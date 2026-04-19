@@ -25,3 +25,10 @@ devradar:
     ghsa:
       fixed-delay-ms: 86400000
       initial-delay-ms: 86400000
+
+anthropic:
+  api-key: test-only-not-used
+  orchestrator-model: claude-sonnet-4-6
+  scoring-model: claude-haiku-4-5-20251001
+  max-tool-iterations: 4
+  max-tokens-per-call: 1024
