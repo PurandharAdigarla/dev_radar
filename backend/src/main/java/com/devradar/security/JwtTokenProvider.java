@@ -45,6 +45,7 @@ public class JwtTokenProvider {
                 .getPayload();
             Long userId = claims.get("userId", Long.class);
             String email = claims.getSubject();
+            if (userId == null || email == null) return null;
             return new JwtUserDetails(userId, email);
         } catch (Exception e) {
             return null;
