@@ -7,7 +7,7 @@ services:
       MYSQL_USER: devradar
       MYSQL_PASSWORD: devradar
     ports:
-      - "3307:3306"
+      - "${DB_HOST_PORT:-3306}:3306"
     volumes:
       - devradar-mysql:/var/lib/mysql
 volumes:
