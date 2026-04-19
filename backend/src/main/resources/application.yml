@@ -39,3 +39,7 @@ anthropic:
   scoring-model: claude-haiku-4-5-20251001
   max-tool-iterations: 8
   max-tokens-per-call: 4096
+
+google-ai:
+  api-key: ${GOOGLE_AI_API_KEY:}
+  base-url: https://generativelanguage.googleapis.com

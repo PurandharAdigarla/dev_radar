@@ -1,6 +1,8 @@
 package com.devradar;
 
+import com.devradar.ai.AiClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -11,6 +13,8 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 public abstract class AbstractIntegrationTest {
+
+    @MockBean AiClient aiClient;
 
     static final MySQLContainer<?> MYSQL;
     static final GenericContainer<?> REDIS;

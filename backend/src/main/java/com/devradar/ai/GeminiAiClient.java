@@ -1,0 +1,162 @@
+package com.devradar.ai;
+
+import com.devradar.ai.tools.ToolDefinition;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Calls Google AI Studio's Gemini 2.0 Flash via REST. Free tier.
+ * Activated with -Dspring-boot.run.profiles=gemini
+ *
+ * Translates the provider-agnostic AiClient contract to Gemini's REST format:
+ * - "user"/"assistant" role -> "user"/"model"
+ * - tool_use blocks -> functionCall in parts
+ * - tool_result blocks -> functionResponse in parts (sent as user message)
+ */
+@Component
+@Profile("gemini")
+public class GeminiAiClient implements AiClient {
+
+    private final RestClient http;
+    private final String apiKey;
+    private final ObjectMapper json = new ObjectMapper();
+
+    public GeminiAiClient(
+        RestClient.Builder builder,
+        @Value("${google-ai.base-url:https://generativelanguage.googleapis.com}") String baseUrl,
+        @Value("${google-ai.api-key:}") String apiKey
+    ) {
+        this.http = builder.baseUrl(baseUrl).build();
+        this.apiKey = apiKey;
+    }
+
+    @Override
+    public AiResponse generate(String model, String systemPrompt, List<AiMessage> messages, List<ToolDefinition> tools, int maxTokens) {
+        // Gemini uses model name like "gemini-2.0-flash" not "claude-sonnet-4-6".
+        // If the caller passes a Claude model name, ignore it and use the configured Gemini default.
+        String geminiModel = model.startsWith("gemini") ? model : "gemini-2.0-flash";
+
+        ObjectNode body = json.createObjectNode();
+
+        // System instruction
+        if (systemPrompt != null && !systemPrompt.isBlank()) {
+            ObjectNode sysInstr = body.putObject("systemInstruction");
+            ArrayNode sysParts = sysInstr.putArray("parts");
+            sysParts.addObject().put("text", systemPrompt);
+        }
+
+        // Contents: translate each AiMessage
+        ArrayNode contents = body.putArray("contents");
+        for (AiMessage m : messages) {
+            ObjectNode content = contents.addObject();
+            String role = "assistant".equals(m.role()) ? "model" : "user";
+            content.put("role", role);
+            ArrayNode parts = content.putArray("parts");
+
+            if (m.toolResults() != null && !m.toolResults().isEmpty()) {
+                for (AiToolResult r : m.toolResults()) {
+                    ObjectNode part = parts.addObject();
+                    ObjectNode fr = part.putObject("functionResponse");
+                    // toolCallId in our DTO maps to function name in Gemini (it doesn't use opaque IDs the way Anthropic does)
+                    // We packed the original tool name into toolCallId — see how AnthropicAiClient produces it.
+                    // For Gemini parity, embed the result under a single field "result".
+                    fr.put("name", extractFunctionName(r.toolCallId()));
+                    ObjectNode response = fr.putObject("response");
+                    try {
+                        response.set("result", json.readTree(r.outputJson()));
+                    } catch (Exception e) {
+                        response.put("result", r.outputJson());
+                    }
+                }
+            } else if (m.content() != null) {
+                parts.addObject().put("text", m.content());
+            }
+        }
+
+        // Tools
+        if (tools != null && !tools.isEmpty()) {
+            ArrayNode toolsArr = body.putArray("tools");
+            ObjectNode toolEntry = toolsArr.addObject();
+            ArrayNode declarations = toolEntry.putArray("functionDeclarations");
+            for (ToolDefinition t : tools) {
+                ObjectNode decl = declarations.addObject();
+                decl.put("name", t.name());
+                decl.put("description", t.description());
+                try {
+                    decl.set("parameters", json.readTree(t.inputSchemaJson()));
+                } catch (Exception e) {
+                    // skip malformed schema
+                }
+            }
+        }
+
+        // Generation config
+        ObjectNode genCfg = body.putObject("generationConfig");
+        genCfg.put("maxOutputTokens", maxTokens);
+
+        // Call API
+        JsonNode resp = http.post()
+            .uri(uri -> uri.path("/v1beta/models/" + geminiModel + ":generateContent")
+                .queryParam("key", apiKey)
+                .build())
+            .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+            .body(body.toString())
+            .retrieve()
+            .body(JsonNode.class);
+
+        // Parse response
+        StringBuilder textOut = new StringBuilder();
+        List<AiToolCall> toolCalls = new ArrayList<>();
+        String stopReason = "end_turn";
+        int inputTokens = 0;
+        int outputTokens = 0;
+
+        if (resp != null) {
+            JsonNode candidates = resp.path("candidates");
+            if (candidates.isArray() && candidates.size() > 0) {
+                JsonNode candidate = candidates.get(0);
+                JsonNode finishReason = candidate.path("finishReason");
+                if ("STOP".equals(finishReason.asText("STOP"))) stopReason = "end_turn";
+                else if ("MAX_TOKENS".equals(finishReason.asText())) stopReason = "end_turn";
+                JsonNode parts = candidate.path("content").path("parts");
+                int callIdx = 0;
+                for (JsonNode part : parts) {
+                    if (part.has("text")) {
+                        textOut.append(part.get("text").asText());
+                    } else if (part.has("functionCall")) {
+                        JsonNode fc = part.get("functionCall");
+                        String name = fc.path("name").asText();
+                        String argsJson = fc.path("args").toString();
+                        // Gemini doesn't return opaque tool_use ids. Fabricate one that round-trips the function name.
+                        String fakeId = "gemini_" + callIdx++ + "_" + name;
+                        toolCalls.add(new AiToolCall(fakeId, name, argsJson));
+                        stopReason = "tool_use";
+                    }
+                }
+            }
+            JsonNode usage = resp.path("usageMetadata");
+            inputTokens = usage.path("promptTokenCount").asInt(0);
+            outputTokens = usage.path("candidatesTokenCount").asInt(0);
+        }
+
+        return new AiResponse(textOut.toString(), toolCalls, stopReason, inputTokens, outputTokens);
+    }
+
+    /** Extract the function name from our fabricated tool_call id (format: "gemini_<idx>_<name>"). */
+    private static String extractFunctionName(String toolCallId) {
+        if (toolCallId == null) return "unknown";
+        int firstUnderscore = toolCallId.indexOf('_');
+        int secondUnderscore = toolCallId.indexOf('_', firstUnderscore + 1);
+        if (secondUnderscore > 0) return toolCallId.substring(secondUnderscore + 1);
+        return toolCallId;
+    }
+}

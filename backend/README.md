@@ -161,3 +161,28 @@ curl -N -H "Authorization: Bearer $TOKEN" "localhost:8080/api/radars/$RADAR_ID/s
 ```
 
 You should see `radar.started`, then `theme.complete` events as the agent finalizes each theme, then `radar.complete`. Then GET `/api/radars/$RADAR_ID` returns the full radar.
+
+### Multi-provider AI (Plan 3 extension)
+
+The `AiClient` interface lets you swap LLM providers without touching the agent loop, tools, or persistence:
+
+| Spring profile | Implementation | Cost | Use case |
+|---|---|---|---|
+| `default` or `anthropic` | `AnthropicAiClient` (Claude Sonnet 4.6 + Haiku 4.5) | Paid | Production radar quality |
+| `gemini` | `GeminiAiClient` (Gemini 2.0 Flash via REST) | Free tier | Dev / portfolio demo |
+| `demo` | `MockAiClient` (canned radar JSON) | Free | UI dev, screen recordings, no API key |
+
+```bash
+# Demo mode — no API key required
+mvn spring-boot:run -Dspring-boot.run.profiles=demo
+
+# Gemini (free tier, set GOOGLE_AI_API_KEY in env first)
+export GOOGLE_AI_API_KEY=...   # from aistudio.google.com/apikey
+mvn spring-boot:run -Dspring-boot.run.profiles=gemini
+
+# Anthropic (paid)
+export ANTHROPIC_API_KEY=sk-ant-...
+mvn spring-boot:run
+```
+
+The `RadarOrchestrator` agent loop, all 3 tools, persistence, SSE, caching — none of that knows or cares which provider is active.

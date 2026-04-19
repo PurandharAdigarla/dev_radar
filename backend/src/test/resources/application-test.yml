@@ -32,3 +32,7 @@ anthropic:
   scoring-model: claude-haiku-4-5-20251001
   max-tool-iterations: 4
   max-tokens-per-call: 1024
+
+google-ai:
+  api-key: test-only-not-used
+  base-url: http://localhost:0

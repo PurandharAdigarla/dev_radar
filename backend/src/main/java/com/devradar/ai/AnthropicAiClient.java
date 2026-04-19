@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@org.springframework.context.annotation.Profile("default | anthropic")
 public class AnthropicAiClient implements AiClient {
 
     private final AnthropicClient sdk;
