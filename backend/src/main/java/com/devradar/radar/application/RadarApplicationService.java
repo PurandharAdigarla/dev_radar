@@ -101,10 +101,11 @@ public class RadarApplicationService {
         if (slugs.isEmpty()) return List.of();
         Instant cutoff = Instant.now().minus(7, ChronoUnit.DAYS);
         return em.createQuery(
-            "SELECT DISTINCT si.id FROM SourceItem si, SourceItemTag sit, InterestTag it " +
+            "SELECT si.id FROM SourceItem si, SourceItemTag sit, InterestTag it " +
             "WHERE sit.sourceItemId = si.id AND sit.interestTagId = it.id " +
             "AND it.slug IN :slugs AND si.postedAt > :cutoff " +
-            "ORDER BY si.postedAt DESC")
+            "GROUP BY si.id " +
+            "ORDER BY MAX(si.postedAt) DESC")
             .setParameter("slugs", slugs)
             .setParameter("cutoff", cutoff)
             .setMaxResults(200)
