@@ -26,6 +26,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshRepo;
     private final PasswordEncoder encoder;
     private final JwtTokenProvider jwt;
+    private final AuditLogService audit;
     private final long refreshTtlDays;
 
     public AuthService(
@@ -33,12 +34,14 @@ public class AuthService {
         RefreshTokenRepository refreshRepo,
         PasswordEncoder encoder,
         JwtTokenProvider jwt,
+        AuditLogService audit,
         @Value("${jwt.refresh-token-ttl-days}") long refreshTtlDays
     ) {
         this.userRepo = userRepo;
         this.refreshRepo = refreshRepo;
         this.encoder = encoder;
         this.jwt = jwt;
+        this.audit = audit;
         this.refreshTtlDays = refreshTtlDays;
     }
 
@@ -51,7 +54,9 @@ public class AuthService {
         user.setEmail(email);
         user.setDisplayName(displayName);
         user.setPasswordHash(encoder.encode(password));
-        return userRepo.save(user);
+        User saved = userRepo.save(user);
+        audit.log(saved.getId(), "USER_REGISTERED", "user", String.valueOf(saved.getId()), null);
+        return saved;
     }
 
     @Transactional
@@ -60,7 +65,9 @@ public class AuthService {
         if (!u.isActive() || !encoder.matches(password, u.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }
-        return issueTokens(u);
+        AuthResult r = issueTokens(u);
+        audit.log(u.getId(), "USER_LOGIN", "user", String.valueOf(u.getId()), null);
+        return r;
     }
 
     @Transactional
@@ -76,6 +83,7 @@ public class AuthService {
     @Transactional
     public void logout(String rawRefreshToken) {
         refreshRepo.revokeByTokenHash(sha256(rawRefreshToken), Instant.now());
+        audit.log(null, "USER_LOGOUT", null, null, null);
     }
 
     private AuthResult issueTokens(User u) {

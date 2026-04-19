@@ -28,7 +28,8 @@ class AuthServiceTest {
         userRepo = mock(UserRepository.class);
         refreshRepo = mock(RefreshTokenRepository.class);
         jwt = mock(JwtTokenProvider.class);
-        service = new AuthService(userRepo, refreshRepo, new BCryptPasswordEncoder(12), jwt, 1);
+        AuditLogService audit = mock(AuditLogService.class);
+        service = new AuthService(userRepo, refreshRepo, new BCryptPasswordEncoder(12), jwt, audit, 1);
     }
 
     @Test
