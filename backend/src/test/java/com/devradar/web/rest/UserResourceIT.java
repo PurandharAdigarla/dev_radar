@@ -56,4 +56,35 @@ class UserResourceIT extends AbstractIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.displayName").value("Bob"));
     }
+
+    @Test
+    void interests_putAndGet_roundTrip() throws Exception {
+        String token = registerAndLogin("interests@example.com");
+
+        // PUT
+        mvc.perform(put("/api/users/me/interests")
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content(json.writeValueAsString(java.util.Map.of(
+                    "tagSlugs", java.util.List.of("spring_boot", "react", "mysql")))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(3));
+
+        // GET
+        mvc.perform(get("/api/users/me/interests").header("Authorization", "Bearer " + token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(3))
+            .andExpect(jsonPath("$[?(@.slug=='spring_boot')]").exists());
+    }
+
+    @Test
+    void interests_put_returns404_whenSlugUnknown() throws Exception {
+        String token = registerAndLogin("badinterests@example.com");
+        mvc.perform(put("/api/users/me/interests")
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .content(json.writeValueAsString(java.util.Map.of(
+                    "tagSlugs", java.util.List.of("not_a_real_tag")))))
+            .andExpect(status().isNotFound());
+    }
 }
