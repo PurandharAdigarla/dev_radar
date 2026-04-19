@@ -2,6 +2,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    properties:
+      hibernate:
+        type:
+          preferred_boolean_jdbc_type: tinyint
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
 
