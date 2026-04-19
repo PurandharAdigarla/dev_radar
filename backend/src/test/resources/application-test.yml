@@ -13,3 +13,15 @@ jwt:
   secret: test-only-secret-must-be-at-least-256-bits-long-for-hs256-algorithm-to-work
   access-token-ttl-minutes: 60
   refresh-token-ttl-days: 1
+
+devradar:
+  ingest:
+    hn:
+      fixed-delay-ms: 86400000
+      initial-delay-ms: 86400000
+    gh-trending:
+      fixed-delay-ms: 86400000
+      initial-delay-ms: 86400000
+    ghsa:
+      fixed-delay-ms: 86400000
+      initial-delay-ms: 86400000
