@@ -43,3 +43,6 @@ anthropic:
 google-ai:
   api-key: ${GOOGLE_AI_API_KEY:}
   base-url: https://generativelanguage.googleapis.com
+
+encryption:
+  github-token-key-base64: ${GITHUB_TOKEN_ENCRYPTION_KEY:UEjGRJjRBYGZQRdsB7Cln1mLG0qlxPEAU+Vq/Sx0iYE=}
