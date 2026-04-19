@@ -9,4 +9,5 @@
     <include file="db/changelog/004-seed-interest-tags.xml"/>
     <include file="db/changelog/005-ingestion-schema.xml"/>
     <include file="db/changelog/006-seed-sources.xml"/>
+    <include file="db/changelog/007-radar-schema.xml"/>
 </databaseChangeLog>
