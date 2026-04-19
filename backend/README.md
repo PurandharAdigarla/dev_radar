@@ -53,3 +53,43 @@ docker.host=unix:///Users/<you>/.docker/run/docker.sock
 - Eval harness (Plan 6)
 - Observability dashboard (Plan 7)
 - Frontend (Plan 8)
+
+## Plan 2 — Ingestion
+
+Three `@Scheduled` jobs continuously populate `source_items` from external sources.
+
+| Source code | Job | Cadence (default) | Client |
+|---|---|---|---|
+| `HN` | HackerNewsIngestor | every 1h | Algolia REST API |
+| `GH_TRENDING` | GitHubTrendingIngestor | every 6h | github.com/trending HTML scrape (Jsoup) |
+| `GHSA` | GHSAIngestor | every 30m | api.github.com/advisories |
+
+Each item passes through:
+1. Redis SETNX dedup lock (5 min TTL)
+2. MySQL `(source_id, external_id)` unique constraint as backstop
+3. `TagExtractor` matches the title against the `interest_tags` taxonomy + explicit topics
+4. INSERT into `source_items` + `source_item_tags`
+
+### Local manual ingestion check
+
+```bash
+cd backend
+docker compose up -d
+mvn spring-boot:run
+
+# In another terminal, after ~30s wait, the HN ingestor will fire
+mysql -h 127.0.0.1 -P ${DB_HOST_PORT:-3306} -udevradar -pdevradar devradar -e \
+  "SELECT s.code, COUNT(*) FROM source_items i JOIN sources s ON s.id=i.source_id GROUP BY s.code;"
+```
+
+You should see rows accumulate over time. Stop the app: kill the `mvn` process.
+
+### Configuration
+
+| Property | Default | Description |
+|---|---|---|
+| `devradar.ingest.hn.fixed-delay-ms` | 3600000 (1h) | HN fetch cadence |
+| `devradar.ingest.hn.initial-delay-ms` | 30000 (30s) | First HN fetch after startup |
+| `devradar.ingest.gh-trending.fixed-delay-ms` | 21600000 (6h) | GitHub trending fetch cadence |
+| `devradar.ingest.gh-trending.languages` | java,python,javascript,typescript,go,rust | CSV of languages to scrape |
+| `devradar.ingest.ghsa.fixed-delay-ms` | 1800000 (30m) | GHSA fetch cadence |
