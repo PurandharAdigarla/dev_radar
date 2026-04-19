@@ -17,7 +17,7 @@ public class User extends BaseAuditableEntity {
     @Column(name = "display_name", nullable = false, length = 100)
     private String displayName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TINYINT(1)")
     private boolean active = true;
 
     public Long getId() { return id; }
