@@ -10,5 +10,12 @@ services:
       - "${DB_HOST_PORT:-3306}:3306"
     volumes:
       - devradar-mysql:/var/lib/mysql
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - devradar-redis:/data
 volumes:
   devradar-mysql:
+  devradar-redis:
