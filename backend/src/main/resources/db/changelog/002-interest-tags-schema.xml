@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="002-create-interest-tags" author="devradar">
+        <createTable tableName="interest_tags">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="slug" type="VARCHAR(80)"><constraints nullable="false" unique="true" uniqueConstraintName="uk_interest_tags_slug"/></column>
+            <column name="display_name" type="VARCHAR(100)"><constraints nullable="false"/></column>
+            <column name="category" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <createIndex tableName="interest_tags" indexName="ix_interest_tags_category">
+            <column name="category"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="002-create-user-interests" author="devradar">
+        <createTable tableName="user_interests">
+            <column name="user_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="interest_tag_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <addPrimaryKey tableName="user_interests" columnNames="user_id, interest_tag_id" constraintName="pk_user_interests"/>
+        <addForeignKeyConstraint baseTableName="user_interests" baseColumnNames="user_id"
+            constraintName="fk_user_interests_user" referencedTableName="users" referencedColumnNames="id" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="user_interests" baseColumnNames="interest_tag_id"
+            constraintName="fk_user_interests_tag" referencedTableName="interest_tags" referencedColumnNames="id" onDelete="CASCADE"/>
+    </changeSet>
+</databaseChangeLog>

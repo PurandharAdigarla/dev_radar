@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="004-seed-interest-tags" author="devradar">
+        <sql>
+INSERT INTO interest_tags (slug, display_name, category, created_at) VALUES
+  ('java','Java','language',NOW()),('python','Python','language',NOW()),('javascript','JavaScript','language',NOW()),
+  ('typescript','TypeScript','language',NOW()),('go','Go','language',NOW()),('rust','Rust','language',NOW()),
+  ('kotlin','Kotlin','language',NOW()),('csharp','C#','language',NOW()),('swift','Swift','language',NOW()),
+  ('spring_boot','Spring Boot','framework',NOW()),('react','React','framework',NOW()),('next_js','Next.js','framework',NOW()),
+  ('vue','Vue','framework',NOW()),('svelte','Svelte','framework',NOW()),('angular','Angular','framework',NOW()),
+  ('django','Django','framework',NOW()),('fastapi','FastAPI','framework',NOW()),('rails','Rails','framework',NOW()),
+  ('mysql','MySQL','tool',NOW()),('postgres','PostgreSQL','tool',NOW()),('redis','Redis','tool',NOW()),
+  ('mongodb','MongoDB','tool',NOW()),('elasticsearch','Elasticsearch','tool',NOW()),('docker','Docker','tool',NOW()),
+  ('kubernetes','Kubernetes','tool',NOW()),('terraform','Terraform','tool',NOW()),('aws','AWS','tool',NOW()),
+  ('gcp','GCP','tool',NOW()),('azure','Azure','tool',NOW()),
+  ('ai_tooling','AI Tooling','topic',NOW()),('llm','LLM','topic',NOW()),('mcp','MCP','topic',NOW()),
+  ('security','Security','topic',NOW()),('performance','Performance','topic',NOW()),
+  ('devops','DevOps','topic',NOW()),('observability','Observability','topic',NOW()),
+  ('frontend','Frontend','topic',NOW()),('backend','Backend','topic',NOW()),
+  ('database','Database','topic',NOW()),('testing','Testing','topic',NOW());
+        </sql>
+    </changeSet>
+</databaseChangeLog>
