@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="005-create-sources" author="devradar">
+        <createTable tableName="sources">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(40)"><constraints nullable="false" unique="true" uniqueConstraintName="uk_sources_code"/></column>
+            <column name="display_name" type="VARCHAR(120)"><constraints nullable="false"/></column>
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true"><constraints nullable="false"/></column>
+            <column name="fetch_interval_minutes" type="INT"><constraints nullable="false"/></column>
+            <column name="created_at" type="TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="005-create-source-items" author="devradar">
+        <createTable tableName="source_items">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="source_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="external_id" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="url" type="VARCHAR(2048)"><constraints nullable="false"/></column>
+            <column name="title" type="VARCHAR(1000)"><constraints nullable="false"/></column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="posted_at" type="TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="raw_payload" type="JSON"/>
+            <column name="fetched_at" type="TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="source_items" columnNames="source_id, external_id" constraintName="uk_source_items_source_external"/>
+        <addForeignKeyConstraint baseTableName="source_items" baseColumnNames="source_id"
+            constraintName="fk_source_items_source" referencedTableName="sources" referencedColumnNames="id" onDelete="RESTRICT"/>
+        <createIndex tableName="source_items" indexName="ix_source_items_posted_at">
+            <column name="posted_at"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="005-create-source-item-tags" author="devradar">
+        <createTable tableName="source_item_tags">
+            <column name="source_item_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="interest_tag_id" type="BIGINT"><constraints nullable="false"/></column>
+        </createTable>
+        <addPrimaryKey tableName="source_item_tags" columnNames="source_item_id, interest_tag_id" constraintName="pk_source_item_tags"/>
+        <addForeignKeyConstraint baseTableName="source_item_tags" baseColumnNames="source_item_id"
+            constraintName="fk_source_item_tags_item" referencedTableName="source_items" referencedColumnNames="id" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="source_item_tags" baseColumnNames="interest_tag_id"
+            constraintName="fk_source_item_tags_tag" referencedTableName="interest_tags" referencedColumnNames="id" onDelete="CASCADE"/>
+        <createIndex tableName="source_item_tags" indexName="ix_source_item_tags_tag">
+            <column name="interest_tag_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

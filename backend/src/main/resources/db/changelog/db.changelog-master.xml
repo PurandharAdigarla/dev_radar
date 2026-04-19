@@ -7,4 +7,6 @@
     <include file="db/changelog/002-interest-tags-schema.xml"/>
     <include file="db/changelog/003-audit-log-schema.xml"/>
     <include file="db/changelog/004-seed-interest-tags.xml"/>
+    <include file="db/changelog/005-ingestion-schema.xml"/>
+    <include file="db/changelog/006-seed-sources.xml"/>
 </databaseChangeLog>

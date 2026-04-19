@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="006-seed-sources" author="devradar">
+        <sql>
+INSERT INTO sources (code, display_name, active, fetch_interval_minutes, created_at) VALUES
+  ('HN', 'Hacker News', true, 60, NOW()),
+  ('GH_TRENDING', 'GitHub Trending', true, 360, NOW()),
+  ('GHSA', 'GitHub Security Advisories', true, 30, NOW());
+        </sql>
+    </changeSet>
+</databaseChangeLog>
