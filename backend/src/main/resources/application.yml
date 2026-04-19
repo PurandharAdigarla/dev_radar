@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: devradar-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/devradar?useSSL=false&serverTimezone=UTC
+    username: devradar
+    password: devradar
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate.dialect: org.hibernate.dialect.MySQLDialect
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+        default-page-size: 20
+
+jwt:
+  secret: ${JWT_SECRET:dev-only-secret-please-override-in-prod-must-be-at-least-256-bits-long-ok}
+  access-token-ttl-minutes: 1440
+  refresh-token-ttl-days: 30
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-stacktrace: never

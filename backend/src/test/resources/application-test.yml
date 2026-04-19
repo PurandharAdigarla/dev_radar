@@ -1,0 +1,11 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+jwt:
+  secret: test-only-secret-must-be-at-least-256-bits-long-for-hs256-algorithm-to-work
+  access-token-ttl-minutes: 60
+  refresh-token-ttl-days: 1
