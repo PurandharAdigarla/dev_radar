@@ -1,11 +1,14 @@
 package com.devradar.ai;
 
+import com.devradar.observability.DailyMetricsCounter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,13 +19,30 @@ public class AiSummaryCache {
     private static final String PREFIX = "ai:summary:";
 
     private final StringRedisTemplate redis;
+    private final MeterRegistry meterRegistry;
+    private final DailyMetricsCounter dailyMetrics;
 
-    public AiSummaryCache(StringRedisTemplate redis) { this.redis = redis; }
+    public AiSummaryCache(StringRedisTemplate redis, MeterRegistry meterRegistry, DailyMetricsCounter dailyMetrics) {
+        this.redis = redis;
+        this.meterRegistry = meterRegistry;
+        this.dailyMetrics = dailyMetrics;
+    }
 
     public Optional<String> get(List<Long> sourceItemIds) {
         String key = buildKey(sourceItemIds);
         String v = redis.opsForValue().get(key);
-        return Optional.ofNullable(v);
+        var result = Optional.ofNullable(v);
+
+        var today = LocalDate.now();
+        if (result.isPresent()) {
+            meterRegistry.counter("ai.summary.cache", "result", "hit").increment();
+            dailyMetrics.incrementCacheHit(today);
+        } else {
+            meterRegistry.counter("ai.summary.cache", "result", "miss").increment();
+            dailyMetrics.incrementCacheMiss(today);
+        }
+
+        return result;
     }
 
     public void put(List<Long> sourceItemIds, String summary) {

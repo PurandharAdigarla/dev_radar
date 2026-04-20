@@ -4,13 +4,16 @@ import com.devradar.domain.Source;
 import com.devradar.domain.SourceItem;
 import com.devradar.domain.SourceItemTag;
 import com.devradar.ingest.client.FetchedItem;
+import com.devradar.observability.DailyMetricsCounter;
 import com.devradar.repository.SourceItemRepository;
 import com.devradar.repository.SourceItemTagRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -24,17 +27,23 @@ public class IngestionService {
     private final SourceItemTagRepository tagRepo;
     private final TagExtractor tagExtractor;
     private final DedupService dedup;
+    private final MeterRegistry meterRegistry;
+    private final DailyMetricsCounter dailyMetrics;
 
     public IngestionService(
         SourceItemRepository itemRepo,
         SourceItemTagRepository tagRepo,
         TagExtractor tagExtractor,
-        DedupService dedup
+        DedupService dedup,
+        MeterRegistry meterRegistry,
+        DailyMetricsCounter dailyMetrics
     ) {
         this.itemRepo = itemRepo;
         this.tagRepo = tagRepo;
         this.tagExtractor = tagExtractor;
         this.dedup = dedup;
+        this.meterRegistry = meterRegistry;
+        this.dailyMetrics = dailyMetrics;
     }
 
     /**
@@ -51,6 +60,12 @@ public class IngestionService {
             }
         }
         LOG.info("ingest source={} fetched={} inserted={}", source.getCode(), items.size(), inserted);
+
+        var today = LocalDate.now();
+        meterRegistry.counter("ingest.items", "source", source.getCode(), "result", "inserted").increment(inserted);
+        dailyMetrics.incrementItemsIngested(today, inserted);
+        dailyMetrics.incrementItemsDeduped(today, items.size() - inserted);
+
         return inserted;
     }
 

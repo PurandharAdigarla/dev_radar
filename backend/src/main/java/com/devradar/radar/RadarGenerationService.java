@@ -7,6 +7,8 @@ import com.devradar.domain.RadarThemeItem;
 import com.devradar.repository.RadarThemeItemRepository;
 import com.devradar.repository.RadarThemeRepository;
 import com.devradar.radar.event.*;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -26,6 +28,7 @@ public class RadarGenerationService {
     private final AiSummaryCache cache;
     private final RadarEventBus events;
     private final com.devradar.repository.ActionProposalRepository actionProposalRepo;
+    private final MeterRegistry meterRegistry;
 
     public RadarGenerationService(
         RadarOrchestrator orchestrator,
@@ -34,7 +37,8 @@ public class RadarGenerationService {
         RadarThemeItemRepository themeItemRepo,
         AiSummaryCache cache,
         RadarEventBus events,
-        com.devradar.repository.ActionProposalRepository actionProposalRepo
+        com.devradar.repository.ActionProposalRepository actionProposalRepo,
+        MeterRegistry meterRegistry
     ) {
         this.orchestrator = orchestrator;
         this.radarService = radarService;
@@ -43,6 +47,7 @@ public class RadarGenerationService {
         this.cache = cache;
         this.events = events;
         this.actionProposalRepo = actionProposalRepo;
+        this.meterRegistry = meterRegistry;
     }
 
     /** Fired by RadarApplicationService.create(). Runs asynchronously. */
@@ -50,8 +55,11 @@ public class RadarGenerationService {
     public void runGeneration(Long radarId, Long userId, List<String> userInterests, List<Long> candidateIds) {
         long t0 = System.currentTimeMillis();
         events.publishStarted(new RadarStartedEvent(radarId));
+        var sample = Timer.start(meterRegistry);
         try {
             var result = orchestrator.generate(userInterests, candidateIds, new com.devradar.ai.tools.ToolContext(userId, radarId));
+            sample.stop(Timer.builder("radar.generation.duration").register(meterRegistry));
+            meterRegistry.counter("radar.generation", "status", "success").increment();
             persistAndStream(radarId, result.themes());
             for (var prop : actionProposalRepo.findByRadarIdOrderByCreatedAtAsc(radarId)) {
                 events.publishActionProposed(new com.devradar.radar.event.ActionProposedEvent(
@@ -62,6 +70,7 @@ public class RadarGenerationService {
             radarService.markReady(radarId, elapsed, tokens, result.totalInputTokens(), result.totalOutputTokens());
             events.publishComplete(new RadarCompleteEvent(radarId, elapsed, tokens));
         } catch (Exception e) {
+            meterRegistry.counter("radar.generation", "status", "failure").increment();
             LOG.error("radar generation failed radar={}: {}", radarId, e.toString(), e);
             radarService.markFailed(radarId, "GENERATION_FAILED", e.getMessage());
             events.publishFailed(new RadarFailedEvent(radarId, "GENERATION_FAILED", e.getMessage()));
