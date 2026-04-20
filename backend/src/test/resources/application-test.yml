@@ -39,3 +39,13 @@ google-ai:
 
 encryption:
   github-token-key-base64: UEjGRJjRBYGZQRdsB7Cln1mLG0qlxPEAU+Vq/Sx0iYE=
+
+github:
+  oauth:
+    client-id: test-client-id
+    client-secret: test-client-secret
+    redirect-uri: http://localhost:8080/api/auth/github/callback
+    authorize-url: http://localhost:0/login/oauth/authorize
+    token-url: http://localhost:0/login/oauth/access_token
+  api:
+    base-url: http://localhost:0
