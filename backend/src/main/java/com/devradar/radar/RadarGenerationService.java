@@ -48,7 +48,7 @@ public class RadarGenerationService {
         long t0 = System.currentTimeMillis();
         events.publishStarted(new RadarStartedEvent(radarId));
         try {
-            var result = orchestrator.generate(userInterests, candidateIds);
+            var result = orchestrator.generate(userInterests, candidateIds, new com.devradar.ai.tools.ToolContext(userId, radarId));
             persistAndStream(radarId, result.themes());
             long elapsed = System.currentTimeMillis() - t0;
             int tokens = result.totalInputTokens() + result.totalOutputTokens();

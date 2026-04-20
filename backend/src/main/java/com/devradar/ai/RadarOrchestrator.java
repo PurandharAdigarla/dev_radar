@@ -1,5 +1,6 @@
 package com.devradar.ai;
 
+import com.devradar.ai.tools.ToolContext;
 import com.devradar.ai.tools.ToolRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,7 +21,9 @@ public class RadarOrchestrator {
     private static final String SYSTEM_PROMPT = """
         You are a tech radar analyst. Given a user's interest tags and a pool of recently ingested items,
         identify 3-5 themes that genuinely matter to this user. Use the provided tools to refine your candidate
-        set. When you are done investigating, output a single JSON object with NO PROSE around it:
+        set. When you encounter a CVE-related item, you may call checkRepoForVulnerability to see if the user's
+        repos are affected — if so, that automatically creates an action proposal the user can approve.
+        When you are done investigating, output a single JSON object with NO PROSE around it:
 
         {"themes": [
           {"title": "...", "summary": "...", "item_ids": [<source_item ids cited>]},
@@ -48,12 +51,12 @@ public class RadarOrchestrator {
         this.maxIterations = maxIterations; this.maxTokens = maxTokens;
     }
 
-    public RadarOrchestrationResult generate(List<String> userInterests, List<Long> candidateItemIds) {
+    public RadarOrchestrationResult generate(List<String> userInterests, List<Long> candidateItemIds, ToolContext ctx) {
         String userMsg = """
             User interests: %s
             Candidate item ids (from last 7 days, pre-filtered to user's tags): %s
 
-            Use the tools to look up titles, score relevance, fetch full details, and produce the final themes JSON.
+            Use the tools to look up titles, score relevance, fetch full details, check the user's repos for vulnerabilities, and produce the final themes JSON.
             """.formatted(userInterests, candidateItemIds);
 
         List<AiMessage> messages = new ArrayList<>();
@@ -72,7 +75,7 @@ public class RadarOrchestrator {
 
             List<AiToolResult> results = new ArrayList<>();
             for (AiToolCall call : resp.toolCalls()) {
-                String out = tools.dispatch(call.name(), call.inputJson());
+                String out = tools.dispatch(call.name(), call.inputJson(), ctx);
                 boolean isError = out != null && out.contains("\"error\"");
                 results.add(new AiToolResult(call.id(), out, isError));
                 LOG.debug("tool dispatched name={} resultLen={}", call.name(), out == null ? 0 : out.length());
@@ -101,7 +104,6 @@ public class RadarOrchestrator {
         return new RadarOrchestrationResult(themes, totalIn, totalOut);
     }
 
-    /** Find the first {...} JSON object in the text and return that substring. */
     private static String extractJsonObject(String text) {
         int start = text.indexOf('{');
         if (start < 0) return "{}";

@@ -27,18 +27,18 @@ class RadarOrchestratorTest {
 
         ToolRegistry tools = mock(ToolRegistry.class);
         when(tools.definitions()).thenReturn(List.of());
-        when(tools.dispatch("searchItems", "{\"tag_slugs\":[\"spring_boot\"]}")).thenReturn("[{\"id\":1,\"title\":\"sb 3.5\"},{\"id\":2,\"title\":\"sb perf\"}]");
+        when(tools.dispatch(eq("searchItems"), eq("{\"tag_slugs\":[\"spring_boot\"]}"), any())).thenReturn("[{\"id\":1,\"title\":\"sb 3.5\"},{\"id\":2,\"title\":\"sb perf\"}]");
 
         RadarOrchestrator orch = new RadarOrchestrator(ai, tools, "claude-sonnet-4-6", 8, 4096);
 
-        var result = orch.generate(List.of("spring_boot"), List.of(1L, 2L, 3L));
+        var result = orch.generate(List.of("spring_boot"), List.of(1L, 2L, 3L), new com.devradar.ai.tools.ToolContext(null, null));
 
         assertThat(result.themes()).hasSize(1);
         assertThat(result.themes().get(0).title()).isEqualTo("Spring Boot 3.5 ships");
         assertThat(result.themes().get(0).itemIds()).containsExactly(1L, 2L);
         assertThat(result.totalInputTokens()).isEqualTo(180);
         assertThat(result.totalOutputTokens()).isEqualTo(70);
-        verify(tools).dispatch("searchItems", "{\"tag_slugs\":[\"spring_boot\"]}");
+        verify(tools).dispatch(eq("searchItems"), eq("{\"tag_slugs\":[\"spring_boot\"]}"), any());
     }
 
     @Test
@@ -49,13 +49,13 @@ class RadarOrchestratorTest {
         }
         ToolRegistry tools = mock(ToolRegistry.class);
         when(tools.definitions()).thenReturn(List.of());
-        when(tools.dispatch(eq("searchItems"), anyString())).thenReturn("[]");
+        when(tools.dispatch(eq("searchItems"), anyString(), any())).thenReturn("[]");
 
         RadarOrchestrator orch = new RadarOrchestrator(ai, tools, "claude-sonnet-4-6", 3, 4096);
 
-        var result = orch.generate(List.of(), List.of());
+        var result = orch.generate(List.of(), List.of(), new com.devradar.ai.tools.ToolContext(null, null));
         // 3 iterations, then we stop with whatever themes (none in this case)
         assertThat(result.themes()).isEmpty();
-        verify(tools, times(3)).dispatch(eq("searchItems"), anyString());
+        verify(tools, times(3)).dispatch(eq("searchItems"), anyString(), any());
     }
 }
