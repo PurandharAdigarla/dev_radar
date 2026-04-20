@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="008-create-user-github-identity" author="devradar">
+        <createTable tableName="user_github_identity">
+            <column name="user_id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
+            <column name="github_user_id" type="BIGINT"><constraints nullable="false" unique="true" uniqueConstraintName="uk_user_github_identity_github_user_id"/></column>
+            <column name="github_login" type="VARCHAR(120)"><constraints nullable="false"/></column>
+            <column name="access_token_encrypted" type="VARCHAR(2048)"><constraints nullable="false"/></column>
+            <column name="granted_scopes" type="VARCHAR(255)"/>
+            <column name="linked_at" type="TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="user_github_identity" baseColumnNames="user_id"
+            constraintName="fk_user_github_identity_user" referencedTableName="users" referencedColumnNames="id" onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="008-create-action-proposals" author="devradar">
+        <createTable tableName="action_proposals">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="radar_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="user_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="kind" type="VARCHAR(30)"><constraints nullable="false"/></column>
+            <column name="payload" type="JSON"><constraints nullable="false"/></column>
+            <column name="status" type="VARCHAR(20)"><constraints nullable="false"/></column>
+            <column name="pr_url" type="VARCHAR(1000)"/>
+            <column name="failure_reason" type="VARCHAR(1000)"/>
+            <column name="created_at" type="TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="action_proposals" baseColumnNames="radar_id"
+            constraintName="fk_action_proposals_radar" referencedTableName="radars" referencedColumnNames="id" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="action_proposals" baseColumnNames="user_id"
+            constraintName="fk_action_proposals_user" referencedTableName="users" referencedColumnNames="id" onDelete="CASCADE"/>
+        <createIndex tableName="action_proposals" indexName="ix_action_proposals_user_status">
+            <column name="user_id"/>
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
