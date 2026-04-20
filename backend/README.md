@@ -186,3 +186,63 @@ mvn spring-boot:run
 ```
 
 The `RadarOrchestrator` agent loop, all 3 tools, persistence, SSE, caching — none of that knows or cares which provider is active.
+
+## Plan 4 — GitHub OAuth + Auto-PR
+
+Lets users link their GitHub account so the radar agent can scan their repos for vulnerable dependencies and propose a PR with the fix.
+
+### Architecture
+
+| Component | Role |
+|---|---|
+| `TokenEncryptor` | AES-256-GCM encryption for GitHub access tokens at rest |
+| `GitHubOAuthClient` | OAuth code → access_token exchange |
+| `GitHubApiClient` | REST wrapper for `/user`, `/user/repos`, `/contents`, branch + PR creation |
+| `CheckRepoForVulnerabilityTool` | Agent tool: scans user's repos, records `action_proposals` |
+| `AutoPrExecutor` | Branches the user's repo, commits the version bump, opens a PR |
+| `ActionApplicationService` | List / approve / dismiss proposals |
+| `ActionResource` | REST: `GET /api/actions/proposals`, `POST /{id}/approve`, `DELETE /{id}` |
+
+### New endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/auth/github/start` | 302 redirect to GitHub consent |
+| GET | `/api/auth/github/callback` | OAuth callback; exchanges code, creates/links user, returns JWT |
+| GET | `/api/actions/proposals?radar_id=X` | List proposals for a radar |
+| POST | `/api/actions/{id}/approve` | Body: `{"fix_version":"2.16.3"}` — opens the real PR via GitHub API |
+| DELETE | `/api/actions/{id}` | Dismiss proposal |
+
+### Configuration
+
+| Property / env var | Default | Description |
+|---|---|---|
+| `GITHUB_OAUTH_CLIENT_ID` | empty | Required for OAuth flow |
+| `GITHUB_OAUTH_CLIENT_SECRET` | empty | Required for OAuth flow |
+| `GITHUB_OAUTH_REDIRECT_URI` | `http://localhost:8080/api/auth/github/callback` | Match the value registered in your GitHub OAuth App |
+| `GITHUB_TOKEN_ENCRYPTION_KEY` | dev key in `application.yml` | Base64-encoded 32 bytes for AES-256. Generate with `openssl rand -base64 32`. |
+
+### Setting up the OAuth app
+
+1. Go to https://github.com/settings/developers → "New OAuth App"
+2. Application name: `Dev Radar (local)`
+3. Homepage URL: `http://localhost:8080`
+4. Authorization callback URL: `http://localhost:8080/api/auth/github/callback`
+5. After creating: copy Client ID + generate Client Secret
+6. Set in your `.env`:
+   ```bash
+   GITHUB_OAUTH_CLIENT_ID=Iv1.abcdef...
+   GITHUB_OAUTH_CLIENT_SECRET=...
+   GITHUB_TOKEN_ENCRYPTION_KEY=$(openssl rand -base64 32)
+   ```
+
+### Agent flow (when AI is configured)
+
+1. Ingestion brings in a GHSA item (e.g., `jackson-databind` CVE)
+2. User generates a radar
+3. Agent calls `checkRepoForVulnerability(package="jackson-databind", version_pattern="2.16.2", ghsa_id="GHSA-...")`
+4. Tool scans the user's repos for `pom.xml`/`package.json` containing the version → finds `creeno-backend/pom.xml` matches
+5. Tool persists an `action_proposal` row + returns the affected file to the agent
+6. After the agent loop completes, the SSE event `action.proposed` fires for each new proposal
+7. User clicks "Open PR" in the UI → POST `/api/actions/{id}/approve` with `{"fix_version":"2.16.3"}`
+8. `AutoPrExecutor` creates branch `dev-radar/cve-ghsa-...`, commits the file with the version bump, opens a PR; `pr_url` recorded on the proposal
