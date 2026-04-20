@@ -59,7 +59,7 @@ public class RadarGenerationService {
             }
             long elapsed = System.currentTimeMillis() - t0;
             int tokens = result.totalInputTokens() + result.totalOutputTokens();
-            radarService.markReady(radarId, elapsed, tokens);
+            radarService.markReady(radarId, elapsed, tokens, result.totalInputTokens(), result.totalOutputTokens());
             events.publishComplete(new RadarCompleteEvent(radarId, elapsed, tokens));
         } catch (Exception e) {
             LOG.error("radar generation failed radar={}: {}", radarId, e.toString(), e);

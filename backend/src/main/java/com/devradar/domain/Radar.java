@@ -31,6 +31,12 @@ public class Radar {
     @Column(name = "token_count")
     private Integer tokenCount;
 
+    @Column(name = "input_token_count")
+    private Integer inputTokenCount;
+
+    @Column(name = "output_token_count")
+    private Integer outputTokenCount;
+
     @Column(name = "error_code", length = 80)
     private String errorCode;
 
@@ -58,6 +64,10 @@ public class Radar {
     public void setGenerationMs(Long v) { this.generationMs = v; }
     public Integer getTokenCount() { return tokenCount; }
     public void setTokenCount(Integer v) { this.tokenCount = v; }
+    public Integer getInputTokenCount() { return inputTokenCount; }
+    public void setInputTokenCount(Integer v) { this.inputTokenCount = v; }
+    public Integer getOutputTokenCount() { return outputTokenCount; }
+    public void setOutputTokenCount(Integer v) { this.outputTokenCount = v; }
     public String getErrorCode() { return errorCode; }
     public void setErrorCode(String v) { this.errorCode = v; }
     public String getErrorMessage() { return errorMessage; }

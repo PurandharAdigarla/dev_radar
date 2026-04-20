@@ -26,12 +26,14 @@ public class RadarService {
     }
 
     @Transactional
-    public void markReady(Long radarId, long generationMs, int tokenCount) {
+    public void markReady(Long radarId, long generationMs, int tokenCount, int inputTokens, int outputTokens) {
         Radar r = repo.findById(radarId).orElseThrow();
         r.setStatus(RadarStatus.READY);
         r.setGeneratedAt(Instant.now());
         r.setGenerationMs(generationMs);
         r.setTokenCount(tokenCount);
+        r.setInputTokenCount(inputTokens);
+        r.setOutputTokenCount(outputTokens);
         repo.save(r);
     }
 
