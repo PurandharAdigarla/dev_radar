@@ -11,4 +11,7 @@
     <include file="db/changelog/006-seed-sources.xml"/>
     <include file="db/changelog/007-radar-schema.xml"/>
     <include file="db/changelog/008-github-and-actions-schema.xml"/>
+    <include file="db/changelog/009-eval-schema.xml"/>
+    <include file="db/changelog/010-metrics-daily-rollup.xml"/>
+    <include file="db/changelog/011-radar-token-split.xml"/>
 </databaseChangeLog>
