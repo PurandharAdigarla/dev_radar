@@ -1,0 +1,35 @@
+{
+  "name": "Frontend developer — React focus",
+  "userInterests": ["react", "typescript", "css", "nextjs"],
+  "sourceItems": [
+    {
+      "id": 2001,
+      "title": "React 20 Announced with Server Components GA",
+      "url": "https://react.dev/blog/2026/react-20",
+      "tags": ["react", "javascript"],
+      "postedAt": "2026-04-19T12:00:00Z"
+    },
+    {
+      "id": 2002,
+      "title": "TypeScript 6.0 Release Candidate",
+      "url": "https://devblogs.microsoft.com/typescript/announcing-typescript-6-0-rc/",
+      "tags": ["typescript"],
+      "postedAt": "2026-04-18T09:00:00Z"
+    },
+    {
+      "id": 2003,
+      "title": "Spring Boot 3.5 Released with Virtual Threads Support",
+      "url": "https://spring.io/blog/2026/04/spring-boot-3-5",
+      "tags": ["java", "spring_boot"],
+      "postedAt": "2026-04-18T10:00:00Z"
+    }
+  ],
+  "expectedThemes": [
+    {
+      "title": "Frontend framework updates",
+      "expectedItemIds": [2001, 2002],
+      "shouldNotInclude": [2003]
+    }
+  ],
+  "tokenBudget": 5000
+}

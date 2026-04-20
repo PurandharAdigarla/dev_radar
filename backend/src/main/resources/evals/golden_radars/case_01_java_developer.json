@@ -1,0 +1,46 @@
+{
+  "name": "Java backend developer — Spring Boot focus",
+  "userInterests": ["java", "spring_boot", "docker", "postgresql", "security"],
+  "sourceItems": [
+    {
+      "id": 1001,
+      "title": "Spring Boot 3.5 Released with Virtual Threads Support",
+      "url": "https://spring.io/blog/2026/04/spring-boot-3-5",
+      "tags": ["java", "spring_boot"],
+      "postedAt": "2026-04-18T10:00:00Z"
+    },
+    {
+      "id": 1002,
+      "title": "Critical CVE in Jackson Databind 2.16.x",
+      "url": "https://github.com/advisories/GHSA-xxxx-jackson",
+      "tags": ["java", "security"],
+      "postedAt": "2026-04-17T08:00:00Z"
+    },
+    {
+      "id": 1003,
+      "title": "Docker Desktop 5.0 Brings Native Kubernetes Integration",
+      "url": "https://docker.com/blog/desktop-5",
+      "tags": ["docker"],
+      "postedAt": "2026-04-16T14:00:00Z"
+    },
+    {
+      "id": 1004,
+      "title": "React 20 Announced with Server Components GA",
+      "url": "https://react.dev/blog/2026/react-20",
+      "tags": ["react", "javascript"],
+      "postedAt": "2026-04-19T12:00:00Z"
+    }
+  ],
+  "expectedThemes": [
+    {
+      "title": "Spring Boot ecosystem updates",
+      "expectedItemIds": [1001],
+      "shouldNotInclude": [1004]
+    },
+    {
+      "title": "Security advisories affecting Java",
+      "expectedItemIds": [1002]
+    }
+  ],
+  "tokenBudget": 5000
+}
