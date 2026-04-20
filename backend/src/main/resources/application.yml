@@ -56,3 +56,16 @@ github:
     token-url: https://github.com/login/oauth/access_token
   api:
     base-url: https://api.github.com
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  prometheus:
+    metrics:
+      export:
+        enabled: true

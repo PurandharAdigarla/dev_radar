@@ -49,3 +49,9 @@ github:
     token-url: http://localhost:0/login/oauth/access_token
   api:
     base-url: http://localhost:0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics
