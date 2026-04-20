@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface RadarThemeItemRepository extends JpaRepository<RadarThemeItem, Long> {
     List<RadarThemeItem> findByThemeIdOrderByDisplayOrderAsc(Long themeId);
+    List<RadarThemeItem> findByThemeId(Long themeId);
 }

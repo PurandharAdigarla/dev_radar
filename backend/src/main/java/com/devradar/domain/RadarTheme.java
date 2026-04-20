@@ -28,6 +28,7 @@ public class RadarTheme {
     void onCreate() { createdAt = Instant.now(); }
 
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public Long getRadarId() { return radarId; }
     public void setRadarId(Long v) { this.radarId = v; }
     public String getTitle() { return title; }
