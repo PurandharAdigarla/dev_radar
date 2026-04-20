@@ -25,6 +25,7 @@ public class RadarGenerationService {
     private final RadarThemeItemRepository themeItemRepo;
     private final AiSummaryCache cache;
     private final RadarEventBus events;
+    private final com.devradar.repository.ActionProposalRepository actionProposalRepo;
 
     public RadarGenerationService(
         RadarOrchestrator orchestrator,
@@ -32,7 +33,8 @@ public class RadarGenerationService {
         RadarThemeRepository themeRepo,
         RadarThemeItemRepository themeItemRepo,
         AiSummaryCache cache,
-        RadarEventBus events
+        RadarEventBus events,
+        com.devradar.repository.ActionProposalRepository actionProposalRepo
     ) {
         this.orchestrator = orchestrator;
         this.radarService = radarService;
@@ -40,6 +42,7 @@ public class RadarGenerationService {
         this.themeItemRepo = themeItemRepo;
         this.cache = cache;
         this.events = events;
+        this.actionProposalRepo = actionProposalRepo;
     }
 
     /** Fired by RadarApplicationService.create(). Runs asynchronously. */
@@ -50,6 +53,10 @@ public class RadarGenerationService {
         try {
             var result = orchestrator.generate(userInterests, candidateIds, new com.devradar.ai.tools.ToolContext(userId, radarId));
             persistAndStream(radarId, result.themes());
+            for (var prop : actionProposalRepo.findByRadarIdOrderByCreatedAtAsc(radarId)) {
+                events.publishActionProposed(new com.devradar.radar.event.ActionProposedEvent(
+                    radarId, prop.getId(), prop.getKind().name(), prop.getPayload()));
+            }
             long elapsed = System.currentTimeMillis() - t0;
             int tokens = result.totalInputTokens() + result.totalOutputTokens();
             radarService.markReady(radarId, elapsed, tokens);

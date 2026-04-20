@@ -38,6 +38,7 @@ public class RadarEventBus {
         send(event.radarId(), "radar.failed", event);
         completeAll(event.radarId());
     }
+    public void publishActionProposed(ActionProposedEvent event) { send(event.radarId(), "action.proposed", event); }
 
     private void send(Long radarId, String eventName, Object data) {
         List<SseEmitter> list = subscribers.get(radarId);
