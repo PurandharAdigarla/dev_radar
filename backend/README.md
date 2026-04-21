@@ -246,3 +246,56 @@ Lets users link their GitHub account so the radar agent can scan their repos for
 6. After the agent loop completes, the SSE event `action.proposed` fires for each new proposal
 7. User clicks "Open PR" in the UI → POST `/api/actions/{id}/approve` with `{"fix_version":"2.16.3"}`
 8. `AutoPrExecutor` creates branch `dev-radar/cve-ghsa-...`, commits the file with the version bump, opens a PR; `pr_url` recorded on the proposal
+
+## MCP Server Surface
+
+Dev Radar exposes four tools via the Model Context Protocol so MCP clients (Claude Desktop, Cursor, etc.) can query your radar data directly from inside your editor.
+
+| Tool | Scope | Description |
+|---|---|---|
+| `query_radar` | READ | Latest READY radar for the authenticated user |
+| `get_user_interests` | READ | User's interest tags |
+| `get_recent_items` | READ | Recent ingested items filtered by the user's interests (args: `days`, optional `tagSlug`) |
+| `propose_pr_for_cve` | WRITE | Approve a CVE-fix PR proposal (args: `proposalId`, `fixVersion`) |
+
+### Generating an API key
+
+API keys are per-user and scoped (READ or WRITE). Keys are generated with a JWT-authenticated REST call and are returned exactly once on creation — store them immediately.
+
+```bash
+curl -X POST http://localhost:8080/api/users/me/api-keys \
+     -H "Authorization: Bearer <your-jwt-access-token>" \
+     -H "Content-Type: application/json" \
+     -d '{"name":"Cursor","scope":"READ"}'
+```
+
+The response contains a `key` field starting with `devr_`. Copy it; it will not be shown again. Use `GET /api/users/me/api-keys` to list active keys and `DELETE /api/users/me/api-keys/{id}` to revoke.
+
+### Connecting Claude Desktop
+
+Add to `claude_desktop_config.json` (typically at `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "devradar": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:8080/mcp/sse",
+               "--header", "Authorization: Bearer devr_<your-key>"]
+    }
+  }
+}
+```
+
+Restart Claude Desktop. The four tools should appear in the MCP tool tray.
+
+### Connecting Cursor
+
+Add a custom MCP server in Cursor settings pointing to `http://localhost:8080/mcp/sse` with the `Authorization: Bearer devr_<key>` header.
+
+### Observability
+
+MCP activity is exposed via Micrometer counters on `/actuator/prometheus`:
+
+- `mcp_tool_calls_total{tool, status}` — every tool invocation, tagged with `tool` and `status` (`success` / `error` / `denied_scope`)
+- `mcp_auth_failures_total{reason}` — authentication rejections, tagged `reason` (`missing` / `malformed` / `unknown_key`)
