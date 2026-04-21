@@ -7,6 +7,7 @@ import com.devradar.repository.SourceItemRepository;
 import com.devradar.repository.SourceItemTagRepository;
 import com.devradar.repository.SourceRepository;
 import com.devradar.security.SecurityUtils;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -27,15 +28,18 @@ public class RecentItemsMcpTools {
     private final SourceItemTagRepository itemTagRepo;
     private final SourceRepository sources;
     private final InterestTagRepository tags;
+    private final MeterRegistry meters;
 
     public RecentItemsMcpTools(SourceItemRepository items,
                                SourceItemTagRepository itemTagRepo,
                                SourceRepository sources,
-                               InterestTagRepository tags) {
+                               InterestTagRepository tags,
+                               MeterRegistry meters) {
         this.items = items;
         this.itemTagRepo = itemTagRepo;
         this.sources = sources;
         this.tags = tags;
+        this.meters = meters;
     }
 
     @Tool(name = "get_recent_items",
@@ -44,14 +48,21 @@ public class RecentItemsMcpTools {
         @ToolParam(description = "Number of days to look back (1-30, default 7)", required = false) Integer days,
         @ToolParam(description = "Optional interest tag slug to filter by", required = false) String tagSlug) {
 
-        int n = (days == null) ? DEFAULT_DAYS : Math.max(1, Math.min(days, MAX_DAYS));
-        Long uid = SecurityUtils.getCurrentUserId();
-        Instant since = Instant.now().minus(n, ChronoUnit.DAYS);
+        try {
+            int n = (days == null) ? DEFAULT_DAYS : Math.max(1, Math.min(days, MAX_DAYS));
+            Long uid = SecurityUtils.getCurrentUserId();
+            Instant since = Instant.now().minus(n, ChronoUnit.DAYS);
 
-        List<SourceItem> hits = items.findRecentByUserInterests(uid, since,
-            (tagSlug == null || tagSlug.isBlank()) ? null : tagSlug, ITEM_LIMIT);
+            List<SourceItem> hits = items.findRecentByUserInterests(uid, since,
+                (tagSlug == null || tagSlug.isBlank()) ? null : tagSlug, ITEM_LIMIT);
 
-        return hits.stream().map(this::toDto).toList();
+            List<RecentItemMcpDTO> out = hits.stream().map(this::toDto).toList();
+            meters.counter("mcp.tool.calls", "tool", "get_recent_items", "status", "success").increment();
+            return out;
+        } catch (RuntimeException e) {
+            meters.counter("mcp.tool.calls", "tool", "get_recent_items", "status", "error").increment();
+            throw e;
+        }
     }
 
     private RecentItemMcpDTO toDto(SourceItem si) {

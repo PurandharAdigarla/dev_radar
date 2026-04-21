@@ -4,6 +4,8 @@ import com.devradar.apikey.ApiKeyUsedEvent;
 import com.devradar.domain.ApiKeyScope;
 import com.devradar.domain.UserApiKey;
 import com.devradar.repository.UserApiKeyRepository;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +30,7 @@ class ApiKeyAuthenticationFilterTest {
     ApplicationEventPublisher events;
     FilterChain chain;
     ApiKeyAuthenticationFilter filter;
+    MeterRegistry metersMock;
 
     @BeforeEach
     void setUp() {
@@ -35,7 +38,8 @@ class ApiKeyAuthenticationFilterTest {
         hasher = mock(ApiKeyHasher.class);
         events = mock(ApplicationEventPublisher.class);
         chain = mock(FilterChain.class);
-        filter = new ApiKeyAuthenticationFilter(repo, hasher, events);
+        metersMock = new SimpleMeterRegistry();
+        filter = new ApiKeyAuthenticationFilter(repo, hasher, events, metersMock);
         SecurityContextHolder.clearContext();
     }
 
