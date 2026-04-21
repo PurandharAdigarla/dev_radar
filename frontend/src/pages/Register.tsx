@@ -1,0 +1,117 @@
+import { useState, type FormEvent } from "react";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Link from "@mui/material/Link";
+import { Button } from "../components/Button";
+import { TextField } from "../components/TextField";
+import { Alert } from "../components/Alert";
+import { AuthCard } from "../components/AuthCard";
+import { useAuth } from "../auth/useAuth";
+
+type ErrorKind = "email-taken" | "generic" | null;
+
+export function Register() {
+  const { register, login } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [error, setError] = useState<ErrorKind>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setErrorMsg(null);
+    setSubmitting(true);
+    try {
+      await register(email, password, displayName);
+      await login(email, password);
+      navigate("/app");
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      const serverMsg = (err as { data?: { message?: string } }).data?.message;
+      if (status === 409) {
+        setError("email-taken");
+      } else {
+        setError("generic");
+        setErrorMsg(serverMsg ?? "Registration failed");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <AuthCard>
+      <Typography variant="h2" sx={{ mb: 1 }}>Create your account</Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        Start getting your weekly radar.
+      </Typography>
+
+      <Box component="form" onSubmit={onSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3.5 }}>
+        {error === "email-taken" && (
+          <Alert severity="error">
+            That email is already registered.{" "}
+            <Link
+              component={RouterLink}
+              to="/login"
+              sx={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: "3px" }}
+            >
+              Sign in instead?
+            </Link>
+          </Alert>
+        )}
+        {error === "generic" && errorMsg && <Alert severity="error">{errorMsg}</Alert>}
+
+        <TextField
+          label="Email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          required
+        />
+        <TextField
+          label="Display name"
+          autoComplete="nickname"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          helperText="Shown on your radar header. You can change this later."
+          required
+        />
+        <TextField
+          label="Password"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          helperText="At least 8 characters."
+          required
+        />
+
+        <Box sx={{ mt: 0.5 }}>
+          <Button type="submit" fullWidth disabled={submitting}>
+            {submitting ? "Creating…" : "Create account"}
+          </Button>
+        </Box>
+      </Box>
+
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
+        Have an account?{" "}
+        <Link
+          component={RouterLink}
+          to="/login"
+          sx={{ color: "text.primary", textDecoration: "underline", textUnderlineOffset: "3px" }}
+        >
+          Sign in
+        </Link>
+      </Typography>
+    </AuthCard>
+  );
+}
