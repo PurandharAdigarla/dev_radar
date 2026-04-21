@@ -1,5 +1,6 @@
 package com.devradar.config;
 
+import com.devradar.mcp.ActionMcpTools;
 import com.devradar.mcp.InterestMcpTools;
 import com.devradar.mcp.RadarMcpTools;
 import com.devradar.mcp.RecentItemsMcpTools;
@@ -14,9 +15,10 @@ public class McpConfig {
     @Bean
     public ToolCallbackProvider devradarTools(RadarMcpTools radarTools,
                                               InterestMcpTools interestTools,
-                                              RecentItemsMcpTools recentTools) {
+                                              RecentItemsMcpTools recentTools,
+                                              ActionMcpTools actionTools) {
         return MethodToolCallbackProvider.builder()
-            .toolObjects(radarTools, interestTools, recentTools)
+            .toolObjects(radarTools, interestTools, recentTools, actionTools)
             .build();
     }
 }

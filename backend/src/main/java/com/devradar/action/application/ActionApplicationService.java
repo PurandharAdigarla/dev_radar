@@ -38,6 +38,13 @@ public class ActionApplicationService {
         return toDto(repo.findById(proposalId).orElseThrow());
     }
 
+    public ActionProposalDTO approveForUser(Long userId, Long proposalId, String fixVersion) {
+        ActionProposal p = repo.findById(proposalId).orElseThrow();
+        if (!p.getUserId().equals(userId)) throw new RuntimeException("forbidden");
+        executor.execute(proposalId, fixVersion);
+        return toDto(repo.findById(proposalId).orElseThrow());
+    }
+
     @Transactional
     public ActionProposalDTO dismiss(Long proposalId) {
         Long uid = currentUserId();
