@@ -4,4 +4,8 @@ import com.devradar.domain.SourceItemTag;
 import com.devradar.domain.SourceItemTagId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface SourceItemTagRepository extends JpaRepository<SourceItemTag, SourceItemTagId> {}
+import java.util.List;
+
+public interface SourceItemTagRepository extends JpaRepository<SourceItemTag, SourceItemTagId> {
+    List<SourceItemTag> findBySourceItemId(Long sourceItemId);
+}
