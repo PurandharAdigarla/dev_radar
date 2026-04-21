@@ -8,6 +8,14 @@ spring:
           preferred_boolean_jdbc_type: tinyint
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
+  ai:
+    mcp:
+      server:
+        name: devradar
+        version: 1.0.0
+        type: SYNC
+        sse-message-endpoint: /mcp/message
+        sse-endpoint: /mcp/sse
 
 jwt:
   secret: test-only-secret-must-be-at-least-256-bits-long-for-hs256-algorithm-to-work

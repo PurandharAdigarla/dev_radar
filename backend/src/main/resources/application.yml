@@ -21,6 +21,14 @@ spring:
       pageable:
         max-page-size: 100
         default-page-size: 20
+  ai:
+    mcp:
+      server:
+        name: devradar
+        version: 1.0.0
+        type: SYNC
+        sse-message-endpoint: /mcp/message
+        sse-endpoint: /mcp/sse
 
 jwt:
   secret: ${JWT_SECRET:dev-only-secret-please-override-in-prod-must-be-at-least-256-bits-long-ok}
