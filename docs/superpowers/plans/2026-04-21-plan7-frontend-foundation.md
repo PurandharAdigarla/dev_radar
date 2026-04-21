@@ -10,6 +10,18 @@
 
 **Spec reference:** `docs/superpowers/specs/2026-04-21-frontend-foundation-design.md`.
 
+**Design reference:** Visual design was iterated on claude.ai/design and exported. The exported React JSX, chat transcript, and interactive HTML are preserved at `docs/superpowers/design-assets/2026-04-21-plan7-frontend/` — **open `screens.jsx` as the canonical source of truth for markup, spacing, and micro-interactions**. The tokens and component code in Tasks 3, 9, 10, and 11 are derived directly from it.
+
+**Design decisions locked by the export:**
+- **Monochrome** — no terracotta. `Ink` (`#2d2a26`) is the button accent per the user's final instruction ("keep the website monochrome and minimalist").
+- **Pill buttons** — `border-radius: 999px`, padding `12px 20px`. NOT the default 8px radius.
+- **Landing hero: 48px** with `letter-spacing: -0.02em`; body paragraph bumped to 17px.
+- `letter-spacing: -0.01em` on h2 (auth) and AppShell h1.
+- Inputs: `border-radius: 8px`, padding `10px 14px`, focus → `0 0 0 2px` Ink ring + border color change to Ink.
+- Alert: inline warning icon + tinted error background (`rgba(179,38,30,0.06)`) + `rgba(179,38,30,0.2)` border. Register email-taken variant includes an inline "Sign in instead?" link.
+- Sidebar disabled items: reduced opacity (0.6) + `cursor: not-allowed` + small uppercase **"soon"** tag on the right.
+- Sidebar user block at bottom with display name, email (ellipsis), and an underlined "Sign out" text button (not a filled button).
+
 ---
 
 ## File Structure
@@ -380,11 +392,13 @@ git commit -m "chore(frontend): add ESLint + Prettier config and README"
 
 ---
 
-## Task 3: MUI Theme (Claude-Inspired Tokens) (TDD)
+## Task 3: MUI Theme (Monochrome Tokens from Claude Design) (TDD)
 
 **Files:**
 - Create: `frontend/src/theme.ts`
 - Create: `frontend/src/theme.test.ts`
+
+Tokens below match the Claude Design export exactly (see `docs/superpowers/design-assets/2026-04-21-plan7-frontend/screens.jsx`). **Monochrome**: primary accent is Ink (`#2d2a26`), not terracotta. Buttons are pills. Letter-spacing is negative on headings.
 
 - [ ] **Step 1: Write failing test for theme**
 
@@ -399,8 +413,8 @@ describe("theme", () => {
     expect(theme.palette.background.default).toBe("#faf9f7");
   });
 
-  it("has terracotta accent as primary", () => {
-    expect(theme.palette.primary.main).toBe("#c15f3c");
+  it("uses Ink as the monochrome primary accent", () => {
+    expect(theme.palette.primary.main).toBe("#2d2a26");
   });
 
   it("uses Inter as the sans font", () => {
@@ -409,6 +423,14 @@ describe("theme", () => {
 
   it("sets default border radius to 8px", () => {
     expect(theme.shape.borderRadius).toBe(8);
+  });
+
+  it("applies negative letter-spacing on h1", () => {
+    expect(theme.typography.h1.letterSpacing).toBe("-0.02em");
+  });
+
+  it("applies negative letter-spacing on h2", () => {
+    expect(theme.typography.h2.letterSpacing).toBe("-0.01em");
   });
 
   it("provides a single subtle shadow level", () => {
@@ -440,6 +462,10 @@ import { createTheme } from "@mui/material/styles";
 
 const subtleShadow = "0 1px 2px rgba(45,42,38,0.04), 0 1px 1px rgba(45,42,38,0.03)";
 
+const INK = "#2d2a26";
+const INK_HOVER = "#000000";
+const DIVIDER = "#e8e4df";
+
 export const theme = createTheme({
   palette: {
     mode: "light",
@@ -448,34 +474,50 @@ export const theme = createTheme({
       paper: "#ffffff",
     },
     text: {
-      primary: "#2d2a26",
+      primary: INK,
       secondary: "#6b655e",
     },
     primary: {
-      main: "#c15f3c",
-      dark: "#a84e2f",
+      main: INK,
+      dark: INK_HOVER,
       contrastText: "#ffffff",
     },
-    divider: "#e8e4df",
+    divider: DIVIDER,
     error: { main: "#b3261e" },
     success: { main: "#2d7a3e" },
   },
   typography: {
-    fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-    h1: { fontSize: "2rem", lineHeight: 1.25, fontWeight: 500 },
-    h2: { fontSize: "1.5rem", lineHeight: 1.33, fontWeight: 500 },
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+    h1: {
+      fontSize: "3rem",           // 48px — Landing hero
+      lineHeight: 1.15,
+      fontWeight: 500,
+      letterSpacing: "-0.02em",
+    },
+    h2: {
+      fontSize: "1.5rem",         // 24px — auth headings
+      lineHeight: "32px",
+      fontWeight: 500,
+      letterSpacing: "-0.01em",
+    },
     h3: { fontSize: "1.125rem", lineHeight: 1.44, fontWeight: 500 },
-    body1: { fontSize: "0.9375rem", lineHeight: 1.6, fontWeight: 400 },
-    body2: { fontSize: "0.9375rem", lineHeight: 1.6, fontWeight: 400 },
-    caption: { fontSize: "0.8125rem", lineHeight: 1.54, fontWeight: 400 },
+    body1: { fontSize: "0.9375rem", lineHeight: 1.6, fontWeight: 400 },     // 15/24
+    body2: { fontSize: "0.875rem", lineHeight: "20px", fontWeight: 400 },   // 14/20
+    caption: { fontSize: "0.8125rem", lineHeight: "20px", fontWeight: 400 }, // 13/20
     overline: {
       fontSize: "0.6875rem",
-      lineHeight: 1.45,
+      lineHeight: "16px",
       fontWeight: 500,
       letterSpacing: "0.08em",
       textTransform: "uppercase",
     },
-    button: { textTransform: "none", fontWeight: 500 },
+    button: {
+      textTransform: "none",
+      fontWeight: 500,
+      fontSize: "0.9375rem",      // 15px
+      lineHeight: 1,
+      letterSpacing: 0,
+    },
   },
   shape: { borderRadius: 8 },
   shadows: [
@@ -489,24 +531,70 @@ export const theme = createTheme({
   ],
   components: {
     MuiButton: {
+      defaultProps: { disableElevation: true, disableRipple: false },
       styleOverrides: {
-        root: { borderRadius: 8, padding: "8px 16px", boxShadow: "none" },
-        contained: { "&:hover": { boxShadow: "none" } },
+        root: {
+          borderRadius: 999,                 // pill per Claude Design
+          padding: "12px 20px",
+          boxShadow: "none",
+          "&:focus-visible": {
+            boxShadow: `0 0 0 2px ${INK}`,
+          },
+        },
+        contained: {
+          "&:hover": { boxShadow: "none", backgroundColor: INK_HOVER },
+        },
+        outlined: {
+          borderColor: DIVIDER,
+          color: INK,
+          "&:hover": { borderColor: DIVIDER, backgroundColor: "rgba(45,42,38,0.04)" },
+        },
+        text: {
+          padding: "6px 8px",
+          borderRadius: 6,
+          color: "#6b655e",
+          fontSize: "0.875rem",
+          "&:hover": { color: INK, backgroundColor: "transparent" },
+        },
       },
     },
     MuiPaper: {
       defaultProps: { elevation: 0 },
+      styleOverrides: { root: { backgroundImage: "none" } },
+    },
+    MuiDivider: { styleOverrides: { root: { borderColor: DIVIDER } } },
+    MuiOutlinedInput: {
       styleOverrides: {
-        root: { backgroundImage: "none" },
+        root: {
+          borderRadius: 8,
+          "& .MuiOutlinedInput-notchedOutline": { borderColor: DIVIDER },
+          "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: DIVIDER },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: INK, borderWidth: 1 },
+          "&.Mui-focused": { boxShadow: `0 0 0 2px ${INK}` },
+        },
+        input: { padding: "10px 14px", fontSize: "0.9375rem", lineHeight: "24px" },
       },
     },
-    MuiDivider: { styleOverrides: { root: { borderColor: "#e8e4df" } } },
-    MuiTextField: { defaultProps: { size: "small", variant: "outlined" } },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          position: "static",
+          transform: "none",
+          fontSize: "0.8125rem",
+          lineHeight: "20px",
+          fontWeight: 500,
+          color: INK,
+          marginBottom: 8,
+          "&.Mui-focused": { color: INK },
+        },
+      },
+    },
+    MuiTextField: { defaultProps: { variant: "outlined" } },
   },
 });
 
-export const serifStack = '"Source Serif Pro", "Tiempos Text", Georgia, serif';
-export const monoStack = '"JetBrains Mono", ui-monospace, monospace';
+export const serifStack = '"Source Serif Pro", "Source Serif 4", Georgia, serif';
+export const monoStack = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace';
 ```
 
 - [ ] **Step 5: Run test to verify it passes**
@@ -1383,21 +1471,72 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
 
 - [ ] **Step 6: Create Alert**
 
+Per the Claude Design export, the error alert is a custom inline block (tinted error bg + thin red border + warning icon), not MUI's filled/outlined Alert variants. The primitive below matches that shape exactly.
+
 Create `frontend/src/components/Alert.tsx`:
 
 ```tsx
-import MuiAlert, { type AlertProps as MuiAlertProps } from "@mui/material/Alert";
-import { forwardRef } from "react";
+import Box from "@mui/material/Box";
+import type { ReactNode } from "react";
 
-export type AlertProps = MuiAlertProps;
+export type AlertSeverity = "error" | "success";
 
-export const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
-  { variant = "outlined", ...rest },
-  ref,
-) {
-  return <MuiAlert ref={ref} variant={variant} {...rest} />;
-});
+export interface AlertProps {
+  severity?: AlertSeverity;
+  children: ReactNode;
+  role?: string;
+}
+
+const palette = {
+  error: {
+    color: "#b3261e",
+    bg: "rgba(179,38,30,0.06)",
+    border: "rgba(179,38,30,0.2)",
+  },
+  success: {
+    color: "#2d7a3e",
+    bg: "rgba(45,122,62,0.06)",
+    border: "rgba(45,122,62,0.2)",
+  },
+};
+
+export function Alert({ severity = "error", children, role = "alert" }: AlertProps) {
+  const p = palette[severity];
+  return (
+    <Box
+      role={role}
+      sx={{
+        fontSize: 14,
+        lineHeight: "20px",
+        color: p.color,
+        background: p.bg,
+        border: `1px solid ${p.border}`,
+        borderRadius: 1,
+        padding: "10px 14px",
+        display: "flex",
+        gap: 1.25,
+        alignItems: "flex-start",
+      }}
+    >
+      <Box
+        component="svg"
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
+        sx={{ flexShrink: 0, mt: "2px" }}
+        aria-hidden="true"
+      >
+        <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
+        <path d="M8 4.5v4M8 11v.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      </Box>
+      <Box component="span">{children}</Box>
+    </Box>
+  );
+}
 ```
+
+The `components.test.tsx` assertion `screen.getByText("Nope")` still passes — the message lives inside a `<span>` descendant.
 
 - [ ] **Step 7: Create PageLayout**
 
@@ -1564,55 +1703,114 @@ Expected: FAIL.
 
 - [ ] **Step 4: Create Landing page**
 
+Matches `docs/superpowers/design-assets/2026-04-21-plan7-frontend/screens.jsx` `LandingScreen` exactly. 640px max-width, left-aligned, 32px overline-to-h1 gap, 24px h1-to-body gap, 40px body-to-buttons gap, pill buttons side by side.
+
 Create `frontend/src/pages/Landing.tsx`:
 
 ```tsx
 import { Link as RouterLink } from "react-router-dom";
-import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button } from "../components/Button";
-import { PageLayout } from "../components/PageLayout";
 
 export function Landing() {
   return (
-    <PageLayout maxWidth={640}>
-      <Stack spacing={4} sx={{ mt: 6 }}>
-        <Typography variant="overline" color="text.secondary">
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "background.default",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 4,
+        py: 10,
+      }}
+    >
+      <Box sx={{ maxWidth: 640, width: "100%" }}>
+        <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 4 }}>
           Dev Radar
         </Typography>
-        <Typography variant="h1">A weekly brief for what you care about.</Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="h1" component="h1" sx={{ textWrap: "balance" }}>
+          A weekly brief for what you care about.
+        </Typography>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{
+            fontSize: "1.0625rem",       // 17px — hero paragraph
+            lineHeight: 1.6,
+            mt: 3,
+            mb: 5,
+            maxWidth: 560,
+            textWrap: "pretty",
+          }}
+        >
           Personalized radars synthesized from Hacker News, GitHub Trending, and security
           advisories, with citations you can trust.
         </Typography>
-        <Stack direction="row" spacing={2}>
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
           <Button component={RouterLink} to="/register">
             Create account
           </Button>
           <Button component={RouterLink} to="/login" variant="outlined">
             Sign in
           </Button>
-        </Stack>
-      </Stack>
-    </PageLayout>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 ```
 
-- [ ] **Step 5: Create Login page**
+- [ ] **Step 5: Create a shared AuthCard wrapper**
+
+Both Login and Register sit inside a centered 400px column with a "Dev Radar" overline above. Extract once.
+
+Create `frontend/src/components/AuthCard.tsx`:
+
+```tsx
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import type { ReactNode } from "react";
+
+export function AuthCard({ children }: { children: ReactNode }) {
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: "background.default",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 4,
+        py: 10,
+      }}
+    >
+      <Box sx={{ maxWidth: 400, width: "100%" }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 5 }}>
+          <Typography variant="overline" color="text.secondary">Dev Radar</Typography>
+        </Box>
+        {children}
+      </Box>
+    </Box>
+  );
+}
+```
+
+- [ ] **Step 6: Create Login page**
 
 Create `frontend/src/pages/Login.tsx`:
 
 ```tsx
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import { Button } from "../components/Button";
 import { TextField } from "../components/TextField";
 import { Alert } from "../components/Alert";
-import { PageLayout } from "../components/PageLayout";
+import { AuthCard } from "../components/AuthCard";
 import { useAuth } from "../auth/useAuth";
 
 export function Login() {
@@ -1640,16 +1838,22 @@ export function Login() {
   }
 
   return (
-    <PageLayout maxWidth={400}>
-      <Stack component="form" spacing={3} onSubmit={onSubmit} sx={{ mt: 6 }}>
-        <Typography variant="h2">Sign in</Typography>
+    <AuthCard>
+      <Typography variant="h2" sx={{ mb: 1 }}>Sign in</Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        Welcome back.
+      </Typography>
+
+      <Box component="form" onSubmit={onSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3.5 }}>
         {error && <Alert severity="error">{error}</Alert>}
+
         <TextField
           label="Email"
           type="email"
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          InputLabelProps={{ shrink: true }}
           required
         />
         <TextField
@@ -1658,38 +1862,56 @@ export function Login() {
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          InputLabelProps={{ shrink: true }}
           required
         />
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Signing in…" : "Sign in"}
-        </Button>
-        <Typography variant="body2" color="text.secondary">
-          New here?{" "}
-          <Link component={RouterLink} to="/register" color="primary">
-            Create an account
-          </Link>
-        </Typography>
-      </Stack>
-    </PageLayout>
+
+        <Box sx={{ mt: 0.5 }}>
+          <Button type="submit" fullWidth disabled={submitting}>
+            {submitting ? "Signing in…" : "Sign in"}
+          </Button>
+        </Box>
+      </Box>
+
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        align="center"
+        sx={{ mt: 4 }}
+      >
+        New here?{" "}
+        <Link
+          component={RouterLink}
+          to="/register"
+          sx={{ color: "text.primary", textDecoration: "underline", textUnderlineOffset: "3px" }}
+        >
+          Create an account
+        </Link>
+      </Typography>
+    </AuthCard>
   );
 }
 ```
 
-- [ ] **Step 6: Create Register page**
+- [ ] **Step 7: Create Register page**
+
+Differences from Login: extra Display name field, helper text on two fields, and an inline "Sign in instead?" link inside the email-taken error alert (per Claude Design export).
 
 Create `frontend/src/pages/Register.tsx`:
 
 ```tsx
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
-import Stack from "@mui/material/Stack";
+import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import { Button } from "../components/Button";
 import { TextField } from "../components/TextField";
 import { Alert } from "../components/Alert";
-import { PageLayout } from "../components/PageLayout";
+import { AuthCard } from "../components/AuthCard";
 import { useAuth } from "../auth/useAuth";
+
+type ErrorKind = "email-taken" | "generic" | null;
 
 export function Register() {
   const { register, login } = useAuth();
@@ -1697,43 +1919,71 @@ export function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorKind>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setErrorMsg(null);
     setSubmitting(true);
     try {
       await register(email, password, displayName);
       await login(email, password);
       navigate("/app");
     } catch (err) {
+      const status = (err as { status?: number }).status;
       const serverMsg = (err as { data?: { message?: string } }).data?.message;
-      setError(serverMsg ?? "Registration failed");
+      if (status === 409) {
+        setError("email-taken");
+      } else {
+        setError("generic");
+        setErrorMsg(serverMsg ?? "Registration failed");
+      }
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <PageLayout maxWidth={400}>
-      <Stack component="form" spacing={3} onSubmit={onSubmit} sx={{ mt: 6 }}>
-        <Typography variant="h2">Create your account</Typography>
-        {error && <Alert severity="error">{error}</Alert>}
+    <AuthCard>
+      <Typography variant="h2" sx={{ mb: 1 }}>Create your account</Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        Start getting your weekly radar.
+      </Typography>
+
+      <Box component="form" onSubmit={onSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3.5 }}>
+        {error === "email-taken" && (
+          <Alert severity="error">
+            That email is already registered.{" "}
+            <Link
+              component={RouterLink}
+              to="/login"
+              sx={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: "3px" }}
+            >
+              Sign in instead?
+            </Link>
+          </Alert>
+        )}
+        {error === "generic" && errorMsg && <Alert severity="error">{errorMsg}</Alert>}
+
         <TextField
           label="Email"
           type="email"
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          InputLabelProps={{ shrink: true }}
           required
         />
         <TextField
           label="Display name"
-          autoComplete="name"
+          autoComplete="nickname"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          helperText="Shown on your radar header. You can change this later."
           required
         />
         <TextField
@@ -1742,35 +1992,45 @@ export function Register() {
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          helperText="At least 8 characters."
           required
         />
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Creating…" : "Create account"}
-        </Button>
-        <Typography variant="body2" color="text.secondary">
-          Have an account?{" "}
-          <Link component={RouterLink} to="/login" color="primary">
-            Sign in
-          </Link>
-        </Typography>
-      </Stack>
-    </PageLayout>
+
+        <Box sx={{ mt: 0.5 }}>
+          <Button type="submit" fullWidth disabled={submitting}>
+            {submitting ? "Creating…" : "Create account"}
+          </Button>
+        </Box>
+      </Box>
+
+      <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
+        Have an account?{" "}
+        <Link
+          component={RouterLink}
+          to="/login"
+          sx={{ color: "text.primary", textDecoration: "underline", textUnderlineOffset: "3px" }}
+        >
+          Sign in
+        </Link>
+      </Typography>
+    </AuthCard>
   );
 }
 ```
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [ ] **Step 8: Run tests to verify they pass**
 
 ```bash
 cd frontend && npm run test -- pages
 ```
 
-Expected: PASS.
+Expected: PASS. Login/Register test assertions still match (`screen.getByLabelText(/email/i)`, `screen.getByText(/already registered/i)`, etc.) — the AuthCard wrapper and shared overline don't affect those queries. If a test fails on label matching, it's because MUI's `InputLabelProps={{ shrink: true }}` keeps the label visible and clickable, which is what we want — update the assertion if needed.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
-git add frontend/src/pages/Landing.tsx frontend/src/pages/Login.tsx frontend/src/pages/Register.tsx frontend/src/pages/Login.test.tsx frontend/src/pages/Register.test.tsx
+git add frontend/src/pages/Landing.tsx frontend/src/pages/Login.tsx frontend/src/pages/Register.tsx frontend/src/components/AuthCard.tsx frontend/src/pages/Login.test.tsx frontend/src/pages/Register.test.tsx
 git commit -m "feat(frontend): add Landing, Login, and Register pages"
 ```
 
@@ -1901,18 +2161,21 @@ export function ProtectedRoute() {
 
 - [ ] **Step 5: Create AppShell**
 
+Matches `docs/superpowers/design-assets/2026-04-21-plan7-frontend/screens.jsx` `AppShellScreen`. Sidebar is 240px with a right border; nav items are `not-allowed` with opacity 0.6 and a small uppercase **"soon"** tag on the right; the user block sits at the bottom of the sidebar with a top border and an underlined text "Sign out" link. Main uses a **32px h1** (not the 48px Landing hero size) because it's an app-shell heading, not a marketing headline.
+
 Create `frontend/src/pages/AppShell.tsx`:
 
 ```tsx
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Divider from "@mui/material/Divider";
-import Link from "@mui/material/Link";
-import { Button } from "../components/Button";
 import { useAuth } from "../auth/useAuth";
 
 const SIDEBAR_WIDTH = 240;
+const NAV_ITEMS = [
+  { key: "radars", label: "Radars" },
+  { key: "proposals", label: "Proposals" },
+  { key: "settings", label: "Settings" },
+];
 
 export function AppShell() {
   const { user, logout } = useAuth();
@@ -1927,50 +2190,109 @@ export function AppShell() {
           borderRight: 1,
           borderColor: "divider",
           bgcolor: "background.default",
-          p: 3,
+          p: "32px 24px",
           display: "flex",
           flexDirection: "column",
         }}
       >
-        <Typography variant="overline" color="text.secondary">
+        <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 5 }}>
           Dev Radar
         </Typography>
-        <Stack spacing={1} sx={{ mt: 4, flexGrow: 1 }}>
-          <Link aria-disabled color="text.secondary" sx={{ pointerEvents: "none" }}>
-            Radars
-          </Link>
-          <Link aria-disabled color="text.secondary" sx={{ pointerEvents: "none" }}>
-            Proposals
-          </Link>
-          <Link aria-disabled color="text.secondary" sx={{ pointerEvents: "none" }}>
-            Settings
-          </Link>
-        </Stack>
-        <Divider sx={{ my: 2 }} />
-        <Stack spacing={1}>
-          <Typography variant="body2" color="text.primary">
+
+        <Box component="nav" sx={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+          {NAV_ITEMS.map((item) => (
+            <Box
+              key={item.key}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: "10px",
+                py: "8px",
+                borderRadius: "6px",
+                color: "text.secondary",
+                opacity: 0.6,
+                cursor: "not-allowed",
+                fontSize: "0.9375rem",
+                lineHeight: "24px",
+              }}
+            >
+              <span>{item.label}</span>
+              <Box
+                component="span"
+                sx={{
+                  fontSize: "0.6875rem",
+                  lineHeight: "16px",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  color: "text.secondary",
+                  opacity: 0.8,
+                }}
+              >
+                soon
+              </Box>
+            </Box>
+          ))}
+        </Box>
+
+        <Box sx={{ flex: 1 }} />
+
+        <Box sx={{ pt: 2.5, borderTop: 1, borderColor: "divider" }}>
+          <Typography sx={{ fontSize: "0.875rem", lineHeight: "20px", fontWeight: 500, color: "text.primary" }}>
             {user?.displayName}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography
+            sx={{
+              fontSize: "0.8125rem",
+              lineHeight: "20px",
+              color: "text.secondary",
+              mb: 1.5,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {user?.email}
           </Typography>
-          <Button variant="text" onClick={logout} sx={{ alignSelf: "flex-start", px: 0 }}>
+          <Box
+            component="button"
+            onClick={logout}
+            sx={{
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              fontFamily: "inherit",
+              fontSize: "0.8125rem",
+              lineHeight: "20px",
+              color: "text.secondary",
+              cursor: "pointer",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
+              "&:hover": { color: "text.primary" },
+            }}
+          >
             Sign out
-          </Button>
-        </Stack>
+          </Box>
+        </Box>
       </Box>
+
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
+          flex: 1,
+          p: { xs: 4, md: "80px 48px" },
           display: "flex",
-          justifyContent: "center",
-          p: { xs: 4, md: 8 },
+          justifyContent: "flex-start",
         }}
       >
-        <Box sx={{ width: "100%", maxWidth: 720 }}>
-          <Typography variant="h1">Welcome, {user?.displayName ?? "there"}.</Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+        <Box sx={{ maxWidth: 720, width: "100%" }}>
+          <Typography
+            component="h1"
+            sx={{ fontSize: "2rem", lineHeight: "40px", fontWeight: 500, letterSpacing: "-0.01em" }}
+          >
+            Welcome, {user?.displayName ?? "there"}.
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 2, maxWidth: 560 }}>
             Your radars and proposals will appear here soon.
           </Typography>
         </Box>
