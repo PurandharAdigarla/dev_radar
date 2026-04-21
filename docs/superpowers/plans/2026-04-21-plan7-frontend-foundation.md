@@ -429,6 +429,15 @@ describe("theme", () => {
     expect(theme.typography.h1.letterSpacing).toBe("-0.02em");
   });
 
+  it("uses responsive clamp on h1 so it collapses on mobile", () => {
+    expect(theme.typography.h1.fontSize).toContain("clamp");
+  });
+
+  it("overrides Link hover color to stay monochrome", () => {
+    const mui = (theme.components as unknown as { MuiLink?: { styleOverrides?: { root?: { "&:hover"?: { color?: string } } } } }).MuiLink;
+    expect(mui?.styleOverrides?.root?.["&:hover"]?.color).toBe("#2d2a26");
+  });
+
   it("applies negative letter-spacing on h2", () => {
     expect(theme.typography.h2.letterSpacing).toBe("-0.01em");
   });
@@ -489,7 +498,9 @@ export const theme = createTheme({
   typography: {
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
     h1: {
-      fontSize: "3rem",           // 48px — Landing hero
+      // Responsive clamp — collapses from 48px to 32px on small viewports so
+      // `textWrap: balance` doesn't force awkward line breaks on mobile.
+      fontSize: "clamp(2rem, 6vw, 3rem)",
       lineHeight: 1.15,
       fontWeight: 500,
       letterSpacing: "-0.02em",
@@ -590,8 +601,32 @@ export const theme = createTheme({
       },
     },
     MuiTextField: { defaultProps: { variant: "outlined" } },
+    MuiLink: {
+      defaultProps: { underline: "always" },
+      styleOverrides: {
+        root: {
+          color: INK,
+          textUnderlineOffset: "3px",
+          textDecorationColor: DIVIDER,
+          transition: "text-decoration-color 120ms ease",
+          "&:hover": {
+            color: INK,
+            textDecorationColor: INK,
+          },
+        },
+      },
+    },
   },
 });
+
+/*
+ * Curvature note — intentional:
+ * Buttons use `border-radius: 999` (pill), inputs use `border-radius: 8`.
+ * These mirror the Claude Design export and match Claude.ai's own pattern —
+ * pill buttons read as "action chips," rounded-rect inputs read as "fields."
+ * A true pill input looks off; fully square buttons lose the Anthropic feel.
+ * The contrast is deliberate, not sloppy.
+ */
 
 export const serifStack = '"Source Serif Pro", "Source Serif 4", Georgia, serif';
 export const monoStack = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace';
