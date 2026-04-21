@@ -2,8 +2,13 @@ package com.devradar.radar.application;
 
 import com.devradar.domain.InterestTag;
 import com.devradar.domain.Radar;
+import com.devradar.domain.RadarStatus;
+import com.devradar.domain.RadarTheme;
 import com.devradar.domain.SourceItem;
 import com.devradar.domain.exception.UserNotAuthenticatedException;
+import com.devradar.mcp.dto.CitationMcpDTO;
+import com.devradar.mcp.dto.RadarMcpDTO;
+import com.devradar.mcp.dto.ThemeMcpDTO;
 import com.devradar.repository.*;
 import com.devradar.security.SecurityUtils;
 import com.devradar.radar.RadarGenerationService;
@@ -13,6 +18,7 @@ import com.devradar.web.rest.dto.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +26,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class RadarApplicationService {
@@ -94,6 +101,33 @@ public class RadarApplicationService {
 
     private RadarSummaryDTO summary(Radar r) {
         return new RadarSummaryDTO(r.getId(), r.getStatus(), r.getPeriodStart(), r.getPeriodEnd(), r.getGeneratedAt(), r.getGenerationMs(), r.getTokenCount());
+    }
+
+    public Optional<RadarMcpDTO> getLatestForUser(Long userId) {
+        var page = radarRepo.findByUserIdOrderByGeneratedAtDesc(
+            userId, PageRequest.of(0, 10));
+        return page.getContent().stream()
+            .filter(r -> r.getStatus() == RadarStatus.READY)
+            .findFirst()
+            .map(this::toMcp);
+    }
+
+    private RadarMcpDTO toMcp(Radar r) {
+        var themes = themeRepo.findByRadarIdOrderByDisplayOrderAsc(r.getId());
+        var themeDtos = themes.stream().map(this::toThemeMcp).toList();
+        return new RadarMcpDTO(r.getId(), r.getGeneratedAt(),
+            r.getPeriodStart(), r.getPeriodEnd(), themeDtos);
+    }
+
+    private ThemeMcpDTO toThemeMcp(RadarTheme t) {
+        var rtis = themeItemRepo.findByThemeIdOrderByDisplayOrderAsc(t.getId());
+        var citations = rtis.stream()
+            .limit(3)
+            .map(rti -> sourceItemRepo.findById(rti.getSourceItemId()).orElse(null))
+            .filter(java.util.Objects::nonNull)
+            .map(si -> new CitationMcpDTO(si.getTitle(), si.getUrl()))
+            .toList();
+        return new ThemeMcpDTO(t.getTitle(), t.getSummary(), citations);
     }
 
     @SuppressWarnings("unchecked")
