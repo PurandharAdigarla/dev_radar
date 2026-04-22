@@ -2,7 +2,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { keyframes } from "@mui/system";
 import { serifStack } from "../theme";
-import { CitationPill } from "./CitationPill";
+import { SourceCard } from "./SourceCard";
 import type { RadarTheme } from "../api/types";
 
 const fadeIn = keyframes`
@@ -35,7 +35,7 @@ export function ThemeCard({ theme }: ThemeCardProps) {
       <Box
         sx={{
           fontFamily: serifStack,
-          fontSize: "1.0625rem",  // 17px
+          fontSize: "1.0625rem",
           lineHeight: "28px",
           color: "text.primary",
           whiteSpace: "pre-line",
@@ -46,20 +46,18 @@ export function ThemeCard({ theme }: ThemeCardProps) {
       </Box>
 
       {theme.items.length > 0 && (
-        <Box sx={{ mt: "20px", display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
-          <Typography
-            variant="overline"
-            color="text.secondary"
-            sx={{ mr: "6px" }}
-          >
-            Sources
-          </Typography>
-          {theme.items.map((item, idx) => (
-            <CitationPill
-              key={item.id}
-              index={idx + 1}
-              source={{ title: item.title, url: item.url, author: item.author }}
-            />
+        <Box
+          sx={{
+            mt: 3,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 2,
+            overflow: "hidden",
+            "& > a:last-child": { borderBottom: "none" },
+          }}
+        >
+          {theme.items.map((item) => (
+            <SourceCard key={item.id} item={item} />
           ))}
         </Box>
       )}

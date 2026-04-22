@@ -43,8 +43,10 @@ export interface RadarSummary {
 export interface RadarItem {
   id: number;
   title: string;
+  description: string | null;
   url: string;
   author: string | null;
+  sourceName: string;
 }
 
 export interface RadarTheme {

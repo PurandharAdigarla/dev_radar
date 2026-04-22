@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import { theme } from "../theme";
 import { ThemeCard } from "./ThemeCard";
@@ -17,32 +16,28 @@ const sample: RadarTheme = {
   summary: "Spring Boot 3.5 ships with virtual thread support.",
   displayOrder: 0,
   items: [
-    { id: 1001, title: "Spring Boot 3.5 released", url: "https://spring.io/3.5", author: "spring-io" },
-    { id: 1002, title: "Virtual threads deep-dive", url: "https://example.com/vt", author: null },
+    { id: 1001, title: "Spring Boot 3.5 released", description: "Major release with virtual thread support.", url: "https://spring.io/3.5", author: "spring-io", sourceName: "HN" },
+    { id: 1002, title: "Virtual threads deep-dive", description: null, url: "https://example.com/vt", author: null, sourceName: "GH_TRENDING" },
   ],
 };
 
 describe("ThemeCard", () => {
-  it("renders title, summary, a SOURCES overline, and numbered citation pills", () => {
+  it("renders title, summary, and source cards for each item", () => {
     render(withTheme(<ThemeCard theme={sample} />));
     expect(screen.getByRole("heading", { name: /spring boot ecosystem/i })).toBeInTheDocument();
     expect(screen.getByText(/virtual thread support/i)).toBeInTheDocument();
-    expect(screen.getByText(/^sources$/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /\[1\]/i })).toHaveAttribute("href", "https://spring.io/3.5");
-    expect(screen.getByRole("link", { name: /\[2\]/i })).toHaveAttribute("href", "https://example.com/vt");
+    expect(screen.getByRole("link", { name: /spring boot 3\.5 released/i })).toHaveAttribute("href", "https://spring.io/3.5");
+    expect(screen.getByRole("link", { name: /virtual threads deep-dive/i })).toHaveAttribute("href", "https://example.com/vt");
   });
 
-  it("omits the SOURCES overline when there are no items", () => {
+  it("omits the source list when there are no items", () => {
     render(withTheme(<ThemeCard theme={{ ...sample, items: [] }} />));
-    expect(screen.queryByText(/^sources$/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
-  it("reveals the source title on citation hover", async () => {
-    const user = userEvent.setup();
+  it("renders description when present", () => {
     render(withTheme(<ThemeCard theme={sample} />));
-    const pill = screen.getByRole("link", { name: /\[1\]/i });
-    await user.hover(pill);
-    expect(await screen.findByText(/spring boot 3\.5 released/i)).toBeInTheDocument();
+    expect(screen.getByText(/major release with virtual thread support/i)).toBeInTheDocument();
   });
 });
 
