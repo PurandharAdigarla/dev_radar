@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -17,7 +17,7 @@ type NavItem =
 const NAV_ITEMS: NavItem[] = [
   { key: "radars", label: "Radars", to: "/app/radars" },
   { key: "interests", label: "Interests", to: "/app/interests" },
-  { key: "settings", label: "Settings", disabled: true },
+  { key: "settings", label: "Settings", to: "/app/settings/api-keys" },
 ];
 
 interface NavLinkItemProps {
@@ -182,6 +182,22 @@ export function AppShell() {
         </Box>
 
         <Box sx={{ flex: 1 }} />
+
+        <Box sx={{ mb: 2 }}>
+          <Box
+            component={Link}
+            to="/observability"
+            sx={{
+              display: "block",
+              fontSize: "0.8125rem",
+              color: "text.secondary",
+              textDecoration: "none",
+              "&:hover": { color: "text.primary" },
+            }}
+          >
+            Public dashboard →
+          </Box>
+        </Box>
 
         <Box sx={{ pt: 2.5, borderTop: 1, borderColor: "divider" }}>
           <Typography sx={{ fontSize: "0.875rem", lineHeight: "20px", fontWeight: 500, color: "text.primary" }}>

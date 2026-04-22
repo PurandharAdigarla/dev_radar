@@ -12,6 +12,8 @@ import { InterestPickerPage } from "./pages/InterestPickerPage";
 import { RadarListPage } from "./pages/RadarListPage";
 import { RadarDetailPage } from "./pages/RadarDetailPage";
 import { GitHubCallback } from "./pages/GitHubCallback";
+import { ObservabilityPage } from "./pages/ObservabilityPage";
+import { ApiKeysPage } from "./pages/ApiKeysPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { ErrorBoundary } from "./ErrorBoundary";
 
@@ -22,12 +24,14 @@ export function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/auth/github/complete" element={<GitHubCallback />} />
+      <Route path="/observability" element={<ObservabilityPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/app" element={<AppShell />}>
           <Route index element={<Navigate to="radars" replace />} />
           <Route path="radars" element={<RadarListPage />} />
           <Route path="radars/:id" element={<RadarDetailPage />} />
           <Route path="interests" element={<InterestPickerPage />} />
+          <Route path="settings/api-keys" element={<ApiKeysPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
