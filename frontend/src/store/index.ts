@@ -5,6 +5,7 @@ import { interestApi } from "../api/interestApi";
 import { radarApi } from "../api/radarApi";
 import { actionApi } from "../api/actionApi";
 import { observabilityApi } from "../api/observabilityApi";
+import { apiKeyApi } from "../api/apiKeyApi";
 import { radarGenerationReducer } from "../radar/radarGenerationSlice";
 
 export function makeStore() {
@@ -17,6 +18,7 @@ export function makeStore() {
       [radarApi.reducerPath]: radarApi.reducer,
       [actionApi.reducerPath]: actionApi.reducer,
       [observabilityApi.reducerPath]: observabilityApi.reducer,
+      [apiKeyApi.reducerPath]: apiKeyApi.reducer,
     },
     middleware: (getDefault) =>
       getDefault()
@@ -24,7 +26,8 @@ export function makeStore() {
         .concat(interestApi.middleware)
         .concat(radarApi.middleware)
         .concat(actionApi.middleware)
-        .concat(observabilityApi.middleware),
+        .concat(observabilityApi.middleware)
+        .concat(apiKeyApi.middleware),
   });
 }
 
