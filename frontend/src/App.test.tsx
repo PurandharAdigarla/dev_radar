@@ -44,7 +44,7 @@ describe("App routing", () => {
     await user.type(screen.getByLabelText(/password/i), "ok");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
     await waitFor(() =>
-      expect(screen.getByText(/welcome, test user/i)).toBeInTheDocument(),
+      expect(screen.getByText(/^test user$/i)).toBeInTheDocument(),
     );
   });
 });
