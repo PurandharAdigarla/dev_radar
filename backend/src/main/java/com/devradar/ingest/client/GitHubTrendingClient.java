@@ -41,7 +41,7 @@ public class GitHubTrendingClient {
             List<String> topics = new ArrayList<>();
             if (langEl != null) topics.add(langEl.text().toLowerCase(Locale.ROOT));
 
-            out.add(new FetchedItem(href, url, href, null, now, null, topics));
+            out.add(new FetchedItem(href, url, href, null, null, now, null, topics));
         }
         return out;
     }

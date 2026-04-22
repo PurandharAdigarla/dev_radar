@@ -34,7 +34,7 @@ public class GHSAClient {
             String publishedAt = textOrNull(adv, "published_at");
             if (ghsaId == null || summary == null || url == null) continue;
             Instant posted = publishedAt != null ? Instant.parse(publishedAt) : Instant.now();
-            out.add(new FetchedItem(ghsaId, url, summary, null, posted, adv.toString(), List.of("security")));
+            out.add(new FetchedItem(ghsaId, url, summary, null, null, posted, adv.toString(), List.of("security")));
         }
         return out;
     }

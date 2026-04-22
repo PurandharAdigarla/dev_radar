@@ -26,8 +26,8 @@ class IngestionServiceIT extends AbstractIntegrationTest {
         Source hn = sources.findByCode("HN").orElseThrow();
 
         List<FetchedItem> batch = List.of(
-            new FetchedItem("hn-1001", "https://example.com/1", "Spring Boot 3.5 release notes", "alice", Instant.now(), "{}", List.of()),
-            new FetchedItem("hn-1002", "https://example.com/2", "React 19 hooks deep dive", "bob", Instant.now(), "{}", List.of())
+            new FetchedItem("hn-1001", "https://example.com/1", "Spring Boot 3.5 release notes", null, "alice", Instant.now(), "{}", List.of()),
+            new FetchedItem("hn-1002", "https://example.com/2", "React 19 hooks deep dive", null, "bob", Instant.now(), "{}", List.of())
         );
 
         int inserted = ingestion.ingestBatch(hn, batch);
@@ -41,7 +41,7 @@ class IngestionServiceIT extends AbstractIntegrationTest {
     void ingestBatch_isIdempotent_onRepeatCall() {
         Source hn = sources.findByCode("HN").orElseThrow();
 
-        FetchedItem dup = new FetchedItem("hn-2000", "https://example.com/x", "Python news", "x", Instant.now(), "{}", List.of());
+        FetchedItem dup = new FetchedItem("hn-2000", "https://example.com/x", "Python news", null, "x", Instant.now(), "{}", List.of());
 
         int firstRun = ingestion.ingestBatch(hn, List.of(dup));
         int secondRun = ingestion.ingestBatch(hn, List.of(dup));
@@ -56,8 +56,8 @@ class IngestionServiceIT extends AbstractIntegrationTest {
 
         String tooLong = "x".repeat(2000);
         List<FetchedItem> batch = List.of(
-            new FetchedItem("hn-3001", "https://example.com/a", tooLong, "x", Instant.now(), "{}", List.of()),
-            new FetchedItem("hn-3002", "https://example.com/b", "MySQL 8 vs 9 benchmarks", "y", Instant.now(), "{}", List.of())
+            new FetchedItem("hn-3001", "https://example.com/a", tooLong, null, "x", Instant.now(), "{}", List.of()),
+            new FetchedItem("hn-3002", "https://example.com/b", "MySQL 8 vs 9 benchmarks", null, "y", Instant.now(), "{}", List.of())
         );
 
         int inserted = ingestion.ingestBatch(hn, batch);

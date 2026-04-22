@@ -87,6 +87,7 @@ public class IngestionService {
         si.setExternalId(item.externalId());
         si.setUrl(item.url());
         si.setTitle(item.title());
+        si.setDescription(item.description());
         si.setAuthor(item.author());
         si.setPostedAt(item.postedAt());
         si.setRawPayload(item.rawPayload());

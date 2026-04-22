@@ -38,7 +38,7 @@ public class HackerNewsClient {
             String author = textOrNull(hit, "author");
             long createdAtSec = hit.path("created_at_i").asLong();
             Instant posted = createdAtSec > 0 ? Instant.ofEpochSecond(createdAtSec) : Instant.now();
-            out.add(new FetchedItem(externalId, url, title, author, posted, hit.toString(), List.of()));
+            out.add(new FetchedItem(externalId, url, title, null, author, posted, hit.toString(), List.of()));
         }
         return out;
     }

@@ -22,6 +22,9 @@ public class SourceItem {
     @Column(nullable = false, length = 1000)
     private String title;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(length = 255)
     private String author;
 
@@ -46,6 +49,8 @@ public class SourceItem {
     public void setUrl(String url) { this.url = url; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public String getAuthor() { return author; }
     public void setAuthor(String author) { this.author = author; }
     public Instant getPostedAt() { return postedAt; }

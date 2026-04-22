@@ -11,6 +11,7 @@ public record FetchedItem(
     String externalId,
     String url,
     String title,
+    String description,
     String author,
     Instant postedAt,
     String rawPayload,
