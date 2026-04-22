@@ -37,12 +37,32 @@ public class GitHubTrendingClient {
             if (href.startsWith("/")) href = href.substring(1);
             String url = "https://github.com/" + href;
 
+            String repoName = href.contains("/") ? href.substring(href.lastIndexOf('/') + 1) : href;
+
+            Element descEl = card.selectFirst("p");
+            String repoDesc = descEl != null ? descEl.text().trim() : "";
+
+            Element starsEl = card.selectFirst("a[href$=/stargazers]");
+            String stars = starsEl != null ? starsEl.text().trim() : "";
+
+            String description = buildDescription(repoDesc, stars);
+
             Element langEl = card.selectFirst("[itemprop=programmingLanguage]");
             List<String> topics = new ArrayList<>();
             if (langEl != null) topics.add(langEl.text().toLowerCase(Locale.ROOT));
 
-            out.add(new FetchedItem(href, url, href, null, null, now, null, topics));
+            out.add(new FetchedItem(href, url, repoName, description, null, now, null, topics));
         }
         return out;
+    }
+
+    private static String buildDescription(String repoDesc, String stars) {
+        StringBuilder sb = new StringBuilder();
+        if (!repoDesc.isEmpty()) sb.append(repoDesc);
+        if (!stars.isEmpty()) {
+            if (sb.length() > 0) sb.append(". ");
+            sb.append(stars).append(" stars on GitHub");
+        }
+        return sb.length() > 0 ? sb.toString() : null;
     }
 }

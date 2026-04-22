@@ -32,7 +32,7 @@ class GitHubTrendingClientTest {
     void tearDown() { wm.stop(); }
 
     @Test
-    void fetchTrending_parsesRepoCards() {
+    void fetchTrending_parsesRepoCards_withDescriptionAndTitle() {
         wm.stubFor(WireMock.get(WireMock.urlPathEqualTo("/trending"))
             .willReturn(WireMock.aResponse().withStatus(200).withHeader("Content-Type", "text/html").withBody(sampleHtml)));
 
@@ -40,11 +40,13 @@ class GitHubTrendingClientTest {
 
         assertThat(items).hasSize(2);
         assertThat(items.get(0).externalId()).isEqualTo("spring-projects/spring-boot");
-        assertThat(items.get(0).title()).isEqualTo("spring-projects/spring-boot");
+        assertThat(items.get(0).title()).isEqualTo("spring-boot");
+        assertThat(items.get(0).description()).contains("Spring Boot makes it easy");
+        assertThat(items.get(0).description()).contains("78,200 stars");
         assertThat(items.get(0).url()).isEqualTo("https://github.com/spring-projects/spring-boot");
         assertThat(items.get(0).topics()).contains("java");
-        assertThat(items.get(1).externalId()).isEqualTo("bigskysoftware/htmx");
-        assertThat(items.get(1).topics()).contains("javascript");
+        assertThat(items.get(1).title()).isEqualTo("htmx");
+        assertThat(items.get(1).description()).contains("htmx - high power tools for HTML");
     }
 
     @Test
