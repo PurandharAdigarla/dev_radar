@@ -1,5 +1,6 @@
 package com.devradar.radar.application;
 
+import com.devradar.ingest.job.GitHubStarsReleaseFetcher;
 import com.devradar.domain.InterestTag;
 import com.devradar.domain.Radar;
 import com.devradar.domain.RadarStatus;
@@ -42,6 +43,7 @@ public class RadarApplicationService {
     private final SourceItemRepository sourceItemRepo;
     private final SourceRepository sourceRepo;
     private final UserInterestService interests;
+    private final GitHubStarsReleaseFetcher starsFetcher;
 
     private final Map<Long, String> sourceNameCache = new ConcurrentHashMap<>();
 
@@ -55,7 +57,8 @@ public class RadarApplicationService {
         RadarThemeItemRepository themeItemRepo,
         SourceItemRepository sourceItemRepo,
         SourceRepository sourceRepo,
-        UserInterestService interests
+        UserInterestService interests,
+        GitHubStarsReleaseFetcher starsFetcher
     ) {
         this.radarService = radarService;
         this.generation = generation;
@@ -65,11 +68,14 @@ public class RadarApplicationService {
         this.sourceItemRepo = sourceItemRepo;
         this.sourceRepo = sourceRepo;
         this.interests = interests;
+        this.starsFetcher = starsFetcher;
     }
 
     public RadarSummaryDTO createForCurrentUser() {
         Long uid = SecurityUtils.getCurrentUserId();
         if (uid == null) throw new UserNotAuthenticatedException();
+
+        starsFetcher.tryFetchForUser(uid);
 
         List<InterestTag> userTags = interests.findInterestsForUser(uid);
         List<String> slugs = userTags.stream().map(InterestTag::getSlug).toList();
