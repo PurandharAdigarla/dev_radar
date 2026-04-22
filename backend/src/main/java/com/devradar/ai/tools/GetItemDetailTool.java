@@ -1,15 +1,18 @@
 package com.devradar.ai.tools;
 
 import com.devradar.repository.SourceItemRepository;
+import com.devradar.repository.SourceRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.stereotype.Component;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class GetItemDetailTool {
 
     public static final String NAME = "getItemDetail";
-    public static final String DESCRIPTION = "Get the full details (title, url, author, posted_at, raw_payload) of one source_item by id.";
+    public static final String DESCRIPTION = "Get the full details (title, description, url, author, source_name, posted_at) of one source_item by id.";
     public static final String INPUT_SCHEMA = """
         {
           "type": "object",
@@ -21,9 +24,14 @@ public class GetItemDetailTool {
         """;
 
     private final SourceItemRepository repo;
+    private final SourceRepository sourceRepo;
     private final ObjectMapper json = new ObjectMapper();
+    private final ConcurrentHashMap<Long, String> sourceNameCache = new ConcurrentHashMap<>();
 
-    public GetItemDetailTool(SourceItemRepository repo) { this.repo = repo; }
+    public GetItemDetailTool(SourceItemRepository repo, SourceRepository sourceRepo) {
+        this.repo = repo;
+        this.sourceRepo = sourceRepo;
+    }
 
     public ToolDefinition definition() {
         return new ToolDefinition(NAME, DESCRIPTION, INPUT_SCHEMA);
@@ -37,15 +45,21 @@ public class GetItemDetailTool {
             var si = maybe.get();
             ObjectNode n = json.createObjectNode();
             n.put("id", si.getId());
-            n.put("external_id", si.getExternalId());
             n.put("title", si.getTitle());
+            n.put("description", si.getDescription());
             n.put("url", si.getUrl());
             n.put("author", si.getAuthor());
+            n.put("source_name", resolveSourceName(si.getSourceId()));
             n.put("posted_at", si.getPostedAt().toString());
-            if (si.getRawPayload() != null) n.set("raw_payload", json.readTree(si.getRawPayload()));
             return json.writeValueAsString(n);
         } catch (Exception e) {
             return "{\"error\":\"" + e.getMessage().replace("\"", "'") + "\"}";
         }
+    }
+
+    private String resolveSourceName(Long sourceId) {
+        return sourceNameCache.computeIfAbsent(sourceId, sid ->
+            sourceRepo.findById(sid).map(s -> s.getCode()).orElse("UNKNOWN")
+        );
     }
 }

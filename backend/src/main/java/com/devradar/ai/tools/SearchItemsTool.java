@@ -68,6 +68,7 @@ public class SearchItemsTool {
                 n.put("id", si.getId());
                 n.put("external_id", si.getExternalId());
                 n.put("title", si.getTitle());
+                n.put("description", si.getDescription());
                 n.put("url", si.getUrl());
                 n.put("posted_at", si.getPostedAt().toString());
                 arr.add(n);
