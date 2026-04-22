@@ -162,4 +162,49 @@ export const handlers = [
       tokenCount: null,
     }, { status: 201 });
   }),
+
+  http.get("/api/actions/proposals", ({ request }) => {
+    const url = new URL(request.url);
+    const radarId = url.searchParams.get("radar_id");
+    if (radarId === "42") {
+      return HttpResponse.json([
+        {
+          id: 7, radarId: 42, kind: "CVE_FIX_PR",
+          payloadJson: JSON.stringify({
+            cveId: "CVE-2024-1234", packageName: "jackson-databind",
+            currentVersion: "2.16.1", fixVersion: "2.17.0",
+            repoOwner: "alice", repoName: "api",
+          }),
+          status: "PROPOSED", prUrl: null, failureReason: null,
+          createdAt: "2026-04-20T10:00:00Z", updatedAt: "2026-04-20T10:00:00Z",
+        },
+      ]);
+    }
+    return HttpResponse.json([]);
+  }),
+
+  http.post("/api/actions/:id/approve", async ({ params, request }) => {
+    const body = (await request.json()) as { fix_version?: string };
+    return HttpResponse.json({
+      id: Number(params.id), radarId: 42, kind: "CVE_FIX_PR",
+      payloadJson: JSON.stringify({
+        cveId: "CVE-2024-1234", packageName: "jackson-databind",
+        currentVersion: "2.16.1", fixVersion: body.fix_version ?? "2.17.0",
+        repoOwner: "alice", repoName: "api",
+      }),
+      status: "EXECUTED",
+      prUrl: "https://github.com/alice/api/pull/99",
+      failureReason: null,
+      createdAt: "2026-04-20T10:00:00Z", updatedAt: "2026-04-20T10:05:00Z",
+    });
+  }),
+
+  http.delete("/api/actions/:id", ({ params }) => {
+    return HttpResponse.json({
+      id: Number(params.id), radarId: 42, kind: "CVE_FIX_PR",
+      payloadJson: "{}",
+      status: "DISMISSED", prUrl: null, failureReason: null,
+      createdAt: "2026-04-20T10:00:00Z", updatedAt: "2026-04-20T10:06:00Z",
+    });
+  }),
 ];
