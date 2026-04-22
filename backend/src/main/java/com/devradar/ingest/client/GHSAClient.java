@@ -8,6 +8,7 @@ import org.springframework.web.client.RestClient;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Component
 public class GHSAClient {
@@ -34,9 +35,38 @@ public class GHSAClient {
             String publishedAt = textOrNull(adv, "published_at");
             if (ghsaId == null || summary == null || url == null) continue;
             Instant posted = publishedAt != null ? Instant.parse(publishedAt) : Instant.now();
-            out.add(new FetchedItem(ghsaId, url, summary, null, null, posted, adv.toString(), List.of("security")));
+
+            String description = buildDescription(adv);
+            out.add(new FetchedItem(ghsaId, url, summary, description, null, posted, adv.toString(), List.of("security")));
         }
         return out;
+    }
+
+    private static String buildDescription(JsonNode adv) {
+        StringBuilder sb = new StringBuilder();
+        String severity = textOrNull(adv, "severity");
+        if (severity != null) sb.append(severity.toUpperCase(Locale.ROOT)).append(" severity");
+
+        JsonNode vulns = adv.path("vulnerabilities");
+        if (vulns.isArray() && vulns.size() > 0) {
+            JsonNode first = vulns.get(0);
+            String pkgName = first.path("package").path("name").asText(null);
+            String ecosystem = first.path("package").path("ecosystem").asText(null);
+            String vulnRange = textOrNull(first, "vulnerable_version_range");
+            String patched = textOrNull(first, "patched_versions");
+
+            if (pkgName != null) {
+                sb.append(". Affects ").append(pkgName);
+                if (ecosystem != null) sb.append(" (").append(ecosystem).append(")");
+                if (vulnRange != null) sb.append(" ").append(vulnRange);
+            }
+            if (patched != null) sb.append(". Fix: upgrade to ").append(patched);
+        }
+
+        String cveId = textOrNull(adv, "cve_id");
+        if (cveId != null) sb.append(". ").append(cveId);
+
+        return sb.length() > 0 ? sb.toString() : null;
     }
 
     private static String textOrNull(JsonNode n, String field) {

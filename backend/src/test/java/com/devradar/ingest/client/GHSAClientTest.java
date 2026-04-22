@@ -27,17 +27,22 @@ class GHSAClientTest {
     void tearDown() { wm.stop(); }
 
     @Test
-    void fetchRecent_returnsParsedAdvisories() {
+    void fetchRecent_returnsParsedAdvisories_withStructuredDescription() {
         wm.stubFor(WireMock.get(WireMock.urlPathEqualTo("/advisories"))
             .willReturn(WireMock.okJson("""
                 [
                   {
                     "ghsa_id": "GHSA-xxxx-yyyy-zzzz",
+                    "cve_id": "CVE-2026-12345",
                     "summary": "jackson-databind RCE in 2.16.x",
                     "html_url": "https://github.com/advisories/GHSA-xxxx-yyyy-zzzz",
                     "severity": "high",
                     "published_at": "2026-04-15T12:00:00Z",
-                    "vulnerabilities": [{"package": {"ecosystem": "maven", "name": "com.fasterxml.jackson.core:jackson-databind"}}]
+                    "vulnerabilities": [{
+                      "package": {"ecosystem": "maven", "name": "com.fasterxml.jackson.core:jackson-databind"},
+                      "vulnerable_version_range": "< 2.16.3",
+                      "patched_versions": "2.16.3"
+                    }]
                   }
                 ]
                 """)));
@@ -45,9 +50,32 @@ class GHSAClientTest {
         List<FetchedItem> items = client.fetchRecent();
 
         assertThat(items).hasSize(1);
-        assertThat(items.get(0).externalId()).isEqualTo("GHSA-xxxx-yyyy-zzzz");
         assertThat(items.get(0).title()).contains("jackson-databind");
-        assertThat(items.get(0).url()).isEqualTo("https://github.com/advisories/GHSA-xxxx-yyyy-zzzz");
+        assertThat(items.get(0).description()).contains("HIGH");
+        assertThat(items.get(0).description()).contains("jackson-databind");
+        assertThat(items.get(0).description()).contains("2.16.3");
+        assertThat(items.get(0).description()).contains("CVE-2026-12345");
         assertThat(items.get(0).topics()).contains("security");
+    }
+
+    @Test
+    void fetchRecent_handlesAdvisoryWithoutVulnerabilities() {
+        wm.stubFor(WireMock.get(WireMock.urlPathEqualTo("/advisories"))
+            .willReturn(WireMock.okJson("""
+                [
+                  {
+                    "ghsa_id": "GHSA-aaaa-bbbb-cccc",
+                    "summary": "Some generic advisory",
+                    "html_url": "https://github.com/advisories/GHSA-aaaa-bbbb-cccc",
+                    "severity": "low",
+                    "published_at": "2026-04-16T12:00:00Z"
+                  }
+                ]
+                """)));
+
+        List<FetchedItem> items = client.fetchRecent();
+
+        assertThat(items).hasSize(1);
+        assertThat(items.get(0).description()).contains("LOW");
     }
 }
