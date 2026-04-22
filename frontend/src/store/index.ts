@@ -4,6 +4,7 @@ import { authReducer } from "../auth/authSlice";
 import { interestApi } from "../api/interestApi";
 import { radarApi } from "../api/radarApi";
 import { actionApi } from "../api/actionApi";
+import { observabilityApi } from "../api/observabilityApi";
 import { radarGenerationReducer } from "../radar/radarGenerationSlice";
 
 export function makeStore() {
@@ -15,13 +16,15 @@ export function makeStore() {
       [interestApi.reducerPath]: interestApi.reducer,
       [radarApi.reducerPath]: radarApi.reducer,
       [actionApi.reducerPath]: actionApi.reducer,
+      [observabilityApi.reducerPath]: observabilityApi.reducer,
     },
     middleware: (getDefault) =>
       getDefault()
         .concat(authApi.middleware)
         .concat(interestApi.middleware)
         .concat(radarApi.middleware)
-        .concat(actionApi.middleware),
+        .concat(actionApi.middleware)
+        .concat(observabilityApi.middleware),
   });
 }
 
