@@ -1808,6 +1808,20 @@ export function InterestPickerPage() {
     });
   }
 
+  // Spec §5.4 — warn the browser before unloading when there are unsaved changes.
+  // React Router v7 in-SPA navigation blocking is deferred; beforeunload covers
+  // the common case (tab close, hard reload, external navigation).
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Modern browsers ignore the returnValue text but require it to be set.
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty]);
+
   return (
     <Box sx={{ maxWidth: 960, width: "100%" }}>
       <PageHeader title="Interests" sub="Pick topics your weekly radar should cover." />
@@ -3357,6 +3371,7 @@ import { PulseDot } from "../components/PulseDot";
 import { ThemeCard } from "../components/ThemeCard";
 import { ThemeSkeleton } from "../components/ThemeSkeleton";
 import { ProposalCard } from "../components/ProposalCard";
+import { Alert } from "../components/Alert";
 import { useGetRadarQuery, radarApi } from "../api/radarApi";
 import { useListProposalsByRadarQuery } from "../api/actionApi";
 import { useGetMyInterestsQuery } from "../api/interestApi";
@@ -3514,6 +3529,14 @@ export function RadarDetailPage() {
               Generation failed: {stream.error ?? "unknown error"}
             </Typography>
           )}
+
+          {!streaming && radar.status === "FAILED" && (
+            <Box sx={{ mt: 3 }}>
+              <Alert severity="error">
+                This radar failed to generate. Start a fresh one from the Radars list.
+              </Alert>
+            </Box>
+          )}
         </Box>
 
         {themes.map((t) => (
@@ -3580,6 +3603,8 @@ git commit -m "feat(frontend): add RadarDetailPage with live SSE streaming + pro
 **Files:**
 - Modify: `frontend/src/pages/AppShell.tsx`
 
+The AppShell collapses on narrow viewports (<900px): the desktop sidebar is hidden and a compact top bar takes its place (Dev Radar overline left, nav links center, user menu right). The desktop sidebar remains unchanged for `md+`. Uses the shared `PulseDot` for the generating indicator.
+
 - [ ] **Step 1: Replace `AppShell.tsx`**
 
 ```tsx
@@ -3587,17 +3612,13 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { keyframes } from "@mui/system";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
+import { PulseDot } from "../components/PulseDot";
 import { useAuth } from "../auth/useAuth";
 import type { RootState } from "../store";
 
 const SIDEBAR_WIDTH = 240;
-
-const pulse = keyframes`
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
-  100% { opacity: 1; transform: scale(1); }
-`;
 
 type NavItem =
   | { key: string; label: string; to: string; disabled?: false }
@@ -3609,11 +3630,146 @@ const NAV_ITEMS: NavItem[] = [
   { key: "settings", label: "Settings", disabled: true },
 ];
 
+interface NavLinkItemProps {
+  item: NavItem;
+  active: boolean;
+  showGeneratingDot: boolean;
+  variant: "sidebar" | "topbar";
+}
+
+function NavLinkItem({ item, active, showGeneratingDot, variant }: NavLinkItemProps) {
+  const isTopbar = variant === "topbar";
+  const sharedSx = {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    justifyContent: isTopbar ? "center" : "space-between",
+    px: isTopbar ? "12px" : "10px",
+    py: "8px",
+    borderRadius: "6px",
+    textDecoration: "none",
+    fontSize: "0.9375rem",
+    lineHeight: "24px",
+    fontWeight: active ? 500 : 400,
+    color: active ? "text.primary" : "text.secondary",
+    bgcolor: active ? "rgba(45,42,38,0.04)" : "transparent",
+    whiteSpace: "nowrap" as const,
+    "&:hover": { color: "text.primary", bgcolor: "rgba(45,42,38,0.04)" },
+  };
+
+  if (item.disabled) {
+    return (
+      <Box sx={{ ...sharedSx, opacity: 0.6, cursor: "not-allowed", "&:hover": undefined }}>
+        <span>{item.label}</span>
+        {!isTopbar && (
+          <Box
+            component="span"
+            sx={{
+              fontSize: "0.6875rem",
+              lineHeight: "16px",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: "text.secondary",
+              opacity: 0.8,
+            }}
+          >
+            soon
+          </Box>
+        )}
+      </Box>
+    );
+  }
+
+  return (
+    <Box component={NavLink} to={item.to} sx={sharedSx}>
+      <span>{item.label}</span>
+      {showGeneratingDot && <PulseDot size={8} />}
+    </Box>
+  );
+}
+
 export function AppShell() {
   const { user, logout } = useAuth();
   const generatingRadarId = useSelector((s: RootState) => s.radarGeneration.currentGeneratingRadarId);
   const location = useLocation();
+  const muiTheme = useTheme();
+  // Below 900px → collapsed top bar; at/above 900px → desktop sidebar.
+  const isNarrow = useMediaQuery(muiTheme.breakpoints.down("md"));
 
+  const navItemsRendered = NAV_ITEMS.map((item) => {
+    const isActive =
+      !item.disabled && location.pathname.startsWith(item.to);
+    const showGeneratingDot =
+      item.key === "radars" && generatingRadarId !== null;
+    return (
+      <NavLinkItem
+        key={item.key}
+        item={item}
+        active={isActive}
+        showGeneratingDot={showGeneratingDot}
+        variant={isNarrow ? "topbar" : "sidebar"}
+      />
+    );
+  });
+
+  // ─── Mobile: top bar ──────────────────────────────────────────────
+  if (isNarrow) {
+    return (
+      <Box sx={{ minHeight: "100vh", bgcolor: "background.default", display: "flex", flexDirection: "column" }}>
+        <Box
+          component="header"
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 3,
+            py: 2,
+            borderBottom: 1,
+            borderColor: "divider",
+            bgcolor: "background.default",
+            gap: 2,
+            flexWrap: "wrap",
+          }}
+        >
+          <Typography variant="overline" color="text.secondary">
+            Dev Radar
+          </Typography>
+
+          <Box component="nav" sx={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+            {navItemsRendered}
+          </Box>
+
+          <Box
+            component="button"
+            onClick={logout}
+            sx={{
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              fontFamily: "inherit",
+              fontSize: "0.8125rem",
+              color: "text.secondary",
+              cursor: "pointer",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
+              "&:hover": { color: "text.primary" },
+            }}
+          >
+            Sign out · {user?.displayName ?? "me"}
+          </Box>
+        </Box>
+
+        <Box
+          component="main"
+          sx={{ flex: 1, p: 3, display: "flex", justifyContent: "flex-start" }}
+        >
+          <Outlet />
+        </Box>
+      </Box>
+    );
+  }
+
+  // ─── Desktop: sidebar ─────────────────────────────────────────────
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default", display: "flex" }}>
       <Box
@@ -3634,73 +3790,7 @@ export function AppShell() {
         </Typography>
 
         <Box component="nav" sx={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-          {NAV_ITEMS.map((item) => {
-            if (item.disabled) {
-              return (
-                <Box
-                  key={item.key}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    px: "10px", py: "8px",
-                    borderRadius: "6px",
-                    color: "text.secondary",
-                    opacity: 0.6,
-                    cursor: "not-allowed",
-                    fontSize: "0.9375rem",
-                    lineHeight: "24px",
-                  }}
-                >
-                  <span>{item.label}</span>
-                  <Box
-                    component="span"
-                    sx={{
-                      fontSize: "0.6875rem", lineHeight: "16px",
-                      letterSpacing: "0.06em", textTransform: "uppercase",
-                      color: "text.secondary", opacity: 0.8,
-                    }}
-                  >
-                    soon
-                  </Box>
-                </Box>
-              );
-            }
-            const active = location.pathname.startsWith(item.to);
-            const showGeneratingDot = item.key === "radars" && generatingRadarId !== null;
-            return (
-              <Box
-                key={item.key}
-                component={NavLink}
-                to={item.to}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  px: "10px", py: "8px",
-                  borderRadius: "6px",
-                  textDecoration: "none",
-                  fontSize: "0.9375rem",
-                  lineHeight: "24px",
-                  fontWeight: active ? 500 : 400,
-                  color: active ? "text.primary" : "text.secondary",
-                  bgcolor: active ? "rgba(45,42,38,0.04)" : "transparent",
-                  "&:hover": { color: "text.primary", bgcolor: "rgba(45,42,38,0.04)" },
-                }}
-              >
-                <span>{item.label}</span>
-                {showGeneratingDot && (
-                  <Box
-                    sx={{
-                      width: 8, height: 8, borderRadius: "50%",
-                      bgcolor: "text.primary",
-                      animation: `${pulse} 1.4s ease-in-out infinite`,
-                    }}
-                  />
-                )}
-              </Box>
-            );
-          })}
+          {navItemsRendered}
         </Box>
 
         <Box sx={{ flex: 1 }} />
@@ -3711,10 +3801,13 @@ export function AppShell() {
           </Typography>
           <Typography
             sx={{
-              fontSize: "0.8125rem", lineHeight: "20px",
+              fontSize: "0.8125rem",
+              lineHeight: "20px",
               color: "text.secondary",
               mb: 1.5,
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
             {user?.email}
@@ -3723,12 +3816,16 @@ export function AppShell() {
             component="button"
             onClick={logout}
             sx={{
-              background: "transparent", border: "none", padding: 0,
+              background: "transparent",
+              border: "none",
+              padding: 0,
               fontFamily: "inherit",
-              fontSize: "0.8125rem", lineHeight: "20px",
+              fontSize: "0.8125rem",
+              lineHeight: "20px",
               color: "text.secondary",
               cursor: "pointer",
-              textDecoration: "underline", textUnderlineOffset: "3px",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
               "&:hover": { color: "text.primary" },
             }}
           >
@@ -3741,7 +3838,7 @@ export function AppShell() {
         component="main"
         sx={{
           flex: 1,
-          p: { xs: 4, md: "80px 48px" },
+          p: "80px 48px",
           display: "flex",
           justifyContent: "flex-start",
         }}
