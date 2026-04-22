@@ -89,4 +89,77 @@ export const handlers = [
     ];
     return HttpResponse.json(all.filter((t) => body.tagSlugs.includes(t.slug)));
   }),
+
+  http.get("/api/radars", ({ request }) => {
+    const auth = request.headers.get("Authorization");
+    if (!auth?.startsWith("Bearer ")) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return HttpResponse.json({
+      content: [
+        {
+          id: 42,
+          status: "READY",
+          periodStart: "2026-04-13T00:00:00Z",
+          periodEnd: "2026-04-20T00:00:00Z",
+          generatedAt: "2026-04-20T10:00:00Z",
+          generationMs: 12000,
+          tokenCount: 4200,
+        },
+      ],
+      totalElements: 1,
+      totalPages: 1,
+      number: 0,
+      size: 20,
+    });
+  }),
+
+  http.get("/api/radars/:id", ({ params, request }) => {
+    const auth = request.headers.get("Authorization");
+    if (!auth?.startsWith("Bearer ")) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    const id = Number(params.id);
+    if (id === 404) {
+      return HttpResponse.json({ message: "Not found" }, { status: 404 });
+    }
+    if (id === 43) {
+      return HttpResponse.json({
+        id: 43,
+        status: "GENERATING",
+        periodStart: "2026-04-15T00:00:00Z",
+        periodEnd: "2026-04-22T00:00:00Z",
+        generatedAt: null,
+        generationMs: null,
+        tokenCount: null,
+        themes: [],
+      });
+    }
+    return HttpResponse.json({
+      id,
+      status: "READY",
+      periodStart: "2026-04-13T00:00:00Z",
+      periodEnd: "2026-04-20T00:00:00Z",
+      generatedAt: "2026-04-20T10:00:00Z",
+      generationMs: 12000,
+      tokenCount: 4200,
+      themes: [
+        {
+          id: 1, title: "Spring Boot ecosystem updates", summary: "Summary text.",
+          displayOrder: 0,
+          items: [{ id: 1001, title: "Spring Boot 3.5 released", url: "https://spring.io/3.5", author: "spring-io" }],
+        },
+      ],
+    });
+  }),
+
+  http.post("/api/radars", ({ request }) => {
+    const auth = request.headers.get("Authorization");
+    if (!auth?.startsWith("Bearer ")) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return HttpResponse.json({
+      id: 100,
+      status: "GENERATING",
+      periodStart: "2026-04-15T00:00:00Z",
+      periodEnd: "2026-04-22T00:00:00Z",
+      generatedAt: null,
+      generationMs: null,
+      tokenCount: null,
+    }, { status: 201 });
+  }),
 ];
