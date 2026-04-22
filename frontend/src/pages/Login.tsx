@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Link from "@mui/material/Link";
 import { Button } from "../components/Button";
+import { GitHubButton } from "../components/GitHubButton";
 import { TextField } from "../components/TextField";
 import { Alert } from "../components/Alert";
 import { AuthCard } from "../components/AuthCard";
@@ -68,6 +69,16 @@ export function Login() {
           </Button>
         </Box>
       </Box>
+
+      <Box sx={{ mt: 3, display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ flex: 1, height: 1, bgcolor: "divider" }} />
+        <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          or
+        </Typography>
+        <Box sx={{ flex: 1, height: 1, bgcolor: "divider" }} />
+      </Box>
+
+      <GitHubButton fullWidth sx={{ mt: 2 }} />
 
       <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>
         New here?{" "}

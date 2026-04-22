@@ -55,6 +55,9 @@ google-ai:
 encryption:
   github-token-key-base64: ${GITHUB_TOKEN_ENCRYPTION_KEY:UEjGRJjRBYGZQRdsB7Cln1mLG0qlxPEAU+Vq/Sx0iYE=}
 
+frontend:
+  base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+
 github:
   oauth:
     client-id: ${GITHUB_OAUTH_CLIENT_ID:}

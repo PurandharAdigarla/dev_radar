@@ -3,8 +3,6 @@ package com.devradar.web.rest;
 import com.devradar.AbstractIntegrationTest;
 import com.devradar.crypto.TokenEncryptor;
 import com.devradar.repository.UserGithubIdentityRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import org.junit.jupiter.api.AfterAll;
@@ -45,7 +43,6 @@ class AuthGithubResourceIT extends AbstractIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired UserGithubIdentityRepository identityRepo;
     @Autowired TokenEncryptor encryptor;
-    @Autowired ObjectMapper json;
 
     @Test
     void githubStart_redirectsToGithub() throws Exception {
@@ -75,11 +72,13 @@ class AuthGithubResourceIT extends AbstractIntegrationTest {
         var callbackResp = mvc.perform(get("/api/auth/github/callback")
                 .param("code", "the-code")
                 .param("state", state))
-            .andExpect(status().isOk())
+            .andExpect(status().isFound())
             .andReturn().getResponse();
 
-        JsonNode body = json.readTree(callbackResp.getContentAsString());
-        assertThat(body.get("accessToken").asText()).isNotBlank();
+        String callbackLocation = callbackResp.getHeader("Location");
+        assertThat(callbackLocation).startsWith("http://localhost:5173/auth/github/complete#accessToken=");
+        String jwt = callbackLocation.substring(callbackLocation.indexOf("accessToken=") + "accessToken=".length());
+        assertThat(jwt).isNotBlank();
 
         var identity = identityRepo.findByGithubUserId(7777L).orElseThrow();
         assertThat(identity.getGithubLogin()).isEqualTo("alice");

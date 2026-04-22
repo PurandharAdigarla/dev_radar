@@ -7,6 +7,7 @@ import { theme } from "./theme";
 import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
+import { GitHubCallback } from "./pages/GitHubCallback";
 import { AppShell } from "./pages/AppShell";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { ErrorBoundary } from "./ErrorBoundary";
@@ -17,6 +18,7 @@ export function AppRoutes() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/auth/github/complete" element={<GitHubCallback />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/app" element={<AppShell />} />
       </Route>

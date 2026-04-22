@@ -40,6 +40,7 @@ public class AuthResource {
     private final JwtTokenProvider jwt;
     private final String authorizeUrl;
     private final String defaultScopes;
+    private final String frontendBaseUrl;
 
     private final ConcurrentHashMap<String, Instant> issuedStates = new ConcurrentHashMap<>();
 
@@ -52,7 +53,8 @@ public class AuthResource {
         TokenEncryptor encryptor,
         JwtTokenProvider jwt,
         @Value("${github.oauth.authorize-url}") String authorizeUrl,
-        @Value("${github.oauth.default-scopes:read:user,public_repo,repo}") String defaultScopes
+        @Value("${github.oauth.default-scopes:read:user,public_repo,repo}") String defaultScopes,
+        @Value("${frontend.base-url:http://localhost:5173}") String frontendBaseUrl
     ) {
         this.auth = auth;
         this.ghOauth = ghOauth;
@@ -63,6 +65,7 @@ public class AuthResource {
         this.jwt = jwt;
         this.authorizeUrl = authorizeUrl;
         this.defaultScopes = defaultScopes;
+        this.frontendBaseUrl = frontendBaseUrl;
     }
 
     @PostMapping("/register")
@@ -102,10 +105,12 @@ public class AuthResource {
     /** Step 2 of GitHub OAuth: exchange code, persist identity, issue JWT. */
     @GetMapping("/github/callback")
     @Transactional
-    public LoginResponseDTO githubCallback(@RequestParam String code, @RequestParam String state) {
+    public ResponseEntity<Void> githubCallback(@RequestParam String code, @RequestParam String state) {
         Instant expires = issuedStates.remove(state);
         if (expires == null || expires.isBefore(Instant.now())) {
-            throw new RuntimeException("invalid or expired state");
+            return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(frontendBaseUrl + "/login?error=oauth_state"))
+                .build();
         }
 
         var tokenResp = ghOauth.exchangeCode(code);
@@ -138,7 +143,8 @@ public class AuthResource {
         }
 
         String jwtToken = jwt.generateAccessToken(u.getId(), u.getEmail());
-        return new LoginResponseDTO(jwtToken, "");
+        String target = frontendBaseUrl + "/auth/github/complete#accessToken=" + jwtToken;
+        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(target)).build();
     }
 
     private void purgeExpiredStates() {

@@ -48,6 +48,9 @@ google-ai:
 encryption:
   github-token-key-base64: UEjGRJjRBYGZQRdsB7Cln1mLG0qlxPEAU+Vq/Sx0iYE=
 
+frontend:
+  base-url: http://localhost:5173
+
 github:
   oauth:
     client-id: test-client-id

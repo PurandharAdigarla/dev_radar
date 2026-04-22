@@ -2,6 +2,7 @@ import { Link as RouterLink } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button } from "../components/Button";
+import { GitHubButton } from "../components/GitHubButton";
 
 export function Landing() {
   return (
@@ -45,6 +46,18 @@ export function Landing() {
           <Button component={RouterLink} to="/login" variant="outlined">
             Sign in
           </Button>
+        </Box>
+
+        <Box sx={{ mt: 4, display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ flex: 1, height: 1, bgcolor: "divider" }} />
+          <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            or
+          </Typography>
+          <Box sx={{ flex: 1, height: 1, bgcolor: "divider" }} />
+        </Box>
+
+        <Box sx={{ mt: 3 }}>
+          <GitHubButton />
         </Box>
       </Box>
     </Box>
