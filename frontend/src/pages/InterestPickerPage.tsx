@@ -47,14 +47,14 @@ export function InterestPickerPage() {
     }
   }, [myInterests, hydrated]);
 
-  const tags = tagsPage?.content ?? [];
   const filteredTags = useMemo(() => {
+    const tags = tagsPage?.content ?? [];
     const q = query.trim().toLowerCase();
     if (!q) return tags;
     return tags.filter(
       (t) => t.displayName.toLowerCase().includes(q) || t.slug.includes(q),
     );
-  }, [tags, query]);
+  }, [tagsPage, query]);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, InterestTag[]>();
