@@ -4,6 +4,7 @@ import com.devradar.domain.InterestTag;
 import com.devradar.domain.Radar;
 import com.devradar.domain.RadarStatus;
 import com.devradar.domain.RadarTheme;
+import com.devradar.domain.Source;
 import com.devradar.domain.SourceItem;
 import com.devradar.domain.exception.UserNotAuthenticatedException;
 import com.devradar.mcp.dto.CitationMcpDTO;
@@ -26,7 +27,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class RadarApplicationService {
@@ -37,7 +40,10 @@ public class RadarApplicationService {
     private final RadarThemeRepository themeRepo;
     private final RadarThemeItemRepository themeItemRepo;
     private final SourceItemRepository sourceItemRepo;
+    private final SourceRepository sourceRepo;
     private final UserInterestService interests;
+
+    private final Map<Long, String> sourceNameCache = new ConcurrentHashMap<>();
 
     @PersistenceContext private EntityManager em;
 
@@ -48,6 +54,7 @@ public class RadarApplicationService {
         RadarThemeRepository themeRepo,
         RadarThemeItemRepository themeItemRepo,
         SourceItemRepository sourceItemRepo,
+        SourceRepository sourceRepo,
         UserInterestService interests
     ) {
         this.radarService = radarService;
@@ -56,6 +63,7 @@ public class RadarApplicationService {
         this.themeRepo = themeRepo;
         this.themeItemRepo = themeItemRepo;
         this.sourceItemRepo = sourceItemRepo;
+        this.sourceRepo = sourceRepo;
         this.interests = interests;
     }
 
@@ -86,7 +94,7 @@ public class RadarApplicationService {
             for (var rti : rtis) {
                 SourceItem si = sourceItemRepo.findById(rti.getSourceItemId()).orElse(null);
                 if (si == null) continue;
-                itemDtos.add(new RadarItemDTO(si.getId(), si.getTitle(), si.getUrl(), si.getAuthor()));
+                itemDtos.add(new RadarItemDTO(si.getId(), si.getTitle(), si.getDescription(), si.getUrl(), si.getAuthor(), resolveSourceName(si.getSourceId())));
             }
             themeDtos.add(new RadarThemeDTO(t.getId(), t.getTitle(), t.getSummary(), t.getDisplayOrder(), itemDtos));
         }
@@ -125,9 +133,14 @@ public class RadarApplicationService {
             .limit(3)
             .map(rti -> sourceItemRepo.findById(rti.getSourceItemId()).orElse(null))
             .filter(java.util.Objects::nonNull)
-            .map(si -> new CitationMcpDTO(si.getTitle(), si.getUrl()))
+            .map(si -> new CitationMcpDTO(si.getTitle(), si.getDescription(), si.getUrl()))
             .toList();
         return new ThemeMcpDTO(t.getTitle(), t.getSummary(), citations);
+    }
+
+    private String resolveSourceName(Long sourceId) {
+        return sourceNameCache.computeIfAbsent(sourceId, id ->
+            sourceRepo.findById(id).map(Source::getCode).orElse("unknown"));
     }
 
     @SuppressWarnings("unchecked")
