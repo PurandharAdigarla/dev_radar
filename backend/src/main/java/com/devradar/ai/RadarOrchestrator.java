@@ -70,8 +70,11 @@ public class RadarOrchestrator {
             totalIn += resp.inputTokens();
             totalOut += resp.outputTokens();
             if (resp.text() != null && !resp.text().isBlank()) lastText = resp.text();
+            LOG.info("orchestrator iter={} stopReason={} toolCalls={} textLen={}", iter, resp.stopReason(), resp.toolCalls().size(), lastText.length());
 
             if (resp.toolCalls().isEmpty() || "end_turn".equals(resp.stopReason())) break;
+
+            messages.add(new AiMessage("assistant", resp.text(), resp.toolCalls(), List.of()));
 
             List<AiToolResult> results = new ArrayList<>();
             for (AiToolCall call : resp.toolCalls()) {

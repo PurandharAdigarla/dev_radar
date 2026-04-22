@@ -40,7 +40,7 @@ public class Radar {
     @Column(name = "error_code", length = 80)
     private String errorCode;
 
-    @Column(name = "error_message", length = 1000)
+    @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
     @Column(name = "created_at", nullable = false, updatable = false)

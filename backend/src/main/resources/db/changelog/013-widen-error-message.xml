@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="013-1" author="devradar">
+        <modifyDataType tableName="radars" columnName="error_message" newDataType="TEXT"/>
+    </changeSet>
+
+    <changeSet id="013-2" author="devradar">
+        <modifyDataType tableName="eval_runs" columnName="error_message" newDataType="TEXT"/>
+    </changeSet>
+
+</databaseChangeLog>

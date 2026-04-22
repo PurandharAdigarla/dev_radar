@@ -43,7 +43,7 @@ public class GeminiAiClient implements AiClient {
     public AiResponse generate(String model, String systemPrompt, List<AiMessage> messages, List<ToolDefinition> tools, int maxTokens) {
         // Gemini uses model name like "gemini-2.0-flash" not "claude-sonnet-4-6".
         // If the caller passes a Claude model name, ignore it and use the configured Gemini default.
-        String geminiModel = model.startsWith("gemini") ? model : "gemini-2.0-flash";
+        String geminiModel = model.startsWith("gemini") ? model : "gemini-2.5-flash";
 
         ObjectNode body = json.createObjectNode();
 
@@ -66,15 +66,26 @@ public class GeminiAiClient implements AiClient {
                 for (AiToolResult r : m.toolResults()) {
                     ObjectNode part = parts.addObject();
                     ObjectNode fr = part.putObject("functionResponse");
-                    // toolCallId in our DTO maps to function name in Gemini (it doesn't use opaque IDs the way Anthropic does)
-                    // We packed the original tool name into toolCallId — see how AnthropicAiClient produces it.
-                    // For Gemini parity, embed the result under a single field "result".
                     fr.put("name", extractFunctionName(r.toolCallId()));
                     ObjectNode response = fr.putObject("response");
                     try {
                         response.set("result", json.readTree(r.outputJson()));
                     } catch (Exception e) {
                         response.put("result", r.outputJson());
+                    }
+                }
+            } else if (m.toolCalls() != null && !m.toolCalls().isEmpty()) {
+                if (m.content() != null && !m.content().isBlank()) {
+                    parts.addObject().put("text", m.content());
+                }
+                for (AiToolCall tc : m.toolCalls()) {
+                    ObjectNode part = parts.addObject();
+                    ObjectNode fc = part.putObject("functionCall");
+                    fc.put("name", tc.name());
+                    try {
+                        fc.set("args", json.readTree(tc.inputJson()));
+                    } catch (Exception e) {
+                        fc.putObject("args");
                     }
                 }
             } else if (m.content() != null) {
@@ -104,14 +115,26 @@ public class GeminiAiClient implements AiClient {
         genCfg.put("maxOutputTokens", maxTokens);
 
         // Call API
-        JsonNode resp = http.post()
-            .uri(uri -> uri.path("/v1beta/models/" + geminiModel + ":generateContent")
-                .queryParam("key", apiKey)
-                .build())
-            .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-            .body(body.toString())
-            .retrieve()
-            .body(JsonNode.class);
+        JsonNode resp;
+        try {
+            resp = http.post()
+                .uri(uri -> uri.path("/v1beta/models/" + geminiModel + ":generateContent")
+                    .queryParam("key", apiKey)
+                    .build())
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .body(body.toString())
+                .retrieve()
+                .body(JsonNode.class);
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            int status = e.getStatusCode().value();
+            String shortMsg = switch (status) {
+                case 429 -> "Gemini rate limit exceeded — free tier quota exhausted. Retry later.";
+                case 400 -> "Gemini bad request: " + extractGeminiError(e.getResponseBodyAsString());
+                case 403 -> "Gemini API key invalid or forbidden.";
+                default -> "Gemini API error " + status + ": " + extractGeminiError(e.getResponseBodyAsString());
+            };
+            throw new RuntimeException(shortMsg, e);
+        }
 
         // Parse response
         StringBuilder textOut = new StringBuilder();
@@ -149,6 +172,16 @@ public class GeminiAiClient implements AiClient {
         }
 
         return new AiResponse(textOut.toString(), toolCalls, stopReason, inputTokens, outputTokens);
+    }
+
+    private String extractGeminiError(String responseBody) {
+        try {
+            JsonNode error = json.readTree(responseBody).path("error").path("message");
+            String msg = error.asText("");
+            return msg.length() > 200 ? msg.substring(0, 200) + "..." : msg;
+        } catch (Exception e) {
+            return responseBody.length() > 200 ? responseBody.substring(0, 200) + "..." : responseBody;
+        }
     }
 
     /** Extract the function name from our fabricated tool_call id (format: "gemini_<idx>_<name>"). */
