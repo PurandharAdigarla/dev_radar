@@ -42,4 +42,51 @@ export const handlers = [
     }
     return HttpResponse.json({ accessToken: "access-2", refreshToken: "refresh-2" });
   }),
+
+  http.get("/api/interest-tags", ({ request }) => {
+    const url = new URL(request.url);
+    const q = url.searchParams.get("q")?.toLowerCase() ?? "";
+    const category = url.searchParams.get("category");
+    const all = [
+      { id: 1, slug: "java", displayName: "Java", category: "language" },
+      { id: 2, slug: "spring_boot", displayName: "Spring Boot", category: "framework" },
+      { id: 3, slug: "postgresql", displayName: "PostgreSQL", category: "database" },
+      { id: 4, slug: "docker", displayName: "Docker", category: "devops" },
+      { id: 5, slug: "security", displayName: "Security", category: "security" },
+    ];
+    const filtered = all.filter((t) => {
+      if (q && !t.displayName.toLowerCase().includes(q) && !t.slug.includes(q)) return false;
+      if (category && t.category !== category) return false;
+      return true;
+    });
+    return HttpResponse.json({
+      content: filtered,
+      totalElements: filtered.length,
+      totalPages: 1,
+      number: 0,
+      size: filtered.length,
+    });
+  }),
+
+  http.get("/api/users/me/interests", ({ request }) => {
+    const auth = request.headers.get("Authorization");
+    if (!auth?.startsWith("Bearer ")) {
+      return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+    return HttpResponse.json([
+      { id: 1, slug: "java", displayName: "Java", category: "language" },
+    ]);
+  }),
+
+  http.put("/api/users/me/interests", async ({ request }) => {
+    const body = (await request.json()) as { tagSlugs: string[] };
+    const all = [
+      { id: 1, slug: "java", displayName: "Java", category: "language" },
+      { id: 2, slug: "spring_boot", displayName: "Spring Boot", category: "framework" },
+      { id: 3, slug: "postgresql", displayName: "PostgreSQL", category: "database" },
+      { id: 4, slug: "docker", displayName: "Docker", category: "devops" },
+      { id: 5, slug: "security", displayName: "Security", category: "security" },
+    ];
+    return HttpResponse.json(all.filter((t) => body.tagSlugs.includes(t.slug)));
+  }),
 ];
