@@ -130,3 +130,68 @@ export interface ActionProposedEvent {
   kind: string;
   payloadJson: string;
 }
+
+// ─── Observability ──────────────────────────────────────────────────
+
+export interface ObservabilitySummary {
+  totalRadars24h: number;
+  totalTokens24h: number;
+  totalTokensInput24h: number;
+  totalTokensOutput24h: number;
+  sonnetCalls24h: number;
+  haikuCalls24h: number;
+  p50Ms24h: number;
+  p95Ms24h: number;
+  avgGenerationMs24h: number;
+  cacheHitRate24h: number;
+  itemsIngested24h: number;
+  evalScoreRelevance: number | null;
+  evalScoreCitations: number | null;
+  evalScoreDistinctness: number | null;
+}
+
+export interface MetricsDay {
+  date: string; // "YYYY-MM-DD"
+  totalRadars: number;
+  totalTokensInput: number;
+  totalTokensOutput: number;
+  sonnetCalls: number;
+  haikuCalls: number;
+  cacheHits: number;
+  cacheMisses: number;
+  p50Ms: number;
+  p95Ms: number;
+  avgGenerationMs: number;
+  itemsIngested: number;
+  itemsDeduped: number;
+  evalScoreRelevance: number | null;
+  evalScoreCitations: number | null;
+  evalScoreDistinctness: number | null;
+}
+
+// ─── API Keys ───────────────────────────────────────────────────────
+
+export type ApiKeyScope = "READ" | "WRITE";
+
+export interface ApiKeySummary {
+  id: number;
+  name: string;
+  scope: ApiKeyScope;
+  keyPrefix: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+export interface ApiKeyCreateRequest {
+  name: string;
+  scope: ApiKeyScope;
+}
+
+export interface ApiKeyCreateResponse {
+  id: number;
+  name: string;
+  scope: ApiKeyScope;
+  key: string;
+  keyPrefix: string;
+  createdAt: string;
+}
