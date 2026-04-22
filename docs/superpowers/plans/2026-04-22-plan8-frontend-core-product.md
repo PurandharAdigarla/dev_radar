@@ -9,27 +9,35 @@
 **Tech Stack:** Existing Plan 7 frontend (Vite 5 + React 19 + TypeScript + Redux Toolkit 2 + RTK Query + React Router v7 + MUI v6 themed with monochrome Claude Design tokens) + backend JWT query-param auth for SSE.
 
 **Spec reference:** `docs/superpowers/specs/2026-04-22-frontend-core-product-design.md`.
-**Design brief:** `docs/superpowers/design-briefs/2026-04-22-dev-radar-core-product-brief.md` — visual decisions are made by this plan (deriving from Plan 7's locked tokens) rather than iterated via Claude Design.
+**Design reference:** Claude Design export preserved at `docs/superpowers/design-assets/2026-04-22-plan8-frontend/Dev-Radar-Product.html` — canonical source of truth for markup and visual choices. The component tasks below derive directly from it.
 
-**Visual decisions locked by this plan (per user direction to skip Claude Design this round):**
+**Visual decisions locked by the Claude Design export:**
 
-- **Tag chip**: pill-shape (border-radius 999), selected = filled Ink + white text, unselected = outlined divider + Ink text. Symmetric to buttons, instantly scannable in wrap-flow.
-- **Category headers**: `overline` (11px uppercase, 0.08em tracking). Editorial and quiet — `h2` would compete with the page h1.
-- **Search input**: standard themed `TextField`, not hero-sized. Most users scroll.
-- **Save button**: inline right-aligned next to "N selected", not sticky. Simpler; 80-120 tags fits in 2-3 screenfuls.
-- **Radar row**: editorial list row (no card border), 16px vertical padding, hover tint `rgba(45,42,38,0.04)`, 1px divider between rows. The brand is reading-forward, not dashboard-y.
-- **Status chip**: small compact pill, right-aligned on row. `READY` = filled Ink, `GENERATING` = outlined Ink with animated pulsing dot, `FAILED` = error-tinted.
-- **Metadata density**: keep all four pieces (date · themes · tokens · ms) in caption size — they're tiny enough to tolerate.
-- **First-time nudge banner**: surface card with a 3px Ink left border, not a red alert. Invitational, not corrective.
-- **Empty state (no radars)**: centered block in the content column, muted copy + primary CTA.
-- **Theme card**: title in sans h2 (24/32, -0.01em), summary in Source Serif Pro 17/28. Whitespace separator between themes (48px). No borders, no cards — the typography carries it.
-- **Citation pills**: numbered `[1] [2] [3]` — academic feel, cleaner against serif body. Hover reveals source title; click opens URL in new tab.
-- **Generating indicator**: inline caption under the radar header, "Generating…" with a pulsing 8px dot. No progress bar, no skeletons.
-- **Proposals panel**: 280px right column, outlined compact cards stacked vertically, monochrome. Calm, not drawer-y.
-- **Approve modal**: small centered MUI `Dialog`, single editable field (`fixVersion`), primary "Open PR" + ghost "Cancel".
-- **Executed state**: proposal card updates in-place — replaces buttons with "PR opened →" link using `text.primary` + success-tinted bottom border.
-- **Failure state**: inline Alert inside the proposal card + "Retry" ghost button.
-- **Animations**: 300ms ease-out fade-in for new themes / proposals. Pulsing dot for generating indicator (keyframe: 1.0 → 0.4 → 1.0 opacity over 1.4s). Nothing else.
+- **Tag chip**: pill-shape (border-radius 999), selected = filled Ink + white text on Ink border, unselected = Ink on white surface with divider border. 14/20px label, 6/14px padding.
+- **Category headers**: `DROverline` (11px uppercase, 0.08em tracking, text.secondary). Category labels use human-friendly names: "Languages", "Frameworks", "Databases", "DevOps & cloud", "Security", "Other".
+- **Search input**: standard themed input, not hero-sized. Left-aligned with "N selected" and Save button in the same flex row. Save is a filled Ink pill; disabled state is `rgba(45,42,38,0.15)`.
+- **Radar row**: editorial list row (no card border by default), 20px vertical padding, hover tint `rgba(45,42,38,0.025)`, 1px divider between rows. **Hierarchy inverted from my earlier draft** — the period ("Week of Apr 13 – Apr 20") is the top line at 16px/500, metadata (themes · tokens · seconds) is a caption row below in text.secondary.
+- **Status indicator** (not a chip): plain uppercase text at 11px/500 with 0.06em letter-spacing. `READY` in `text.secondary`; `GENERATING` = pulsing 7px dot + text in `text.primary`; `FAILED` = text in `error.main`. No filled pill — the editorial brand doesn't need it.
+- **First-time nudge banner**: surface with `rgba(45,42,38,0.03)` bg and divider border, not a left-accent or red alert. Quiet and invitational.
+- **Empty state (no radars)**: dashed divider border (`1px dashed var(--dr-divider)`), 80px vertical padding, serif italic headline "No radars yet." at 20/28, secondary caption, primary CTA.
+- **Theme card**: title in sans h2 (24/32, -0.01em, `fontWeight: 500`), summary in Source Serif 4 at 17/28 with `textWrap: pretty`. 48px margin-bottom between themes (no dividers). Below summary: a "SOURCES" overline in text.secondary, then wrap-flow of citation pills.
+- **Citation pills**: numbered `[n]` in JetBrains Mono at 11px, 24×20 min size, 4px radius (not full pill), divider border, `rgba(45,42,38,0.04)` bg. **Hover reveals a dark tooltip** showing source title + author (if available), not a native `title=""` attribute. Anchor tag with `target="_blank" rel="noreferrer noopener"`.
+- **Radar detail header**: `DROverline` "Week of Apr 13 – Apr 20" above an h1 in sans (32/40, -0.01em). Title falls back to "This week in your stack" if the radar has no explicit title field (it doesn't in our backend — always use the fallback). Below h1 is a metadata caption row: while streaming, `PulseDot + "Generating themes…" + "·" + "{n} of {expected}"`; when done, `{themes} themes · {seconds}s · {tokens}k tokens`.
+- **ThemeSkeleton** (new): while streaming, render shimmer placeholders for themes not yet arrived. Based on `expectedThemeCount` which we estimate from the user's interest count (cap 5). Two blocks per skeleton: a 24px-tall width-58% title bar, then four 14px-tall paragraph bars at decreasing widths (100/96/100/78). `dr-shimmer` keyframe: opacity 0.7 ⇄ 1 over 1.4s, staggered 120ms per bar.
+- **Proposals panel**: 300px right column (grid `minmax(0, 720px) 300px`, 48px gap, `align-items: flex-start`). Cards are outlined (1px divider, 8px radius, white surface), 16px padding, 12px vertical gap between cards. `DROverline` "Action proposals" above the stack.
+- **Proposal card body**: CVE id at top in JetBrains Mono 11px, package name in sans 14/500, then `fromVersion → toVersion` in mono 13 (arrow rendered as inline SVG, not unicode). Below: actions.
+- **Approve modal**: 420px centered overlay, 12px radius, white surface, `0 12px 40px rgba(45,42,38,0.15)` shadow. Contains — h3 "Open migration PR" (20/28 -0.01em), caption paragraph, then a proposal-preview row (CVE id + package + fromVersion in a rounded secondary-bg box), then a labeled `toVersion` text field in mono, then right-aligned `Cancel` (ghost) + `Open PR` (primary pill). Loading state: primary button swaps to `PulseDot + "Opening PR…"`. We implement via MUI `Dialog` styled to match.
+- **Executed state**: card shows an inline `[✓ icon] PR opened →` link in `success.main`. No success-tinted border — text color carries it.
+- **Failure state**: inline tinted error block inside the card (matching Alert primitive) + "Retry" ghost pill button.
+- **Dismissed state**: card opacity drops to 0.5, "Dismissed" caption replaces actions.
+- **PageHeader component** (new, reusable): title + optional sub + right slot (for action buttons). Used by Interest / Radar list / Radar detail pages for consistent header rhythm.
+- **Animations**: 400ms ease-out `dr-fade-in` for new themes (slides up 6px). Pulsing 7–8px dot (`dr-pulse`) for GENERATING indicators. `dr-shimmer` for theme skeletons.
+
+**Kept from my original plan (not in the export, judgment call):**
+
+- **Sidebar items**: Radars + Interests + Settings(soon). The export includes a "Proposals" item — but per spec §4, proposals live inside radar detail, not on a standalone page. Skipping Proposals sidebar item in Plan 8; may restore in a future plan.
+- **SSE mechanics + Redux + API slice structure**: unchanged — those are backend/plumbing decisions not visual ones.
+- **MUI Dialog for the approve modal**: using Dialog + styled theme rather than bespoke overlay divmodal, so we inherit focus-trap + escape-to-close for free.
 
 ---
 
@@ -1533,6 +1541,8 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
+Matches the export's `TagChip` with the "filled" chipStyle (default). 14/20px label, 6/14px padding, white surface when unselected, Ink fill when selected.
+
 Create `frontend/src/components/TagChip.tsx`:
 
 ```tsx
@@ -1553,21 +1563,25 @@ export function TagChip({ label, selected, onToggle }: TagChipProps) {
       aria-pressed={selected}
       onClick={onToggle}
       sx={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "6px",
         fontFamily: "inherit",
-        fontSize: "0.875rem",
-        lineHeight: 1,
+        fontSize: 14,
+        lineHeight: "20px",
         fontWeight: 500,
-        padding: "8px 14px",
+        padding: "6px 14px",
         borderRadius: 999,
         cursor: "pointer",
+        userSelect: "none",
         border: "1px solid",
         borderColor: selected ? "text.primary" : "divider",
-        background: selected ? "text.primary" : "transparent",
+        bgcolor: selected ? "text.primary" : "background.paper",
         color: selected ? "#ffffff" : "text.primary",
-        transition: "background 120ms ease, color 120ms ease, border-color 120ms ease",
+        transition: "background 120ms, border-color 120ms, color 120ms",
         "&:hover": {
-          borderColor: "text.primary",
-          background: selected ? "#000000" : "rgba(45,42,38,0.04)",
+          bgcolor: selected ? "#000000" : "rgba(45,42,38,0.04)",
+          borderColor: selected ? "text.primary" : "divider",
         },
         "&:focus-visible": {
           outline: "none",
@@ -1694,6 +1708,8 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
+Per the export: use `PageHeader`, a compact search input in the same row as `{n} selected` counter and Save button, and a "No tags match" empty state.
+
 Create `frontend/src/pages/InterestPickerPage.tsx`:
 
 ```tsx
@@ -1703,6 +1719,7 @@ import Typography from "@mui/material/Typography";
 import { Button } from "../components/Button";
 import { TextField } from "../components/TextField";
 import { Alert } from "../components/Alert";
+import { PageHeader } from "../components/PageHeader";
 import { TagChip } from "../components/TagChip";
 import {
   useGetMyInterestsQuery,
@@ -1720,10 +1737,14 @@ const CATEGORY_ORDER: InterestCategory[] = [
   "other",
 ];
 
-function labelForCategory(c: InterestCategory | null): string {
-  if (c === null) return "Other";
-  return c.replace(/_/g, " ");
-}
+const CATEGORY_LABEL: Record<InterestCategory, string> = {
+  language: "Languages",
+  framework: "Frameworks",
+  database: "Databases",
+  devops: "DevOps & cloud",
+  security: "Security",
+  other: "Other",
+};
 
 export function InterestPickerPage() {
   const { data: tagsPage, isLoading: tagsLoading } = useListTagsQuery({});
@@ -1788,38 +1809,58 @@ export function InterestPickerPage() {
   }
 
   return (
-    <Box sx={{ maxWidth: 720, width: "100%" }}>
-      <Typography variant="h1" component="h1"
-        sx={{ fontSize: "2rem", lineHeight: "40px", fontWeight: 500, letterSpacing: "-0.01em" }}>
-        Interests
-      </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mt: 1, mb: 5 }}>
-        Pick topics your weekly radar should cover.
-      </Typography>
+    <Box sx={{ maxWidth: 960, width: "100%" }}>
+      <PageHeader title="Interests" sub="Pick topics your weekly radar should cover." />
 
-      <Box sx={{ display: "flex", gap: 2, alignItems: "flex-end", mb: 5 }}>
-        <Box sx={{ flex: 1 }}>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          alignItems: "center",
+          mb: 5,
+          flexWrap: "wrap",
+        }}
+      >
+        <Box sx={{ flex: 1, minWidth: 280, maxWidth: 420 }}>
           <TextField
             label="Search"
-            placeholder="java, spring, security…"
+            placeholder="Search tags…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </Box>
-        <Typography variant="caption" color="text.secondary" sx={{ mb: "9px" }}>
-          {selected.size} selected
+        <Typography
+          sx={{
+            fontSize: 14,
+            color: "text.secondary",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          <Box component="strong" sx={{ color: "text.primary", fontWeight: 500 }}>
+            {selected.size}
+          </Box>{" "}
+          selected
         </Typography>
-        <Button onClick={onSave} disabled={!dirty || saveState.isLoading} sx={{ mb: "4px" }}>
+        <Box sx={{ flex: 1 }} />
+        <Button onClick={onSave} disabled={!dirty || saveState.isLoading}>
           {saveState.isLoading ? "Saving…" : "Save"}
         </Button>
       </Box>
 
       {saveState.isError && (
-        <Alert severity="error">Couldn't save your interests. Try again.</Alert>
+        <Box sx={{ mb: 4 }}>
+          <Alert severity="error">Couldn't save your interests. Try again.</Alert>
+        </Box>
       )}
 
       {tagsLoading && (
         <Typography variant="body2" color="text.secondary">Loading tags…</Typography>
+      )}
+
+      {!tagsLoading && filteredTags.length === 0 && (
+        <Box sx={{ py: 5, textAlign: "center", color: "text.secondary", fontSize: 14 }}>
+          No tags match “{query}”.
+        </Box>
       )}
 
       {CATEGORY_ORDER.map((cat) => {
@@ -1832,7 +1873,7 @@ export function InterestPickerPage() {
               color="text.secondary"
               sx={{ display: "block", mb: 2 }}
             >
-              {labelForCategory(cat)}
+              {CATEGORY_LABEL[cat]}
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {catTags.map((t) => (
@@ -1870,12 +1911,16 @@ git commit -m "feat(frontend): add InterestPickerPage with search, categories, a
 
 ---
 
-## Task 11: Frontend — `StatusChip` + `RadarRow` components (TDD)
+## Task 11: Frontend — `StatusTag`, `PulseDot`, `PageHeader` + `RadarRow` (TDD)
 
 **Files:**
-- Create: `frontend/src/components/StatusChip.tsx`
+- Create: `frontend/src/components/PulseDot.tsx`
+- Create: `frontend/src/components/StatusTag.tsx`
+- Create: `frontend/src/components/PageHeader.tsx`
 - Create: `frontend/src/components/RadarRow.tsx`
 - Create: `frontend/src/components/RadarRow.test.tsx`
+
+Per the Claude Design export: `StatusTag` is plain uppercase text (not a filled pill). `PulseDot` is the shared animated 7–8px dot used on GENERATING status, radar-detail header, and sidebar generating indicator. `PageHeader` is a reusable title+sub+right-slot composed by all three pages.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1907,12 +1952,20 @@ const ready: RadarSummary = {
 };
 
 describe("RadarRow", () => {
-  it("renders the period and status for READY radar", () => {
+  it("renders the period as the primary line", () => {
     render(withWrappers(<RadarRow radar={ready} />));
     expect(screen.getByText(/week of/i)).toBeInTheDocument();
-    expect(screen.getByText(/ready/i)).toBeInTheDocument();
-    // 4.2k tokens
+  });
+
+  it("renders metadata caption with tokens and seconds", () => {
+    render(withWrappers(<RadarRow radar={ready} />));
     expect(screen.getByText(/4\.2k tokens/i)).toBeInTheDocument();
+    expect(screen.getByText(/12\.0s/)).toBeInTheDocument();
+  });
+
+  it("renders 'Ready' as plain uppercase text", () => {
+    render(withWrappers(<RadarRow radar={ready} />));
+    expect(screen.getByText(/^ready$/i)).toBeInTheDocument();
   });
 
   it("links to /app/radars/:id", () => {
@@ -1920,9 +1973,10 @@ describe("RadarRow", () => {
     expect(screen.getByRole("link")).toHaveAttribute("href", "/app/radars/42");
   });
 
-  it("shows GENERATING with a pulsing dot", () => {
+  it("shows 'Generating' with a pulsing dot", () => {
     render(withWrappers(<RadarRow radar={{ ...ready, status: "GENERATING", generatedAt: null, generationMs: null }} />));
     expect(screen.getByText(/generating/i)).toBeInTheDocument();
+    expect(screen.getByText(/streaming themes/i)).toBeInTheDocument();
   });
 });
 ```
@@ -1935,37 +1989,61 @@ cd frontend && npm run test -- RadarRow
 
 Expected: FAIL.
 
-- [ ] **Step 3: Create `StatusChip`**
+- [ ] **Step 3: Create `PulseDot`**
 
-Create `frontend/src/components/StatusChip.tsx`:
+Create `frontend/src/components/PulseDot.tsx`:
 
 ```tsx
 import Box from "@mui/material/Box";
 import { keyframes } from "@mui/system";
-import type { RadarStatus } from "../api/types";
 
 const pulse = keyframes`
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
-  100% { opacity: 1; transform: scale(1); }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.3; transform: scale(0.85); }
 `;
 
-const TONE: Record<RadarStatus, { bg: string; color: string; border: string }> = {
-  READY:      { bg: "text.primary",                 color: "#ffffff",      border: "transparent" },
-  GENERATING: { bg: "transparent",                  color: "text.primary", border: "text.primary" },
-  FAILED:     { bg: "rgba(179,38,30,0.06)",         color: "#b3261e",      border: "rgba(179,38,30,0.3)" },
-};
+export interface PulseDotProps {
+  size?: number;
+  color?: string;
+}
 
-const LABEL: Record<RadarStatus, string> = {
-  READY: "Ready",
-  GENERATING: "Generating",
-  FAILED: "Failed",
-};
-
-export function StatusChip({ status }: { status: RadarStatus }) {
-  const tone = TONE[status];
+export function PulseDot({ size = 7, color = "text.primary" }: PulseDotProps) {
   return (
     <Box
+      component="span"
+      sx={{
+        display: "inline-block",
+        width: size,
+        height: size,
+        borderRadius: 999,
+        bgcolor: color,
+        animation: `${pulse} 1.2s ease-in-out infinite`,
+      }}
+    />
+  );
+}
+```
+
+- [ ] **Step 4: Create `StatusTag`**
+
+Create `frontend/src/components/StatusTag.tsx`:
+
+```tsx
+import Box from "@mui/material/Box";
+import { PulseDot } from "./PulseDot";
+import type { RadarStatus } from "../api/types";
+
+const STYLES: Record<RadarStatus, { color: string; label: string }> = {
+  READY:      { color: "text.secondary", label: "Ready" },
+  GENERATING: { color: "text.primary",   label: "Generating" },
+  FAILED:     { color: "error.main",     label: "Failed" },
+};
+
+export function StatusTag({ status }: { status: RadarStatus }) {
+  const { color, label } = STYLES[status];
+  return (
+    <Box
+      component="span"
       sx={{
         display: "inline-flex",
         alignItems: "center",
@@ -1973,32 +2051,78 @@ export function StatusChip({ status }: { status: RadarStatus }) {
         fontSize: 11,
         lineHeight: "16px",
         fontWeight: 500,
-        letterSpacing: "0.08em",
+        letterSpacing: "0.06em",
         textTransform: "uppercase",
-        padding: "3px 10px",
-        borderRadius: 999,
-        border: "1px solid",
-        borderColor: tone.border,
-        bgcolor: tone.bg,
-        color: tone.color,
+        color,
       }}
     >
-      {status === "GENERATING" && (
-        <Box
-          sx={{
-            width: 6, height: 6, borderRadius: "50%",
-            bgcolor: "text.primary",
-            animation: `${pulse} 1.4s ease-in-out infinite`,
-          }}
-        />
-      )}
-      {LABEL[status]}
+      {status === "GENERATING" && <PulseDot />}
+      {label}
     </Box>
   );
 }
 ```
 
-- [ ] **Step 4: Create `RadarRow`**
+- [ ] **Step 5: Create `PageHeader`**
+
+Create `frontend/src/components/PageHeader.tsx`:
+
+```tsx
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import type { ReactNode } from "react";
+
+export interface PageHeaderProps {
+  title: string;
+  sub?: string;
+  right?: ReactNode;
+}
+
+export function PageHeader({ title, sub, right }: PageHeaderProps) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "space-between",
+        gap: 3,
+        mb: 5,
+        flexWrap: "wrap",
+      }}
+    >
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          component="h1"
+          sx={{
+            m: 0,
+            fontSize: "2rem",
+            lineHeight: "40px",
+            fontWeight: 500,
+            letterSpacing: "-0.01em",
+            color: "text.primary",
+          }}
+        >
+          {title}
+        </Typography>
+        {sub && (
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mt: 1, fontSize: "0.9375rem", lineHeight: "24px" }}
+          >
+            {sub}
+          </Typography>
+        )}
+      </Box>
+      {right}
+    </Box>
+  );
+}
+```
+
+- [ ] **Step 6: Create `RadarRow`**
+
+Per the export, the row's top line is the period at 16px/500 and the metadata is a caption row below. For GENERATING status the metadata swaps to "Streaming themes now…". For FAILED it swaps to "Generation failed — retry from the detail view".
 
 Create `frontend/src/components/RadarRow.tsx`:
 
@@ -2006,32 +2130,15 @@ Create `frontend/src/components/RadarRow.tsx`:
 import { Link as RouterLink } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { StatusChip } from "./StatusChip";
+import { StatusTag } from "./StatusTag";
 import type { RadarSummary } from "../api/types";
 
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 function formatPeriod(startIso: string, endIso: string): string {
-  const start = new Date(startIso);
-  const end = new Date(endIso);
-  const fmt = (d: Date) =>
-    d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  return `Week of ${fmt(start)} – ${fmt(end)}`;
-}
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function formatTokens(n: number | null): string {
-  if (n == null) return "—";
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k tokens`;
-  return `${n} tokens`;
-}
-
-function formatMs(n: number | null): string {
-  if (n == null) return "—";
-  return `${Math.round(n / 1000)}s`;
+  return `Week of ${formatDate(startIso)} – ${formatDate(endIso)}`;
 }
 
 export interface RadarRowProps {
@@ -2039,13 +2146,9 @@ export interface RadarRowProps {
 }
 
 export function RadarRow({ radar }: RadarRowProps) {
-  const metaParts = [
-    formatDate(radar.generatedAt),
-    "·",
-    formatTokens(radar.tokenCount),
-    "·",
-    formatMs(radar.generationMs),
-  ];
+  const tokensK = radar.tokenCount != null ? (radar.tokenCount / 1000).toFixed(1) : null;
+  const seconds = radar.generationMs != null ? (radar.generationMs / 1000).toFixed(1) : null;
+
   return (
     <Box
       component={RouterLink}
@@ -2054,43 +2157,80 @@ export function RadarRow({ radar }: RadarRowProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "16px 12px",
+        gap: 3,
+        padding: "20px 12px",
+        mx: "-12px",
         borderBottom: 1,
         borderColor: "divider",
         textDecoration: "none",
         color: "text.primary",
-        "&:hover": { bgcolor: "rgba(45,42,38,0.04)" },
-        "&:first-of-type": { borderTop: 1, borderColor: "divider" },
+        transition: "background 120ms",
+        "&:hover": { bgcolor: "rgba(45,42,38,0.025)" },
       }}
     >
-      <Box>
-        <Typography variant="caption" color="text.secondary">
-          {metaParts.join(" ")}
-        </Typography>
-        <Typography variant="body1" sx={{ mt: "2px" }}>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography
+          sx={{
+            fontSize: 16,
+            lineHeight: "24px",
+            fontWeight: 500,
+            letterSpacing: "-0.005em",
+            color: "text.primary",
+            mb: "4px",
+          }}
+        >
           {formatPeriod(radar.periodStart, radar.periodEnd)}
         </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1.5,
+            flexWrap: "wrap",
+            fontSize: 13,
+            lineHeight: "20px",
+            color: "text.secondary",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {radar.status === "READY" && tokensK != null && seconds != null && (
+            <>
+              <span>3 themes</span>
+              <span>·</span>
+              <span>{tokensK}k tokens</span>
+              <span>·</span>
+              <span>{seconds}s</span>
+            </>
+          )}
+          {radar.status === "GENERATING" && <span>Streaming themes now…</span>}
+          {radar.status === "FAILED" && <span>Generation failed — retry from the detail view</span>}
+        </Box>
       </Box>
-      <StatusChip status={radar.status} />
+      <StatusTag status={radar.status} />
     </Box>
   );
 }
 ```
 
-- [ ] **Step 5: Run test**
+Note: the fixed "3 themes" string is a placeholder — our `RadarSummary` doesn't carry `themeCount` yet. If the backend DTO gains that field in a future task, swap `"3 themes"` for `{radar.themeCount} themes`. For Plan 8 it's acceptable — the detail page shows the real count.
+
+- [ ] **Step 7: Run test**
 
 ```bash
 cd frontend && npm run test -- RadarRow
 ```
 
-Expected: PASS (3/3).
+Expected: PASS (5/5).
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 cd /Users/purandhar/Work/Projects/AI_analyst
-git add frontend/src/components/StatusChip.tsx frontend/src/components/RadarRow.tsx frontend/src/components/RadarRow.test.tsx
-git commit -m "feat(frontend): add StatusChip (with pulsing GENERATING dot) and RadarRow"
+git add frontend/src/components/PulseDot.tsx \
+        frontend/src/components/StatusTag.tsx \
+        frontend/src/components/PageHeader.tsx \
+        frontend/src/components/RadarRow.tsx \
+        frontend/src/components/RadarRow.test.tsx
+git commit -m "feat(frontend): add PulseDot, StatusTag (plain uppercase), PageHeader, and RadarRow"
 ```
 
 ---
@@ -2167,6 +2307,8 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement**
 
+Per the export: first-time banner uses a calm `rgba(45,42,38,0.03)` bg + divider border (not a left-accent). Empty state is a dashed-border centered block with a serif italic "No radars yet." headline at 20/28.
+
 Create `frontend/src/pages/RadarListPage.tsx`:
 
 ```tsx
@@ -2175,7 +2317,9 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { Button } from "../components/Button";
 import { Alert } from "../components/Alert";
+import { PageHeader } from "../components/PageHeader";
 import { RadarRow } from "../components/RadarRow";
+import { serifStack } from "../theme";
 import { useCreateRadarMutation, useListRadarsQuery } from "../api/radarApi";
 import { useGetMyInterestsQuery } from "../api/interestApi";
 
@@ -2190,84 +2334,118 @@ export function RadarListPage() {
   const hasRadars = radars.length > 0;
 
   async function onGenerate() {
+    if (!hasInterests) return;
     const created = await createRadar().unwrap().catch(() => null);
     if (created) navigate(`/app/radars/${created.id}`);
   }
 
   return (
-    <Box sx={{ maxWidth: 720, width: "100%" }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 2,
-        }}
-      >
-        <Box>
-          <Typography variant="h1" component="h1"
-            sx={{ fontSize: "2rem", lineHeight: "40px", fontWeight: 500, letterSpacing: "-0.01em" }}>
-            Radars
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-            Your weekly briefs.
-          </Typography>
-        </Box>
-        <Button
-          onClick={onGenerate}
-          disabled={!hasInterests || createState.isLoading}
-          title={hasInterests ? undefined : "Pick at least one interest first"}
-        >
-          {createState.isLoading ? "Starting…" : "Generate new radar"}
-        </Button>
-      </Box>
+    <Box sx={{ maxWidth: 960, width: "100%" }}>
+      <PageHeader
+        title="Radars"
+        sub="Your weekly briefs."
+        right={
+          <Button
+            onClick={onGenerate}
+            disabled={!hasInterests || createState.isLoading}
+            title={hasInterests ? undefined : "Pick at least one interest first"}
+          >
+            {createState.isLoading ? "Starting…" : "Generate new radar"}
+          </Button>
+        }
+      />
 
       {createState.isError && (
-        <Alert severity="error">Couldn't start a new radar. Try again.</Alert>
+        <Box sx={{ mb: 4 }}>
+          <Alert severity="error">Couldn't start a new radar. Try again.</Alert>
+        </Box>
       )}
 
       {!hasInterests && interests !== undefined && (
         <Box
           sx={{
-            mt: 5,
-            borderLeft: "3px solid",
-            borderColor: "text.primary",
-            bgcolor: "background.paper",
+            mb: 4,
             padding: "16px 20px",
+            bgcolor: "rgba(45,42,38,0.03)",
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
           }}
         >
-          <Typography variant="body1">
+          <Typography sx={{ fontSize: 14, lineHeight: "22px", color: "text.primary" }}>
             Pick a few interests to generate your first radar.
           </Typography>
-          <Button
-            variant="text"
+          <Box
+            component="button"
             onClick={() => navigate("/app/interests")}
-            sx={{ mt: 1, px: 0 }}
+            sx={{
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              fontFamily: "inherit",
+              fontSize: 14,
+              fontWeight: 500,
+              color: "text.primary",
+              cursor: "pointer",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
+            }}
           >
             Pick interests →
+          </Box>
+        </Box>
+      )}
+
+      {isLoading && (
+        <Typography variant="body2" color="text.secondary">Loading radars…</Typography>
+      )}
+
+      {!isLoading && !hasRadars && hasInterests && (
+        <Box
+          sx={{
+            padding: "80px 24px",
+            textAlign: "center",
+            border: "1px dashed",
+            borderColor: "divider",
+            borderRadius: 3,
+            bgcolor: "background.paper",
+          }}
+        >
+          <Box
+            sx={{
+              fontFamily: serifStack,
+              fontSize: 20,
+              lineHeight: "28px",
+              fontStyle: "italic",
+              color: "text.primary",
+              mb: 1,
+            }}
+          >
+            No radars yet.
+          </Box>
+          <Typography
+            sx={{ fontSize: 14, color: "text.secondary", mb: 3, lineHeight: "22px" }}
+          >
+            Generate one to see how the weekly brief comes together.
+          </Typography>
+          <Button onClick={onGenerate} disabled={createState.isLoading}>
+            Generate your first radar
           </Button>
         </Box>
       )}
 
-      <Box sx={{ mt: 5 }}>
-        {isLoading && (
-          <Typography variant="body2" color="text.secondary">Loading radars…</Typography>
-        )}
-        {!isLoading && !hasRadars && hasInterests && (
-          <Box sx={{ textAlign: "center", py: 8 }}>
-            <Typography variant="h2" sx={{ mb: 1 }}>No radars yet.</Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Generate your first brief — it takes about 30 seconds.
-            </Typography>
-            <Button onClick={onGenerate} disabled={createState.isLoading}>
-              Generate new radar
-            </Button>
-          </Box>
-        )}
-        {radars.map((r) => (
-          <RadarRow key={r.id} radar={r} />
-        ))}
-      </Box>
+      {hasRadars && (
+        <Box sx={{ borderTop: 1, borderColor: "divider" }}>
+          {radars.map((r) => (
+            <RadarRow key={r.id} radar={r} />
+          ))}
+        </Box>
+      )}
     </Box>
   );
 }
@@ -2291,12 +2469,15 @@ git commit -m "feat(frontend): add RadarListPage with first-time nudge, empty st
 
 ---
 
-## Task 13: Frontend — `CitationPill` + `ThemeCard` components (TDD)
+## Task 13: Frontend — `CitationPill`, `ThemeCard`, `ThemeSkeleton` components (TDD)
 
 **Files:**
 - Create: `frontend/src/components/CitationPill.tsx`
 - Create: `frontend/src/components/ThemeCard.tsx`
+- Create: `frontend/src/components/ThemeSkeleton.tsx`
 - Create: `frontend/src/components/ThemeCard.test.tsx`
+
+Per the Claude Design export: citation pills are mono `[n]` at 11px with a hover tooltip (not a native title attribute); ThemeCard has a "SOURCES" overline above the pills; ThemeSkeleton renders shimmer placeholders for themes that haven't streamed in yet.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -2305,9 +2486,11 @@ Create `frontend/src/components/ThemeCard.test.tsx`:
 ```tsx
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ThemeProvider } from "@mui/material/styles";
 import { theme } from "../theme";
 import { ThemeCard } from "./ThemeCard";
+import { ThemeSkeleton } from "./ThemeSkeleton";
 import type { RadarTheme } from "../api/types";
 
 function withTheme(ui: React.ReactNode) {
@@ -2326,12 +2509,33 @@ const sample: RadarTheme = {
 };
 
 describe("ThemeCard", () => {
-  it("renders title, summary, and numbered citation pills", () => {
+  it("renders title, summary, a SOURCES overline, and numbered citation pills", () => {
     render(withTheme(<ThemeCard theme={sample} />));
     expect(screen.getByRole("heading", { name: /spring boot ecosystem/i })).toBeInTheDocument();
     expect(screen.getByText(/virtual thread support/i)).toBeInTheDocument();
+    expect(screen.getByText(/^sources$/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /\[1\]/i })).toHaveAttribute("href", "https://spring.io/3.5");
     expect(screen.getByRole("link", { name: /\[2\]/i })).toHaveAttribute("href", "https://example.com/vt");
+  });
+
+  it("omits the SOURCES overline when there are no items", () => {
+    render(withTheme(<ThemeCard theme={{ ...sample, items: [] }} />));
+    expect(screen.queryByText(/^sources$/i)).not.toBeInTheDocument();
+  });
+
+  it("reveals the source title on citation hover", async () => {
+    const user = userEvent.setup();
+    render(withTheme(<ThemeCard theme={sample} />));
+    const pill = screen.getByRole("link", { name: /\[1\]/i });
+    await user.hover(pill);
+    expect(await screen.findByText(/spring boot 3\.5 released/i)).toBeInTheDocument();
+  });
+});
+
+describe("ThemeSkeleton", () => {
+  it("renders a placeholder with role=status", () => {
+    render(withTheme(<ThemeSkeleton />));
+    expect(screen.getByRole("status")).toBeInTheDocument();
   });
 });
 ```
@@ -2349,54 +2553,153 @@ Expected: FAIL.
 Create `frontend/src/components/CitationPill.tsx`:
 
 ```tsx
+import { useState } from "react";
 import Box from "@mui/material/Box";
-import Link from "@mui/material/Link";
+import { monoStack } from "../theme";
+
+export interface CitationPillSource {
+  title: string;
+  url: string;
+  author?: string | null;
+}
 
 export interface CitationPillProps {
   index: number; // 1-based
-  title: string;
-  url: string;
+  source: CitationPillSource;
 }
 
-export function CitationPill({ index, title, url }: CitationPillProps) {
+export function CitationPill({ index, source }: CitationPillProps) {
+  const [hover, setHover] = useState(false);
   return (
-    <Box
-      component={Link}
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      title={title}
-      underline="none"
-      sx={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "3px 10px",
-        borderRadius: 999,
-        border: "1px solid",
-        borderColor: "divider",
-        fontSize: 12,
-        lineHeight: "16px",
-        fontWeight: 500,
-        color: "text.primary",
-        "&:hover": { borderColor: "text.primary", bgcolor: "rgba(45,42,38,0.04)" },
-      }}
-    >
-      [{index}]
+    <Box component="span" sx={{ position: "relative", display: "inline-block" }}>
+      <Box
+        component="a"
+        href={source.url}
+        target="_blank"
+        rel="noreferrer noopener"
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minWidth: 24,
+          height: 20,
+          padding: "0 6px",
+          borderRadius: "4px",
+          fontFamily: monoStack,
+          fontSize: 11,
+          lineHeight: 1,
+          color: "text.primary",
+          bgcolor: hover ? "rgba(45,42,38,0.08)" : "rgba(45,42,38,0.04)",
+          border: "1px solid",
+          borderColor: "divider",
+          textDecoration: "none",
+          verticalAlign: "baseline",
+          cursor: "pointer",
+          transition: "background 120ms",
+        }}
+      >
+        [{index}]
+      </Box>
+      {hover && (
+        <Box
+          component="span"
+          role="tooltip"
+          sx={{
+            position: "absolute",
+            bottom: "100%",
+            left: 0,
+            mb: "6px",
+            padding: "8px 12px",
+            bgcolor: "text.primary",
+            color: "#fff",
+            fontSize: 12,
+            lineHeight: "16px",
+            borderRadius: "6px",
+            whiteSpace: "nowrap",
+            maxWidth: 280,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            zIndex: 10,
+            pointerEvents: "none",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          }}
+        >
+          {source.title}
+          {source.author && (
+            <Box component="span" sx={{ opacity: 0.6, ml: "6px" }}>· {source.author}</Box>
+          )}
+        </Box>
+      )}
     </Box>
   );
 }
 ```
 
-- [ ] **Step 4: Create `ThemeCard`**
+- [ ] **Step 4: Create `ThemeSkeleton`**
+
+Create `frontend/src/components/ThemeSkeleton.tsx`:
+
+```tsx
+import Box from "@mui/material/Box";
+import { keyframes } from "@mui/system";
+
+const shimmer = keyframes`
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+`;
+
+const LINE_WIDTHS = ["100%", "96%", "100%", "78%"];
+
+export function ThemeSkeleton() {
+  return (
+    <Box component="article" role="status" aria-label="Loading theme" sx={{ mb: 6, opacity: 0.9 }}>
+      <Box
+        sx={{
+          height: 24,
+          width: "58%",
+          mb: "20px",
+          bgcolor: "rgba(45,42,38,0.07)",
+          borderRadius: "4px",
+          animation: `${shimmer} 1.4s ease-in-out infinite`,
+        }}
+      />
+      {LINE_WIDTHS.map((w, i) => (
+        <Box
+          key={i}
+          sx={{
+            height: 14,
+            width: w,
+            mb: "10px",
+            bgcolor: "rgba(45,42,38,0.05)",
+            borderRadius: "4px",
+            animation: `${shimmer} 1.4s ease-in-out infinite`,
+            animationDelay: `${i * 120}ms`,
+          }}
+        />
+      ))}
+    </Box>
+  );
+}
+```
+
+- [ ] **Step 5: Create `ThemeCard`**
 
 Create `frontend/src/components/ThemeCard.tsx`:
 
 ```tsx
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { keyframes } from "@mui/system";
 import { serifStack } from "../theme";
 import { CitationPill } from "./CitationPill";
 import type { RadarTheme } from "../api/types";
+
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+`;
 
 export interface ThemeCardProps {
   theme: RadarTheme;
@@ -2404,10 +2707,12 @@ export interface ThemeCardProps {
 
 export function ThemeCard({ theme }: ThemeCardProps) {
   return (
-    <Box sx={{ mb: 6 }}>
+    <Box component="article" sx={{ mb: 6, animation: `${fadeIn} 400ms ease-out` }}>
       <Typography
         component="h2"
         sx={{
+          m: 0,
+          mb: 2,
           fontSize: "1.5rem",
           lineHeight: "32px",
           fontWeight: 500,
@@ -2421,20 +2726,31 @@ export function ThemeCard({ theme }: ThemeCardProps) {
       <Box
         sx={{
           fontFamily: serifStack,
-          fontSize: "1.0625rem",  // 17
+          fontSize: "1.0625rem",  // 17px
           lineHeight: "28px",
           color: "text.primary",
-          mt: 2,
           whiteSpace: "pre-line",
+          textWrap: "pretty",
         }}
       >
         {theme.summary}
       </Box>
 
       {theme.items.length > 0 && (
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}>
+        <Box sx={{ mt: "20px", display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+          <Typography
+            variant="overline"
+            color="text.secondary"
+            sx={{ mr: "6px" }}
+          >
+            Sources
+          </Typography>
           {theme.items.map((item, idx) => (
-            <CitationPill key={item.id} index={idx + 1} title={item.title} url={item.url} />
+            <CitationPill
+              key={item.id}
+              index={idx + 1}
+              source={{ title: item.title, url: item.url, author: item.author }}
+            />
           ))}
         </Box>
       )}
@@ -2443,20 +2759,23 @@ export function ThemeCard({ theme }: ThemeCardProps) {
 }
 ```
 
-- [ ] **Step 5: Run test**
+- [ ] **Step 6: Run test**
 
 ```bash
 cd frontend && npm run test -- ThemeCard
 ```
 
-Expected: PASS.
+Expected: PASS (4/4).
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 cd /Users/purandhar/Work/Projects/AI_analyst
-git add frontend/src/components/CitationPill.tsx frontend/src/components/ThemeCard.tsx frontend/src/components/ThemeCard.test.tsx
-git commit -m "feat(frontend): add CitationPill and ThemeCard (serif summary + numbered citations)"
+git add frontend/src/components/CitationPill.tsx \
+        frontend/src/components/ThemeCard.tsx \
+        frontend/src/components/ThemeSkeleton.tsx \
+        frontend/src/components/ThemeCard.test.tsx
+git commit -m "feat(frontend): add CitationPill (mono [n] + hover tooltip), ThemeCard (SOURCES overline), and ThemeSkeleton"
 ```
 
 ---
@@ -2553,6 +2872,8 @@ Expected: FAIL.
 
 - [ ] **Step 3: Implement `ProposalApproveModal`**
 
+Per the export: the modal opens with a contextual preview row (CVE id + package name + current version in a secondary-tinted box) above the editable version field. Primary button shows a pulse dot + "Opening PR…" while submitting.
+
 Create `frontend/src/components/ProposalApproveModal.tsx`:
 
 ```tsx
@@ -2566,16 +2887,25 @@ import Box from "@mui/material/Box";
 import { Button } from "./Button";
 import { TextField } from "./TextField";
 import { Alert } from "./Alert";
+import { PulseDot } from "./PulseDot";
+import { monoStack } from "../theme";
+
+export interface ProposalApproveContext {
+  cveId: string;
+  packageName: string;
+  fromVersion: string;
+}
 
 export interface ProposalApproveModalProps {
   open: boolean;
+  context: ProposalApproveContext;
   initialFixVersion: string;
   onCancel: () => void;
   onSubmit: (fixVersion: string) => Promise<void>;
 }
 
 export function ProposalApproveModal(props: ProposalApproveModalProps) {
-  const { open, initialFixVersion, onCancel, onSubmit } = props;
+  const { open, context, initialFixVersion, onCancel, onSubmit } = props;
   const [fixVersion, setFixVersion] = useState(initialFixVersion);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -2601,29 +2931,74 @@ export function ProposalApproveModal(props: ProposalApproveModalProps) {
       maxWidth="xs"
       fullWidth
       aria-labelledby="approve-pr-title"
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          boxShadow: "0 1px 2px rgba(45,42,38,0.04), 0 12px 40px rgba(45,42,38,0.15)",
+        },
+      }}
     >
-      <DialogTitle id="approve-pr-title">Open migration PR</DialogTitle>
+      <DialogTitle
+        id="approve-pr-title"
+        sx={{ fontSize: 20, lineHeight: "28px", fontWeight: 500, letterSpacing: "-0.01em" }}
+      >
+        Open migration PR
+      </DialogTitle>
       <Box component="form" onSubmit={handleSubmit}>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography
+            sx={{ fontSize: 14, lineHeight: "22px", color: "text.secondary", mb: 3 }}
+          >
             This will push a branch to your GitHub repo and open a PR. You can review it before merging.
           </Typography>
+
+          <Box
+            sx={{
+              padding: "12px 14px",
+              bgcolor: "rgba(45,42,38,0.03)",
+              borderRadius: 1,
+              mb: 2.5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1.5,
+              fontSize: 13,
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Box sx={{ fontFamily: monoStack, fontSize: 11, color: "text.secondary" }}>
+                {context.cveId}
+              </Box>
+              <Box sx={{ fontWeight: 500, mt: "2px" }}>{context.packageName}</Box>
+            </Box>
+            <Box sx={{ fontFamily: monoStack, color: "text.secondary" }}>
+              {context.fromVersion}
+            </Box>
+          </Box>
+
           {error && (
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: 2.5 }}>
               <Alert severity="error">{error}</Alert>
             </Box>
           )}
+
           <TextField
             label="Upgrade to version"
             value={fixVersion}
             onChange={(e) => setFixVersion(e.target.value)}
+            disabled={submitting}
             required
             autoFocus
+            InputProps={{ sx: { fontFamily: monoStack } }}
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button variant="text" onClick={onCancel} disabled={submitting}>Cancel</Button>
-          <Button type="submit" disabled={submitting || !fixVersion.trim()}>
+          <Button
+            type="submit"
+            disabled={submitting || !fixVersion.trim()}
+            startIcon={submitting ? <PulseDot size={6} color="#ffffff" /> : undefined}
+          >
             {submitting ? "Opening PR…" : "Open PR"}
           </Button>
         </DialogActions>
@@ -2635,13 +3010,14 @@ export function ProposalApproveModal(props: ProposalApproveModalProps) {
 
 - [ ] **Step 4: Implement `ProposalCard`**
 
+Per the export: card body is CVE id (mono 11px) → package name (sans 14/500) → inline SVG arrow between `fromVersion` and `toVersion` (mono 13). PROPOSED shows primary "Approve" + ghost "Dismiss". EXECUTED shows success-green `[✓] PR opened →`. FAILED shows tinted error block + "Retry" outlined pill. DISMISSED fades to opacity 0.5 + "Dismissed" caption.
+
 Create `frontend/src/components/ProposalCard.tsx`:
 
 ```tsx
 import { useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import Link from "@mui/material/Link";
 import { Button } from "./Button";
 import { Alert } from "./Alert";
 import { ProposalApproveModal } from "./ProposalApproveModal";
@@ -2654,6 +3030,50 @@ function parsePayload(json: string): Partial<CveFixPayload> {
   catch { return {}; }
 }
 
+function ArrowIcon() {
+  return (
+    <Box
+      component="svg"
+      width="14"
+      height="10"
+      viewBox="0 0 14 10"
+      fill="none"
+      aria-hidden="true"
+      sx={{ flexShrink: 0, width: 14, height: 10, opacity: 0.5 }}
+    >
+      <path
+        d="M1 5h12M9 1l4 4-4 4"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Box>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <Box
+      component="svg"
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden="true"
+      sx={{ flexShrink: 0, width: 14, height: 14 }}
+    >
+      <path
+        d="M2 7.5l3 3 7-7"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Box>
+  );
+}
+
 export interface ProposalCardProps {
   proposal: ActionProposal;
 }
@@ -2664,7 +3084,10 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
   const [approve] = useApproveProposalMutation();
   const [dismiss, dismissState] = useDismissProposalMutation();
 
-  const dimmed = proposal.status === "DISMISSED";
+  const isProposed = proposal.status === "PROPOSED";
+  const isExecuted = proposal.status === "EXECUTED";
+  const isDismissed = proposal.status === "DISMISSED";
+  const isFailed = proposal.status === "FAILED";
 
   async function handleApprove(fixVersion: string) {
     await approve({ id: proposal.id, fixVersion }).unwrap();
@@ -2684,63 +3107,113 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
   return (
     <Box
       sx={{
-        border: 1,
-        borderColor: proposal.status === "EXECUTED" ? "success.main" : "divider",
-        borderRadius: 2,
         padding: 2,
-        opacity: dimmed ? 0.5 : 1,
-        transition: "opacity 200ms ease",
+        bgcolor: "background.paper",
+        border: 1,
+        borderColor: "divider",
+        borderRadius: 1,
+        mb: "12px",
+        opacity: isDismissed ? 0.5 : 1,
+        transition: "opacity 200ms",
       }}
     >
-      <Typography
-        variant="overline"
-        color="text.secondary"
-        sx={{ display: "block", fontFamily: monoStack }}
+      <Box
+        sx={{
+          fontFamily: monoStack,
+          fontSize: 11,
+          letterSpacing: "0.04em",
+          color: "text.secondary",
+          mb: "6px",
+        }}
       >
         {payload.cveId ?? "CVE"}
-      </Typography>
-      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+      </Box>
+      <Typography
+        sx={{
+          fontSize: 14,
+          lineHeight: "20px",
+          fontWeight: 500,
+          color: "text.primary",
+          mb: "10px",
+        }}
+      >
         {payload.packageName ?? "package"}
       </Typography>
-      <Typography sx={{ mt: 0.5, fontFamily: monoStack, fontSize: "0.875rem" }}>
-        {payload.currentVersion ?? "—"} &nbsp;→&nbsp; {payload.fixVersion ?? "—"}
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          fontFamily: monoStack,
+          fontSize: 13,
+          color: "text.primary",
+          mb: 2,
+        }}
+      >
+        <Box component="span" sx={{ color: "text.secondary" }}>
+          {payload.currentVersion ?? "—"}
+        </Box>
+        <ArrowIcon />
+        <Box component="span" sx={{ fontWeight: 500 }}>
+          {payload.fixVersion ?? "—"}
+        </Box>
+      </Box>
 
-      {proposal.status === "PROPOSED" && (
-        <Box sx={{ mt: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
-          <Button onClick={() => setModalOpen(true)}>Approve</Button>
+      {isFailed && (
+        <Box sx={{ mb: 1.5 }}>
+          <Alert severity="error">{proposal.failureReason ?? "PR creation failed."}</Alert>
+        </Box>
+      )}
+
+      {isProposed && (
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+          <Button size="small" onClick={() => setModalOpen(true)}>
+            Approve
+          </Button>
           <Button variant="text" onClick={handleDismiss} disabled={dismissState.isLoading}>
             Dismiss
           </Button>
         </Box>
       )}
 
-      {proposal.status === "EXECUTED" && proposal.prUrl && (
-        <Box sx={{ mt: 2 }}>
-          <Link
-            href={proposal.prUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            sx={{ color: "text.primary", textDecoration: "underline", textUnderlineOffset: "3px" }}
-          >
-            PR opened →
-          </Link>
+      {isExecuted && proposal.prUrl && (
+        <Box
+          component="a"
+          href={proposal.prUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            fontSize: 13,
+            fontWeight: 500,
+            color: "success.main",
+            textDecoration: "none",
+          }}
+        >
+          <CheckIcon />
+          PR opened →
         </Box>
       )}
 
-      {proposal.status === "FAILED" && (
-        <Box sx={{ mt: 2 }}>
-          <Alert severity="error">
-            {proposal.failureReason ?? "PR creation failed."}
-          </Alert>
-          <Box sx={{ mt: 1 }}>
-            <Button variant="text" onClick={handleRetry}>Retry</Button>
-          </Box>
-        </Box>
+      {isDismissed && (
+        <Typography sx={{ fontSize: 13, color: "text.secondary" }}>Dismissed</Typography>
+      )}
+
+      {isFailed && (
+        <Button variant="outlined" size="small" onClick={handleRetry}>
+          Retry
+        </Button>
       )}
 
       <ProposalApproveModal
         open={modalOpen}
+        context={{
+          cveId: payload.cveId ?? "CVE",
+          packageName: payload.packageName ?? "package",
+          fromVersion: payload.currentVersion ?? "—",
+        }}
         initialFixVersion={payload.fixVersion ?? ""}
         onCancel={() => setModalOpen(false)}
         onSubmit={handleApprove}
@@ -2870,38 +3343,42 @@ Expected: FAIL.
 
 - [ ] **Step 4: Implement**
 
+Matches `docs/superpowers/design-assets/2026-04-22-plan8-frontend/Dev-Radar-Product.html` `RadarDetailScreen`. Grid layout `minmax(0, 720px) 300px` with 48px gap. Overline + synthetic h1 "This week in your stack" + metadata row (streaming mode shows `PulseDot + "Generating themes…" + "N of M"`; READY shows `N themes · Xs · Ykk tokens`). Persisted themes render as `<ThemeCard>`; pending themes during stream render as `<ThemeSkeleton>`.
+
 Create `frontend/src/pages/RadarDetailPage.tsx`:
 
 ```tsx
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { keyframes } from "@mui/system";
+import { PulseDot } from "../components/PulseDot";
 import { ThemeCard } from "../components/ThemeCard";
+import { ThemeSkeleton } from "../components/ThemeSkeleton";
 import { ProposalCard } from "../components/ProposalCard";
 import { useGetRadarQuery, radarApi } from "../api/radarApi";
 import { useListProposalsByRadarQuery } from "../api/actionApi";
+import { useGetMyInterestsQuery } from "../api/interestApi";
 import { useRadarStream } from "../radar/useRadarStream";
 import { generationFinished, generationStarted } from "../radar/radarGenerationSlice";
-import type { AppDispatch } from "../store";
+import type { AppDispatch, RootState } from "../store";
 import type { RadarTheme } from "../api/types";
 
-const pulse = keyframes`
-  0% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
-  100% { opacity: 1; transform: scale(1); }
-`;
-
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-`;
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 function formatPeriod(startIso: string, endIso: string): string {
-  const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  return `Week of ${fmt(new Date(startIso))} – ${fmt(new Date(endIso))}`;
+  return `Week of ${formatDate(startIso)} – ${formatDate(endIso)}`;
+}
+
+/** Best-effort expected theme count for the progress counter while streaming.
+ *  The backend doesn't tell us how many themes the orchestrator will produce,
+ *  so we estimate from the user's interest count (min 2, max 5). This only
+ *  controls how many skeleton placeholders render. */
+function estimateExpectedThemes(interestCount: number): number {
+  return Math.max(2, Math.min(5, Math.ceil(interestCount / 2)));
 }
 
 export function RadarDetailPage() {
@@ -2912,19 +3389,25 @@ export function RadarDetailPage() {
 
   const { data: radar, error } = useGetRadarQuery(radarId, { skip: !radarId });
   const { data: proposals = [] } = useListProposalsByRadarQuery(radarId, { skip: !radarId });
+  const { data: myInterests } = useGetMyInterestsQuery();
 
   const isGenerating = radar?.status === "GENERATING";
   const stream = useRadarStream(radarId, isGenerating);
+  const streaming = isGenerating && stream.status !== "complete" && stream.status !== "failed";
+
+  const sidebarGeneratingId = useSelector(
+    (s: RootState) => s.radarGeneration.currentGeneratingRadarId,
+  );
 
   // Track generating radar in the sidebar indicator
   useEffect(() => {
-    if (isGenerating) {
+    if (isGenerating && sidebarGeneratingId !== radarId) {
       dispatch(generationStarted({ radarId, startedAt: new Date().toISOString() }));
     }
     return () => { dispatch(generationFinished()); };
-  }, [dispatch, radarId, isGenerating]);
+  }, [dispatch, radarId, isGenerating, sidebarGeneratingId]);
 
-  // When the stream completes, refetch the radar to pick up full items + metadata
+  // When the stream finishes, refetch the radar for full item metadata
   useEffect(() => {
     if (stream.status === "complete" || stream.status === "failed") {
       dispatch(radarApi.util.invalidateTags([{ type: "Radar", id: radarId }]));
@@ -2938,7 +3421,8 @@ export function RadarDetailPage() {
     }
   }, [error, navigate]);
 
-  // Merge: persisted themes from API + streamed themes (streamed ones lack real item metadata)
+  // Merge persisted themes + streamed themes (streamed ones have empty items
+  // until the final refetch fills in full metadata)
   const themes: RadarTheme[] = useMemo(() => {
     const persisted = radar?.themes ?? [];
     if (!isGenerating) return persisted;
@@ -2963,83 +3447,104 @@ export function RadarDetailPage() {
     );
   }
 
-  const showGenerating =
-    isGenerating && stream.status !== "complete" && stream.status !== "failed";
+  const expectedThemes = estimateExpectedThemes(myInterests?.length ?? 3);
+  const pendingCount = streaming ? Math.max(0, expectedThemes - themes.length) : 0;
 
   return (
-    <Box sx={{ display: "flex", gap: 5, alignItems: "flex-start" }}>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 720px) 300px" },
+        gap: { xs: 5, lg: 6 },
+        alignItems: "flex-start",
+      }}
+    >
       {/* Read column */}
-      <Box sx={{ flex: 1, maxWidth: 720, minWidth: 0 }}>
-        <Typography variant="overline" color="text.secondary" sx={{ display: "block" }}>
-          {formatPeriod(radar.periodStart, radar.periodEnd)}
-        </Typography>
-        <Typography
-          component="h1"
-          sx={{ fontSize: "2rem", lineHeight: "40px", fontWeight: 500, letterSpacing: "-0.01em", mt: 1 }}
-        >
-          Radar #{radar.id}
-        </Typography>
-
-        {showGenerating && (
-          <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1, mt: 2 }}>
-            <Box
-              sx={{
-                width: 8, height: 8, borderRadius: "50%",
-                bgcolor: "text.primary",
-                animation: `${pulse} 1.4s ease-in-out infinite`,
-              }}
-            />
-            <Typography variant="body2" color="text.secondary">Generating…</Typography>
+      <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ mb: 5 }}>
+          <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+            {formatPeriod(radar.periodStart, radar.periodEnd)}
+          </Typography>
+          <Typography
+            component="h1"
+            sx={{
+              m: 0,
+              fontSize: "2rem",
+              lineHeight: "40px",
+              fontWeight: 500,
+              letterSpacing: "-0.01em",
+              color: "text.primary",
+            }}
+          >
+            This week in your stack
+          </Typography>
+          <Box
+            sx={{
+              mt: 1.5,
+              fontSize: 13,
+              lineHeight: "20px",
+              color: "text.secondary",
+              display: "flex",
+              alignItems: "center",
+              gap: 1.25,
+              flexWrap: "wrap",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {streaming ? (
+              <>
+                <PulseDot />
+                <span>Generating themes…</span>
+                <span>·</span>
+                <span>{themes.length} of {expectedThemes}</span>
+              </>
+            ) : (
+              <>
+                <span>{themes.length} themes</span>
+                <span>·</span>
+                <span>{((radar.generationMs ?? 0) / 1000).toFixed(1)}s</span>
+                <span>·</span>
+                <span>{((radar.tokenCount ?? 0) / 1000).toFixed(1)}k tokens</span>
+              </>
+            )}
           </Box>
-        )}
 
-        {!isGenerating && radar.status === "READY" && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Generated in {Math.round((radar.generationMs ?? 0) / 1000)}s ·{" "}
-            {(radar.tokenCount ?? 0).toLocaleString()} tokens
-          </Typography>
-        )}
-
-        {stream.status === "failed" && (
-          <Typography variant="body2" color="error" sx={{ mt: 2 }}>
-            Generation failed: {stream.error ?? "unknown error"}
-          </Typography>
-        )}
-
-        <Box sx={{ mt: 6 }}>
-          {themes.map((t, idx) => (
-            <Box
-              key={t.id}
-              sx={{
-                animation: idx >= (radar.themes?.length ?? 0)
-                  ? `${fadeIn} 300ms ease-out`
-                  : "none",
-              }}
-            >
-              <ThemeCard theme={t} />
-            </Box>
-          ))}
-          {themes.length === 0 && !showGenerating && (
-            <Typography variant="body2" color="text.secondary">
-              This radar has no themes.
+          {stream.status === "failed" && (
+            <Typography variant="body2" color="error" sx={{ mt: 2 }}>
+              Generation failed: {stream.error ?? "unknown error"}
             </Typography>
           )}
         </Box>
+
+        {themes.map((t) => (
+          <ThemeCard key={t.id} theme={t} />
+        ))}
+        {streaming &&
+          Array.from({ length: pendingCount }).map((_, i) => (
+            <ThemeSkeleton key={`sk-${i}`} />
+          ))}
+
+        {!streaming && themes.length === 0 && (
+          <Box
+            sx={{
+              padding: "80px 24px",
+              textAlign: "center",
+              border: "1px dashed",
+              borderColor: "divider",
+              borderRadius: 3,
+              color: "text.secondary",
+              fontSize: 14,
+            }}
+          >
+            No themes generated.
+          </Box>
+        )}
       </Box>
 
       {/* Proposals column */}
       {proposals.length > 0 && (
-        <Box
-          component="aside"
-          sx={{
-            width: { xs: "100%", lg: 280 },
-            flexShrink: 0,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
-        >
-          <Typography variant="overline" color="text.secondary" sx={{ display: "block" }}>
+        <Box component="aside">
+          <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 2 }}>
             Action proposals
           </Typography>
           {proposals.map((p) => (
