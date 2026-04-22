@@ -36,7 +36,7 @@ describe("App routing", () => {
     expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
   });
 
-  it("login flow lands at /app", async () => {
+  it("login flow lands at /app/radars with the Radars heading", async () => {
     localStorage.clear();
     tokenStorage.clear();
     const { user } = renderAt("/login");
@@ -44,7 +44,7 @@ describe("App routing", () => {
     await user.type(screen.getByLabelText(/password/i), "ok");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
     await waitFor(() =>
-      expect(screen.getByText(/^test user$/i)).toBeInTheDocument(),
+      expect(screen.getByRole("heading", { name: /^radars$/i, level: 1 })).toBeInTheDocument(),
     );
   });
 });
