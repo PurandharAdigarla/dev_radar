@@ -6,10 +6,11 @@ export const handlers = [
     if (body.password === "wrong") {
       return HttpResponse.json({ message: "Invalid credentials" }, { status: 401 });
     }
+    // Match real backend — login returns only tokens.
+    void body;
     return HttpResponse.json({
       accessToken: "access-1",
       refreshToken: "refresh-1",
-      user: { id: 1, email: body.email, displayName: "Test User" },
     });
   }),
 
@@ -29,7 +30,9 @@ export const handlers = [
     if (auth === "Bearer expired") {
       return HttpResponse.json({ message: "Token expired" }, { status: 401 });
     }
-    return HttpResponse.json({ id: 1, email: "a@b.com", displayName: "Alice" });
+    // displayName "Test User" is asserted in App.test.tsx's login flow
+    // (`welcome, test user`), and email "a@b.com" is asserted in useAuth.test.tsx.
+    return HttpResponse.json({ id: 1, email: "a@b.com", displayName: "Test User" });
   }),
 
   http.post("/api/auth/refresh", async ({ request }) => {

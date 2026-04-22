@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "../store";
-import { loginSucceeded, loggedOut } from "./authSlice";
-import { useLoginMutation, useRegisterMutation } from "../api/authApi";
+import { loginSucceeded, loggedOut, setUser } from "./authSlice";
+import { authApi, useLoginMutation, useRegisterMutation } from "../api/authApi";
 import { tokenStorage } from "./tokenStorage";
 
 export function useAuth() {
@@ -16,7 +16,10 @@ export function useAuth() {
       const res = await loginMut({ email, password }).unwrap();
       tokenStorage.setAccess(res.accessToken);
       tokenStorage.setRefresh(res.refreshToken);
-      dispatch(loginSucceeded({ accessToken: res.accessToken, user: res.user }));
+      // Backend login returns only tokens; fetch the user profile so the shell
+      // can render display name / email without a second page load.
+      const me = await dispatch(authApi.endpoints.me.initiate()).unwrap();
+      dispatch(loginSucceeded({ accessToken: res.accessToken, user: me }));
       return res;
     },
     [loginMut, dispatch],
@@ -41,5 +44,6 @@ export function useAuth() {
     login,
     register,
     logout,
+    _setUser: (u: Parameters<typeof setUser>[0]) => dispatch(setUser(u)),
   };
 }

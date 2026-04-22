@@ -20,13 +20,13 @@ describe("authApi", () => {
     tokenStorage.clear();
   });
 
-  it("login returns token + user on success", async () => {
+  it("login returns tokens on success", async () => {
     const store = makeStore();
     const result = await store.dispatch(
       authApi.endpoints.login.initiate({ email: "a@b.com", password: "ok" }),
     );
     expect(result.data?.accessToken).toBe("access-1");
-    expect(result.data?.user.email).toBe("a@b.com");
+    expect(result.data?.refreshToken).toBe("refresh-1");
   });
 
   it("login surfaces 401 error on bad credentials", async () => {
@@ -54,6 +54,6 @@ describe("authApi", () => {
     tokenStorage.setAccess("valid-token");
     const store = makeStore();
     const result = await store.dispatch(authApi.endpoints.me.initiate());
-    expect(result.data?.displayName).toBe("Alice");
+    expect(result.data?.displayName).toBe("Test User");
   });
 });

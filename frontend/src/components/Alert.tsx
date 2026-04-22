@@ -40,18 +40,17 @@ export function Alert({ severity = "error", children, role = "alert" }: AlertPro
         alignItems: "flex-start",
       }}
     >
-      <Box
-        component="svg"
+      <svg
         width="16"
         height="16"
         viewBox="0 0 16 16"
         fill="none"
-        sx={{ flexShrink: 0, mt: "2px" }}
         aria-hidden="true"
+        style={{ flexShrink: 0, marginTop: 2, width: 16, height: 16 }}
       >
         <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.4" />
         <path d="M8 4.5v4M8 11v.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-      </Box>
+      </svg>
       <Box component="span">{children}</Box>
     </Box>
   );
