@@ -17,4 +17,5 @@
     <include file="db/changelog/012-api-keys-schema.xml"/>
     <include file="db/changelog/013-widen-error-message.xml"/>
     <include file="db/changelog/014-add-description-column.xml"/>
+    <include file="db/changelog/015-seed-gh-releases-source.xml"/>
 </databaseChangeLog>
