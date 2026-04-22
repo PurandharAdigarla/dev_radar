@@ -11,8 +11,6 @@ import com.devradar.security.JwtTokenProvider;
 import com.devradar.service.AuthService;
 import com.devradar.web.rest.dto.*;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequestMapping("/api/auth")
 public class AuthResource {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AuthResource.class);
     private static final java.time.Duration STATE_TTL = java.time.Duration.ofMinutes(10);
 
     private final AuthService auth;
