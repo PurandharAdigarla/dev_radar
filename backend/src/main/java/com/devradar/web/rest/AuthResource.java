@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
+import com.devradar.security.SecurityUtils;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
@@ -39,7 +41,9 @@ public class AuthResource {
     private final String defaultScopes;
     private final String frontendBaseUrl;
 
-    private final ConcurrentHashMap<String, Instant> issuedStates = new ConcurrentHashMap<>();
+    record PendingOAuth(Instant expiresAt, Long linkUserId) {}
+
+    private final ConcurrentHashMap<String, PendingOAuth> issuedStates = new ConcurrentHashMap<>();
 
     public AuthResource(
         AuthService auth,
@@ -89,12 +93,26 @@ public class AuthResource {
         return ResponseEntity.noContent().build();
     }
 
-    /** Step 1 of GitHub OAuth: redirect user to GitHub consent. */
+    /** Step 1 of GitHub OAuth: redirect user to GitHub consent (login/signup). */
     @GetMapping("/github/start")
     public ResponseEntity<Void> githubStart() {
+        return startOAuth(null);
+    }
+
+    /** Step 1 of GitHub OAuth: redirect user to GitHub consent (link to existing account). */
+    @GetMapping("/github/link")
+    public ResponseEntity<Void> githubLink() {
+        Long uid = SecurityUtils.getCurrentUserId();
+        if (uid == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return startOAuth(uid);
+    }
+
+    private ResponseEntity<Void> startOAuth(Long linkUserId) {
         purgeExpiredStates();
         String state = GitHubOAuthClient.generateState();
-        issuedStates.put(state, Instant.now().plus(STATE_TTL));
+        issuedStates.put(state, new PendingOAuth(Instant.now().plus(STATE_TTL), linkUserId));
         String url = ghOauth.buildAuthorizeUrl(authorizeUrl, state, defaultScopes);
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }
@@ -103,8 +121,8 @@ public class AuthResource {
     @GetMapping("/github/callback")
     @Transactional
     public ResponseEntity<Void> githubCallback(@RequestParam String code, @RequestParam String state) {
-        Instant expires = issuedStates.remove(state);
-        if (expires == null || expires.isBefore(Instant.now())) {
+        PendingOAuth pending = issuedStates.remove(state);
+        if (pending == null || pending.expiresAt().isBefore(Instant.now())) {
             return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(frontendBaseUrl + "/login?error=oauth_state"))
                 .build();
@@ -112,15 +130,51 @@ public class AuthResource {
 
         var tokenResp = ghOauth.exchangeCode(code);
         var ghUser = ghApi.getAuthenticatedUser(tokenResp.accessToken());
+        String encryptedToken = encryptor.encrypt(tokenResp.accessToken());
 
+        if (pending.linkUserId() != null) {
+            return handleLink(pending.linkUserId(), ghUser, encryptedToken, tokenResp.grantedScopes());
+        }
+        return handleLoginOrSignup(ghUser, encryptedToken, tokenResp.grantedScopes());
+    }
+
+    private ResponseEntity<Void> handleLink(Long userId, GitHubApiClient.AuthedUser ghUser,
+                                             String encryptedToken, String scopes) {
+        Optional<UserGithubIdentity> existing = identityRepo.findByGithubUserId(ghUser.id());
+        if (existing.isPresent() && !existing.get().getUserId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(frontendBaseUrl + "/settings?error=github_already_linked"))
+                .build();
+        }
+
+        User u = userRepo.findById(userId).orElseThrow();
+        UserGithubIdentity identity = existing.orElseGet(() -> {
+            var id = new UserGithubIdentity();
+            id.setUserId(userId);
+            id.setGithubUserId(ghUser.id());
+            id.setGithubLogin(ghUser.login());
+            return id;
+        });
+        identity.setAccessTokenEncrypted(encryptedToken);
+        identity.setGrantedScopes(scopes);
+        identityRepo.save(identity);
+
+        String jwtToken = jwt.generateAccessToken(u.getId(), u.getEmail());
+        return ResponseEntity.status(HttpStatus.FOUND)
+            .location(URI.create(frontendBaseUrl + "/settings?github=linked#accessToken=" + jwtToken))
+            .build();
+    }
+
+    private ResponseEntity<Void> handleLoginOrSignup(GitHubApiClient.AuthedUser ghUser,
+                                                      String encryptedToken, String scopes) {
         Optional<UserGithubIdentity> existing = identityRepo.findByGithubUserId(ghUser.id());
         User u;
         UserGithubIdentity identity;
         if (existing.isPresent()) {
             identity = existing.get();
             u = userRepo.findById(identity.getUserId()).orElseThrow();
-            identity.setAccessTokenEncrypted(encryptor.encrypt(tokenResp.accessToken()));
-            identity.setGrantedScopes(tokenResp.grantedScopes());
+            identity.setAccessTokenEncrypted(encryptedToken);
+            identity.setGrantedScopes(scopes);
             identityRepo.save(identity);
         } else {
             String email = ghUser.login() + "@github.users.noreply.devradar";
@@ -134,8 +188,8 @@ public class AuthResource {
             identity.setUserId(u.getId());
             identity.setGithubUserId(ghUser.id());
             identity.setGithubLogin(ghUser.login());
-            identity.setAccessTokenEncrypted(encryptor.encrypt(tokenResp.accessToken()));
-            identity.setGrantedScopes(tokenResp.grantedScopes());
+            identity.setAccessTokenEncrypted(encryptedToken);
+            identity.setGrantedScopes(scopes);
             identityRepo.save(identity);
         }
 
@@ -146,6 +200,6 @@ public class AuthResource {
 
     private void purgeExpiredStates() {
         Instant now = Instant.now();
-        issuedStates.entrySet().removeIf(e -> e.getValue().isBefore(now));
+        issuedStates.entrySet().removeIf(e -> e.getValue().expiresAt().isBefore(now));
     }
 }
