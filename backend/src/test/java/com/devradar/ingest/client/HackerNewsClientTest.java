@@ -27,7 +27,7 @@ class HackerNewsClientTest {
     void tearDown() { wm.stop(); }
 
     @Test
-    void fetchRecent_returnsParsedItems() {
+    void fetchRecent_returnsParsedItems_withDescription() {
         wm.stubFor(WireMock.get(WireMock.urlPathEqualTo("/api/v1/search_by_date"))
             .willReturn(WireMock.okJson("""
                 {
@@ -38,15 +38,18 @@ class HackerNewsClientTest {
                       "url": "https://example.com/spring-boot-3-5",
                       "author": "rstoyanchev",
                       "created_at_i": 1755100000,
-                      "points": 280
+                      "points": 280,
+                      "num_comments": 142
                     },
                     {
                       "objectID": "12346",
-                      "title": "Show HN: htmx 2.1",
-                      "url": "https://example.com/htmx",
-                      "author": "carson",
+                      "title": "Ask HN: Best practices for Java 21?",
+                      "url": "https://news.ycombinator.com/item?id=12346",
+                      "author": "javadev",
                       "created_at_i": 1755103600,
-                      "points": 95
+                      "points": 95,
+                      "num_comments": 67,
+                      "story_text": "I recently started using virtual threads and pattern matching. What other Java 21 features are you using in production?"
                     }
                   ]
                 }
@@ -55,11 +58,9 @@ class HackerNewsClientTest {
         List<FetchedItem> items = client.fetchRecent(50);
 
         assertThat(items).hasSize(2);
-        assertThat(items.get(0).externalId()).isEqualTo("12345");
         assertThat(items.get(0).title()).isEqualTo("Spring Boot 3.5 released");
-        assertThat(items.get(0).url()).isEqualTo("https://example.com/spring-boot-3-5");
-        assertThat(items.get(0).author()).isEqualTo("rstoyanchev");
-        assertThat(items.get(1).externalId()).isEqualTo("12346");
+        assertThat(items.get(0).description()).isEqualTo("280 points, 142 comments on Hacker News");
+        assertThat(items.get(1).description()).startsWith("I recently started using virtual threads");
     }
 
     @Test

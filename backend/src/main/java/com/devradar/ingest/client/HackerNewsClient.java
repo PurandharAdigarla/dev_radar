@@ -38,9 +38,24 @@ public class HackerNewsClient {
             String author = textOrNull(hit, "author");
             long createdAtSec = hit.path("created_at_i").asLong();
             Instant posted = createdAtSec > 0 ? Instant.ofEpochSecond(createdAtSec) : Instant.now();
-            out.add(new FetchedItem(externalId, url, title, null, author, posted, hit.toString(), List.of()));
+
+            String description = buildDescription(hit);
+            out.add(new FetchedItem(externalId, url, title, description, author, posted, hit.toString(), List.of()));
         }
         return out;
+    }
+
+    private static String buildDescription(JsonNode hit) {
+        String storyText = textOrNull(hit, "story_text");
+        if (storyText != null && !storyText.isBlank()) {
+            return storyText.length() > 500 ? storyText.substring(0, 500) : storyText;
+        }
+        int points = hit.path("points").asInt(0);
+        int comments = hit.path("num_comments").asInt(0);
+        if (points > 0) {
+            return points + " points, " + comments + " comments on Hacker News";
+        }
+        return null;
     }
 
     private static String textOrNull(JsonNode n, String field) {
