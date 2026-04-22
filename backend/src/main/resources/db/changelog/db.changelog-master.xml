@@ -18,4 +18,5 @@
     <include file="db/changelog/013-widen-error-message.xml"/>
     <include file="db/changelog/014-add-description-column.xml"/>
     <include file="db/changelog/015-seed-gh-releases-source.xml"/>
+    <include file="db/changelog/016-seed-gh-stars-source.xml"/>
 </databaseChangeLog>
