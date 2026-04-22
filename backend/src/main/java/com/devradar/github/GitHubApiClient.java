@@ -46,6 +46,26 @@ public class GitHubApiClient {
         return out;
     }
 
+    public List<String> listStarred(String token) {
+        JsonNode arr = http.get()
+                .uri(uri -> uri.path("/user/starred")
+                        .queryParam("per_page", "100")
+                        .queryParam("sort", "updated")
+                        .queryParam("direction", "desc")
+                        .build())
+                .header("Authorization", "Bearer " + token)
+                .header("Accept", "application/vnd.github+json")
+                .retrieve().body(JsonNode.class);
+        List<String> out = new ArrayList<>();
+        if (arr != null && arr.isArray()) {
+            for (JsonNode r : arr) {
+                String name = r.path("full_name").asText(null);
+                if (name != null) out.add(name);
+            }
+        }
+        return out;
+    }
+
     public FileContent getFileContent(String token, String repoFullName, String path, String ref) {
         JsonNode n = http.get().uri(uri -> {
                     var b = uri.path("/repos/" + repoFullName + "/contents/" + path);

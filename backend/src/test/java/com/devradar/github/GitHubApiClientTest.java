@@ -110,4 +110,34 @@ class GitHubApiClientTest {
 
         assertThat(url).isEqualTo("https://github.com/alice/repo1/pull/42");
     }
+
+    @Test
+    void listStarred_returnsRepoFullNames() {
+        wm.stubFor(WireMock.get(WireMock.urlPathEqualTo("/user/starred"))
+            .withQueryParam("per_page", WireMock.equalTo("100"))
+            .withQueryParam("sort", WireMock.equalTo("updated"))
+            .withQueryParam("direction", WireMock.equalTo("desc"))
+            .willReturn(WireMock.okJson("""
+                [
+                  {"full_name":"alice/react-app"},
+                  {"full_name":"bob/spring-starter"}
+                ]
+                """)));
+
+        List<String> starred = client.listStarred("my-token");
+
+        assertThat(starred).containsExactly("alice/react-app", "bob/spring-starter");
+        wm.verify(WireMock.getRequestedFor(WireMock.urlPathEqualTo("/user/starred"))
+            .withHeader("Authorization", WireMock.equalTo("Bearer my-token")));
+    }
+
+    @Test
+    void listStarred_returnsEmptyListWhenNoStars() {
+        wm.stubFor(WireMock.get(WireMock.urlPathEqualTo("/user/starred"))
+            .willReturn(WireMock.okJson("[]")));
+
+        List<String> starred = client.listStarred("my-token");
+
+        assertThat(starred).isEmpty();
+    }
 }
