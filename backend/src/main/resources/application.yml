@@ -68,6 +68,35 @@ github:
   api:
     base-url: https://api.github.com
 
+devradar:
+  ingest:
+    gh-releases:
+      repos: >-
+        facebook/react:react,frontend,javascript;
+        vercel/next.js:next_js,react,frontend;
+        sveltejs/svelte:svelte,frontend;
+        vuejs/core:vue,frontend,javascript;
+        angular/angular:angular,frontend,typescript;
+        spring-projects/spring-boot:spring_boot,java,backend;
+        spring-projects/spring-framework:spring_boot,java,backend;
+        django/django:django,python,backend;
+        tiangolo/fastapi:fastapi,python,backend;
+        rails/rails:rails,backend;
+        golang/go:go;
+        rust-lang/rust:rust;
+        JetBrains/kotlin:kotlin;
+        apple/swift:swift;
+        microsoft/TypeScript:typescript;
+        moby/moby:docker,devops;
+        kubernetes/kubernetes:kubernetes,devops;
+        hashicorp/terraform:terraform,devops;
+        redis/redis:redis,database;
+        tailwindlabs/tailwindcss:frontend;
+        vitejs/vite:frontend,javascript;
+        modelcontextprotocol/specification:mcp,ai_tooling;
+        langchain-ai/langchain:ai_tooling,llm,python;
+        ollama/ollama:ai_tooling,llm
+
 management:
   endpoints:
     web:

@@ -33,6 +33,10 @@ devradar:
     ghsa:
       fixed-delay-ms: 86400000
       initial-delay-ms: 86400000
+    gh-releases:
+      fixed-delay-ms: 86400000
+      initial-delay-ms: 86400000
+      repos: ""
 
 anthropic:
   api-key: test-only-not-used
