@@ -58,13 +58,13 @@ class GitHubStarsReleaseFetcherTest {
 
         var item = new FetchedItem("alice/lib-a:v1.0.0", "https://example.com", "lib-a v1.0.0",
             "notes", "alice", Instant.now(), null, List.of());
-        when(releasesClient.fetchReleases("alice/lib-a", List.of())).thenReturn(List.of(item));
-        when(releasesClient.fetchReleases("bob/lib-b", List.of())).thenReturn(List.of());
+        when(releasesClient.fetchReleases("alice/lib-a", List.of(), "ghp_real_token")).thenReturn(List.of(item));
+        when(releasesClient.fetchReleases("bob/lib-b", List.of(), "ghp_real_token")).thenReturn(List.of());
 
         fetcher.tryFetchForUser(7L);
 
-        verify(releasesClient).fetchReleases("alice/lib-a", List.of());
-        verify(releasesClient).fetchReleases("bob/lib-b", List.of());
+        verify(releasesClient).fetchReleases("alice/lib-a", List.of(), "ghp_real_token");
+        verify(releasesClient).fetchReleases("bob/lib-b", List.of(), "ghp_real_token");
         verify(ingestion, times(2)).ingestBatch(eq(src), any());
     }
 
@@ -111,12 +111,12 @@ class GitHubStarsReleaseFetcherTest {
         when(sources.findByCode("GH_STARS")).thenReturn(Optional.of(src));
 
         when(github.listStarred("token")).thenReturn(List.of("bad/repo", "good/repo"));
-        when(releasesClient.fetchReleases("bad/repo", List.of())).thenThrow(new RuntimeException("API error"));
-        when(releasesClient.fetchReleases("good/repo", List.of())).thenReturn(List.of());
+        when(releasesClient.fetchReleases("bad/repo", List.of(), "token")).thenThrow(new RuntimeException("API error"));
+        when(releasesClient.fetchReleases("good/repo", List.of(), "token")).thenReturn(List.of());
 
         fetcher.tryFetchForUser(7L);
 
-        verify(releasesClient).fetchReleases("good/repo", List.of());
+        verify(releasesClient).fetchReleases("good/repo", List.of(), "token");
         verify(ingestion).ingestBatch(eq(src), any());
     }
 }

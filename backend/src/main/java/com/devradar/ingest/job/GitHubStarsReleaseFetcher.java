@@ -58,7 +58,7 @@ public class GitHubStarsReleaseFetcher {
 
         for (String repo : starredRepos) {
             try {
-                List<FetchedItem> releases = releasesClient.fetchReleases(repo, List.of());
+                List<FetchedItem> releases = releasesClient.fetchReleases(repo, List.of(), token);
                 ingestion.ingestBatch(src, releases);
             } catch (Exception e) {
                 LOG.debug("Starred repo release fetch skipped repo={}: {}", repo, e.getMessage());

@@ -22,11 +22,17 @@ public class GitHubReleasesClient {
     }
 
     public List<FetchedItem> fetchReleases(String repoFullName, List<String> topics) {
-        JsonNode arr = http.get()
+        return fetchReleases(repoFullName, topics, null);
+    }
+
+    public List<FetchedItem> fetchReleases(String repoFullName, List<String> topics, String token) {
+        var req = http.get()
             .uri(uri -> uri.path("/repos/" + repoFullName + "/releases")
-                .queryParam("per_page", "3").build())
-            .retrieve()
-            .body(JsonNode.class);
+                .queryParam("per_page", "3").build());
+        if (token != null) {
+            req.header("Authorization", "Bearer " + token);
+        }
+        JsonNode arr = req.retrieve().body(JsonNode.class);
 
         List<FetchedItem> out = new ArrayList<>();
         if (arr == null || !arr.isArray()) return out;

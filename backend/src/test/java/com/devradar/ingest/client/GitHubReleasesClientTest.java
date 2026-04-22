@@ -160,6 +160,17 @@ class GitHubReleasesClientTest {
     }
 
     @Test
+    void fetchReleases_sendsAuthHeaderWhenTokenProvided() {
+        wm.stubFor(WireMock.get(WireMock.urlPathEqualTo("/repos/owner/repo/releases"))
+            .willReturn(WireMock.okJson("[]")));
+
+        client.fetchReleases("owner/repo", List.of(), "ghp_test_token");
+
+        wm.verify(WireMock.getRequestedFor(WireMock.urlPathEqualTo("/repos/owner/repo/releases"))
+            .withHeader("Authorization", WireMock.equalTo("Bearer ghp_test_token")));
+    }
+
+    @Test
     void fetchReleases_returnsEmptyListOnNullOrEmptyResponse() {
         wm.stubFor(WireMock.get(WireMock.urlPathEqualTo("/repos/owner/repo/releases"))
             .willReturn(WireMock.okJson("[]")));
