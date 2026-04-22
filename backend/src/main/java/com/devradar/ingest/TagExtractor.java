@@ -17,11 +17,13 @@ public class TagExtractor {
     public TagExtractor(InterestTagRepository repo) { this.repo = repo; }
 
     /**
-     * Extract interest_tag IDs that match in the given text or are explicitly listed in topics.
+     * Extract interest_tag IDs that match in the given title or description, or are explicitly listed in topics.
      * Match is case-insensitive substring with word-boundary intent.
      */
-    public Set<Long> extract(String text, List<String> explicitTopics) {
-        String hay = text == null ? "" : text.toLowerCase(Locale.ROOT);
+    public Set<Long> extract(String title, String description, List<String> explicitTopics) {
+        String titlePart = title == null ? "" : title.toLowerCase(Locale.ROOT);
+        String descPart = description == null ? "" : description.toLowerCase(Locale.ROOT);
+        String hay = titlePart + " " + descPart;
         Set<String> topicSlugs = explicitTopics == null ? Set.of()
             : explicitTopics.stream().map(s -> s.toLowerCase(Locale.ROOT).trim()).collect(java.util.stream.Collectors.toSet());
 

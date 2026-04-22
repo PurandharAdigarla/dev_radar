@@ -25,7 +25,8 @@ class TagExtractorTest {
             tag("spring_boot", "Spring Boot", InterestCategory.framework),
             tag("react", "React", InterestCategory.framework),
             tag("mysql", "MySQL", InterestCategory.tool),
-            tag("rust", "Rust", InterestCategory.language)
+            tag("rust", "Rust", InterestCategory.language),
+            tag("java", "Java", InterestCategory.language)
         );
         when(repo.findAll()).thenReturn(tags);
         extractor = new TagExtractor(repo);
@@ -33,32 +34,38 @@ class TagExtractorTest {
 
     @Test
     void extracts_displayName_caseInsensitive() {
-        Set<Long> ids = extractor.extract("Spring Boot 3.5 just shipped", List.of());
+        Set<Long> ids = extractor.extract("Spring Boot 3.5 just shipped", null, List.of());
         assertThat(ids).hasSize(1);
     }
 
     @Test
     void extracts_slugWordBoundary() {
-        Set<Long> ids = extractor.extract("Why I'm switching from React to Svelte", List.of());
+        Set<Long> ids = extractor.extract("Why I'm switching from React to Svelte", null, List.of());
         assertThat(ids).hasSize(1); // react matches; svelte not in our tag set
     }
 
     @Test
     void extracts_fromExplicitTopics() {
-        Set<Long> ids = extractor.extract("Some unrelated title", List.of("rust", "mysql"));
+        Set<Long> ids = extractor.extract("Some unrelated title", null, List.of("rust", "mysql"));
         assertThat(ids).hasSize(2);
     }
 
     @Test
     void noMatch_returnsEmpty() {
-        Set<Long> ids = extractor.extract("Nothing relevant here at all", List.of());
+        Set<Long> ids = extractor.extract("Nothing relevant here at all", null, List.of());
         assertThat(ids).isEmpty();
     }
 
     @Test
     void deduplicates_acrossTextAndTopics() {
-        Set<Long> ids = extractor.extract("React is great", List.of("react"));
+        Set<Long> ids = extractor.extract("React is great", null, List.of("react"));
         assertThat(ids).hasSize(1);
+    }
+
+    @Test
+    void extracts_fromDescription() {
+        Set<Long> ids = extractor.extract("jextract", "Extract Java bindings from C headers using Panama FFI", List.of());
+        assertThat(ids).isNotEmpty();
     }
 
     private static InterestTag tag(String slug, String display, InterestCategory cat) {

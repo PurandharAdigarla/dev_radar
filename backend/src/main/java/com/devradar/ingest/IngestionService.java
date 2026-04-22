@@ -93,7 +93,7 @@ public class IngestionService {
         si.setRawPayload(item.rawPayload());
         SourceItem saved = itemRepo.save(si);
 
-        Set<Long> tagIds = tagExtractor.extract(item.title(), item.topics());
+        Set<Long> tagIds = tagExtractor.extract(item.title(), item.description(), item.topics());
         for (Long tagId : tagIds) {
             tagRepo.save(new SourceItemTag(saved.getId(), tagId));
         }
