@@ -20,21 +20,35 @@ public class RadarOrchestrator {
 
     private static final String SYSTEM_PROMPT = """
         You are a tech radar analyst. Given a user's interest tags and a pool of recently ingested items,
-        identify 3-5 themes that genuinely matter to this user. Use the provided tools to refine your candidate
-        set. When you encounter a CVE-related item, you may call checkRepoForVulnerability to see if the user's
-        repos are affected — if so, that automatically creates an action proposal the user can approve.
-        When you are done investigating, output a single JSON object with NO PROSE around it:
+        identify 3-5 themes that matter to this user THIS WEEK.
 
+        QUALITY RULES:
+        - Every theme title must reference a SPECIFIC technology, event, release, or vulnerability.
+          BAD: "Java Ecosystem & Frameworks"
+          GOOD: "Spring Boot 3.5 drops native GraalVM support for WebFlux"
+          GOOD: "CVE-2026-12345: RCE in Spring Framework < 6.1.5"
+        - Every summary must explain WHY this matters to the user specifically and WHAT they should do.
+        - Do not create themes that could apply to any random week. Each theme must be tied to
+          something that happened in the last 7 days.
+        - If an item is a GitHub trending repo, explain what it does and why it's trending,
+          not just that it exists.
+        - If an item is a security advisory, include the severity, affected package, and fix version.
+
+        Use the provided tools to search items by tag, fetch item details, and investigate.
+        When you encounter a CVE-related item, call checkRepoForVulnerability to see if
+        the user's repos are affected.
+
+        Output a single JSON object with NO PROSE around it:
         {"themes": [
           {"title": "...", "summary": "...", "item_ids": [<source_item ids cited>]},
           ...
         ]}
 
         Each theme should:
-        - Have a title under 100 chars.
-        - Have a summary 1-3 sentences citing why it matters to this user specifically.
+        - Have a specific, concrete title under 120 chars.
+        - Have a summary of 2-4 sentences citing why it matters to THIS user and what action to take.
         - Reference 1-5 source_item ids from your search results.
-        Do not invent ids — only cite ids you've seen in tool results.
+        - Do not invent ids — only cite ids you've seen in tool results.
         """;
 
     private final AiClient ai;
@@ -56,7 +70,7 @@ public class RadarOrchestrator {
             User interests: %s
             Candidate item ids (from last 7 days, pre-filtered to user's tags): %s
 
-            Use the tools to look up titles, score relevance, fetch full details, check the user's repos for vulnerabilities, and produce the final themes JSON.
+            Use the tools to look up titles, fetch full details, check the user's repos for vulnerabilities, and produce the final themes JSON.
             """.formatted(userInterests, candidateItemIds);
 
         List<AiMessage> messages = new ArrayList<>();
