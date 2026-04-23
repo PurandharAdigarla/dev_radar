@@ -143,7 +143,10 @@ export const handlers = [
         {
           id: 1, title: "Spring Boot ecosystem updates", summary: "Summary text.",
           displayOrder: 0,
-          items: [{ id: 1001, title: "Spring Boot 3.5 released", url: "https://spring.io/3.5", author: "spring-io" }],
+          items: [
+            { id: 1001, title: "Spring Boot 3.5 released", description: "Major release with virtual thread support.", url: "https://spring.io/3.5", author: "spring-io", sourceName: "GH_RELEASES" },
+            { id: 1002, title: "What's New in Spring Boot 3.5", description: "Deep dive into the new features.", url: "https://baeldung.com/spring-boot-3-5", author: "Baeldung", sourceName: "ARTICLE" },
+          ],
         },
       ],
     });
@@ -169,11 +172,11 @@ export const handlers = [
     if (radarId === "42") {
       return HttpResponse.json([
         {
-          id: 7, radarId: 42, kind: "CVE_FIX_PR",
+          id: 7, radarId: 42, kind: "auto_pr_cve",
           payloadJson: JSON.stringify({
-            cveId: "CVE-2024-1234", packageName: "jackson-databind",
-            currentVersion: "2.16.1", fixVersion: "2.17.0",
-            repoOwner: "alice", repoName: "api",
+            ghsa_id: "GHSA-xxxx-yyyy-zzzz", package: "jackson-databind",
+            current_version: "2.16.1", repo: "alice/api",
+            file_path: "pom.xml", file_sha: "abc123",
           }),
           status: "PROPOSED", prUrl: null, failureReason: null,
           createdAt: "2026-04-20T10:00:00Z", updatedAt: "2026-04-20T10:00:00Z",
@@ -186,11 +189,11 @@ export const handlers = [
   http.post("/api/actions/:id/approve", async ({ params, request }) => {
     const body = (await request.json()) as { fix_version?: string };
     return HttpResponse.json({
-      id: Number(params.id), radarId: 42, kind: "CVE_FIX_PR",
+      id: Number(params.id), radarId: 42, kind: "auto_pr_cve",
       payloadJson: JSON.stringify({
-        cveId: "CVE-2024-1234", packageName: "jackson-databind",
-        currentVersion: "2.16.1", fixVersion: body.fix_version ?? "2.17.0",
-        repoOwner: "alice", repoName: "api",
+        ghsa_id: "GHSA-xxxx-yyyy-zzzz", package: "jackson-databind",
+        current_version: "2.16.1", repo: "alice/api",
+        file_path: "pom.xml", file_sha: "abc123",
       }),
       status: "EXECUTED",
       prUrl: "https://github.com/alice/api/pull/99",
@@ -201,7 +204,7 @@ export const handlers = [
 
   http.delete("/api/actions/:id", ({ params }) => {
     return HttpResponse.json({
-      id: Number(params.id), radarId: 42, kind: "CVE_FIX_PR",
+      id: Number(params.id), radarId: 42, kind: "auto_pr_cve",
       payloadJson: "{}",
       status: "DISMISSED", prUrl: null, failureReason: null,
       createdAt: "2026-04-20T10:00:00Z", updatedAt: "2026-04-20T10:06:00Z",

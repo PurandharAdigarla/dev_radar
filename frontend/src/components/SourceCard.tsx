@@ -6,7 +6,10 @@ import type { RadarItem } from "../api/types";
 const SOURCE_LABELS: Record<string, string> = {
   HN: "HN",
   GH_TRENDING: "GitHub",
+  GH_RELEASES: "Release",
+  GH_STARS: "Starred",
   GHSA: "GHSA",
+  ARTICLE: "Article",
 };
 
 function sourceBadgeColor(sourceName: string): string {
