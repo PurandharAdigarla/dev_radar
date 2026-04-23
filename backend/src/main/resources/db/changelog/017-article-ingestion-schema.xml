@@ -12,13 +12,13 @@
             <column name="tag_slug" type="VARCHAR(100)">
                 <constraints nullable="false"/>
             </column>
-            <column name="feed_url" type="VARCHAR(2048)">
+            <column name="feed_url" type="VARCHAR(512)">
                 <constraints nullable="false"/>
             </column>
             <column name="title" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="active" type="TINYINT(1)" defaultValueBoolean="true">
+            <column name="active" type="BOOLEAN" defaultValueBoolean="true">
                 <constraints nullable="false"/>
             </column>
         </createTable>
@@ -54,7 +54,7 @@ INSERT INTO feed_subscriptions (tag_slug, feed_url, title, active) VALUES
   ('kubernetes',  'https://kubernetes.io/feed.xml',                           'Kubernetes Blog',        true),
   ('security',    'https://blog.cloudflare.com/rss/',                         'Cloudflare Blog',        true),
   ('security',    'https://security.googleblog.com/feeds/posts/default',      'Google Security Blog',   true),
-  ('postgresql',  'https://www.postgresql.org/news/feed/',                    'PostgreSQL News',        true);
+  ('postgres',    'https://www.postgresql.org/news/feed/',                    'PostgreSQL News',        true);
         </sql>
     </changeSet>
 </databaseChangeLog>

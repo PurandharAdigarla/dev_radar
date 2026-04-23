@@ -16,13 +16,13 @@ public class FeedSubscription {
     @Column(name = "tag_slug", nullable = false, length = 100)
     private String tagSlug;
 
-    @Column(name = "feed_url", nullable = false, length = 2048)
+    @Column(name = "feed_url", nullable = false, length = 512)
     private String feedUrl;
 
     @Column(nullable = false, length = 255)
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TINYINT(1)")
+    @Column(nullable = false)
     private boolean active = true;
 
     public Long getId() { return id; }
