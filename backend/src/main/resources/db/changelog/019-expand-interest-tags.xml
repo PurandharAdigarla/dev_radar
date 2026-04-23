@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Step 1: Recategorize existing tags from tool/topic to match frontend categories -->
+    <changeSet id="019-recategorize-existing-tags" author="devradar">
+        <sql>
+UPDATE interest_tags SET category = 'database' WHERE slug IN ('mysql', 'postgres', 'redis', 'mongodb', 'elasticsearch');
+UPDATE interest_tags SET category = 'devops'   WHERE slug IN ('docker', 'kubernetes', 'terraform', 'aws', 'gcp', 'azure', 'devops', 'observability');
+UPDATE interest_tags SET category = 'security' WHERE slug IN ('security');
+UPDATE interest_tags SET category = 'other'    WHERE slug IN ('ai_tooling', 'llm', 'mcp', 'performance', 'frontend', 'backend', 'database', 'testing');
+        </sql>
+    </changeSet>
+
+    <!-- Step 2: Add new industry-standard tags -->
+    <changeSet id="019-add-new-interest-tags" author="devradar">
+        <sql>
+INSERT INTO interest_tags (slug, display_name, category, created_at) VALUES
+  -- Languages
+  ('cpp',          'C++',           'language',  NOW()),
+  ('c',            'C',             'language',  NOW()),
+  ('ruby',         'Ruby',          'language',  NOW()),
+  ('php',          'PHP',           'language',  NOW()),
+  ('scala',        'Scala',         'language',  NOW()),
+  ('elixir',       'Elixir',        'language',  NOW()),
+  ('dart',         'Dart',          'language',  NOW()),
+  ('zig',          'Zig',           'language',  NOW()),
+  ('haskell',      'Haskell',       'language',  NOW()),
+  ('lua',          'Lua',           'language',  NOW()),
+  ('r',            'R',             'language',  NOW()),
+  ('clojure',      'Clojure',       'language',  NOW()),
+
+  -- Frameworks
+  ('flask',        'Flask',         'framework', NOW()),
+  ('express',      'Express',       'framework', NOW()),
+  ('nest_js',      'NestJS',        'framework', NOW()),
+  ('remix',        'Remix',         'framework', NOW()),
+  ('nuxt',         'Nuxt',          'framework', NOW()),
+  ('astro',        'Astro',         'framework', NOW()),
+  ('htmx',         'htmx',          'framework', NOW()),
+  ('flutter',      'Flutter',       'framework', NOW()),
+  ('react_native', 'React Native',  'framework', NOW()),
+  ('tailwind',     'Tailwind CSS',  'framework', NOW()),
+  ('spring',       'Spring',        'framework', NOW()),
+  ('dotnet',       '.NET',          'framework', NOW()),
+  ('laravel',      'Laravel',       'framework', NOW()),
+  ('phoenix',      'Phoenix',       'framework', NOW()),
+  ('gin',          'Gin',           'framework', NOW()),
+  ('actix',        'Actix',         'framework', NOW()),
+
+  -- Databases
+  ('sqlite',       'SQLite',        'database',  NOW()),
+  ('dynamodb',     'DynamoDB',      'database',  NOW()),
+  ('cassandra',    'Cassandra',     'database',  NOW()),
+  ('neo4j',        'Neo4j',         'database',  NOW()),
+  ('clickhouse',   'ClickHouse',    'database',  NOW()),
+  ('supabase',     'Supabase',      'database',  NOW()),
+
+  -- DevOps
+  ('github_actions','GitHub Actions','devops',    NOW()),
+  ('ci_cd',        'CI/CD',         'devops',    NOW()),
+  ('nginx',        'Nginx',         'devops',    NOW()),
+  ('grafana',      'Grafana',       'devops',    NOW()),
+  ('prometheus',   'Prometheus',    'devops',    NOW()),
+  ('ansible',      'Ansible',       'devops',    NOW()),
+  ('pulumi',       'Pulumi',        'devops',    NOW()),
+  ('vercel',       'Vercel',        'devops',    NOW()),
+  ('cloudflare',   'Cloudflare',    'devops',    NOW()),
+  ('linux',        'Linux',         'devops',    NOW()),
+
+  -- Security
+  ('owasp',        'OWASP',         'security',  NOW()),
+  ('cryptography', 'Cryptography',  'security',  NOW()),
+  ('zero_trust',   'Zero Trust',    'security',  NOW()),
+  ('supply_chain', 'Supply Chain Security', 'security', NOW()),
+
+  -- Other / Cross-cutting
+  ('graphql',      'GraphQL',       'other',     NOW()),
+  ('grpc',         'gRPC',          'other',     NOW()),
+  ('wasm',         'WebAssembly',   'other',     NOW()),
+  ('edge_computing','Edge Computing','other',    NOW()),
+  ('microservices','Microservices',  'other',     NOW()),
+  ('api_design',   'API Design',    'other',     NOW()),
+  ('open_source',  'Open Source',   'other',     NOW()),
+  ('data_engineering','Data Engineering','other', NOW()),
+  ('ml_ops',       'MLOps',         'other',     NOW()),
+  ('blockchain',   'Blockchain',    'other',     NOW()),
+  ('game_dev',     'Game Dev',      'other',     NOW()),
+  ('mobile',       'Mobile',        'other',     NOW()),
+  ('accessibility','Accessibility', 'other',     NOW());
+        </sql>
+    </changeSet>
+
+    <!-- Step 3: Add RSS feed subscriptions for new tags with good official blogs -->
+    <changeSet id="019-seed-new-feed-subscriptions" author="devradar">
+        <sql>
+INSERT INTO feed_subscriptions (tag_slug, feed_url, title, active) VALUES
+  ('ruby',          'https://www.ruby-lang.org/en/feeds/news.rss',             'Ruby News',              true),
+  ('php',           'https://www.php.net/releases/feed.php',                   'PHP Releases',           true),
+  ('elixir',        'https://elixir-lang.org/blog.atom',                       'Elixir Blog',            true),
+  ('dart',          'https://medium.com/feed/dartlang',                        'Dart Blog',              true),
+  ('flutter',       'https://medium.com/feed/flutter',                         'Flutter Blog',           true),
+  ('dotnet',        'https://devblogs.microsoft.com/dotnet/feed/',             '.NET Blog',              true),
+  ('next_js',       'https://nextjs.org/feed.xml',                             'Next.js Blog',           true),
+  ('tailwind',      'https://tailwindcss.com/feeds/feed.xml',                  'Tailwind CSS Blog',      true),
+  ('grafana',       'https://grafana.com/blog/index.xml',                      'Grafana Blog',           true),
+  ('cloudflare',    'https://blog.cloudflare.com/rss/',                        'Cloudflare Blog',        true),
+  ('supabase',      'https://supabase.com/blog/rss.xml',                       'Supabase Blog',          true),
+  ('vercel',        'https://vercel.com/atom',                                 'Vercel Blog',            true),
+  ('linux',         'https://www.linux.com/feed/',                             'Linux.com',              true);
+        </sql>
+    </changeSet>
+</databaseChangeLog>

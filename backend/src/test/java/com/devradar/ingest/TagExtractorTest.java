@@ -24,7 +24,7 @@ class TagExtractorTest {
         List<InterestTag> tags = List.of(
             tag("spring_boot", "Spring Boot", InterestCategory.framework),
             tag("react", "React", InterestCategory.framework),
-            tag("mysql", "MySQL", InterestCategory.tool),
+            tag("mysql", "MySQL", InterestCategory.database),
             tag("rust", "Rust", InterestCategory.language),
             tag("java", "Java", InterestCategory.language)
         );
