@@ -19,4 +19,5 @@
     <include file="db/changelog/014-add-description-column.xml"/>
     <include file="db/changelog/015-seed-gh-releases-source.xml"/>
     <include file="db/changelog/016-seed-gh-stars-source.xml"/>
+    <include file="db/changelog/017-article-ingestion-schema.xml"/>
 </databaseChangeLog>

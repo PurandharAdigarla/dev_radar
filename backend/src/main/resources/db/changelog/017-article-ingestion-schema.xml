@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="017-create-feed-subscriptions" author="devradar">
+        <createTable tableName="feed_subscriptions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="tag_slug" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="feed_url" type="VARCHAR(2048)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="active" type="TINYINT(1)" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="feed_subscriptions"
+            columnNames="tag_slug, feed_url"
+            constraintName="uk_feed_subscriptions_tag_url"/>
+        <addForeignKeyConstraint
+            baseTableName="feed_subscriptions" baseColumnNames="tag_slug"
+            referencedTableName="interest_tags" referencedColumnNames="slug"
+            constraintName="fk_feed_subscriptions_tag"/>
+    </changeSet>
+
+    <changeSet id="017-seed-article-source" author="devradar">
+        <sql>
+INSERT INTO sources (code, display_name, active, fetch_interval_minutes, created_at) VALUES
+  ('ARTICLE', 'Article', true, 120, NOW());
+        </sql>
+    </changeSet>
+
+    <changeSet id="017-seed-feed-subscriptions" author="devradar">
+        <sql>
+INSERT INTO feed_subscriptions (tag_slug, feed_url, title, active) VALUES
+  ('java',        'https://inside.java/feed/',                                'Inside Java',            true),
+  ('java',        'https://www.baeldung.com/feed',                            'Baeldung',               true),
+  ('spring_boot', 'https://spring.io/blog.atom',                              'Spring Blog',            true),
+  ('react',       'https://react.dev/rss.xml',                                'React Blog',             true),
+  ('javascript',  'https://blog.nodejs.org/feed/',                            'Node.js Blog',           true),
+  ('typescript',  'https://devblogs.microsoft.com/typescript/feed/',           'TypeScript Blog',        true),
+  ('python',      'https://blog.python.org/feeds/posts/default',              'Python Blog',            true),
+  ('go',          'https://go.dev/blog/feed.atom',                            'Go Blog',                true),
+  ('rust',        'https://blog.rust-lang.org/feed.xml',                      'Rust Blog',              true),
+  ('docker',      'https://www.docker.com/blog/feed/',                        'Docker Blog',            true),
+  ('kubernetes',  'https://kubernetes.io/feed.xml',                           'Kubernetes Blog',        true),
+  ('security',    'https://blog.cloudflare.com/rss/',                         'Cloudflare Blog',        true),
+  ('security',    'https://security.googleblog.com/feeds/posts/default',      'Google Security Blog',   true),
+  ('postgresql',  'https://www.postgresql.org/news/feed/',                    'PostgreSQL News',        true);
+        </sql>
+    </changeSet>
+</databaseChangeLog>
