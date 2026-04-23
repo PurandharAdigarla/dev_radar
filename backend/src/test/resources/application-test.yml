@@ -37,6 +37,9 @@ devradar:
       fixed-delay-ms: 86400000
       initial-delay-ms: 86400000
       repos: ""
+    article:
+      fixed-delay-ms: 86400000
+      initial-delay-ms: 86400000
 
 anthropic:
   api-key: test-only-not-used
