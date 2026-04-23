@@ -10,6 +10,7 @@ const SOURCE_LABELS: Record<string, string> = {
   GH_STARS: "Starred",
   GHSA: "GHSA",
   ARTICLE: "Article",
+  DEP_RELEASE: "Dependency",
 };
 
 function sourceBadgeColor(sourceName: string): string {

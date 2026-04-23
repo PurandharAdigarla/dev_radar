@@ -42,6 +42,10 @@ public class RadarOrchestrator {
           They provide valuable context for WHY a change matters. When building a theme about a
           release or trending project, prefer to include an ARTICLE citation alongside the release
           item to give the user both the changelog and expert analysis.
+        - DEP_RELEASE items are new versions of packages the user actually depends on in their
+          GitHub repos. These are the HIGHEST priority citations — they represent direct, actionable
+          updates. Always build a theme around DEP_RELEASE items when available, explaining what
+          changed and whether the user should upgrade.
         - Build themes around releases and version updates when available. Trending repos should
           only be cited when no release item exists for that project.
 
