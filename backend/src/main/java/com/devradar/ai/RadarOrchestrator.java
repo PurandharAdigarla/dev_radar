@@ -38,6 +38,10 @@ public class RadarOrchestrator {
         - When items from GH_RELEASES or GH_STARS exist for a technology, ALWAYS prefer them over
           GH_TRENDING items for the same project. Release items link to specific changelogs;
           trending items only link to repo homepages with no context about what changed.
+        - ARTICLE items are blog posts and official documentation from authoritative sources.
+          They provide valuable context for WHY a change matters. When building a theme about a
+          release or trending project, prefer to include an ARTICLE citation alongside the release
+          item to give the user both the changelog and expert analysis.
         - Build themes around releases and version updates when available. Trending repos should
           only be cited when no release item exists for that project.
 
