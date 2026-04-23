@@ -34,6 +34,13 @@ public class RadarOrchestrator {
           not just that it exists.
         - If an item is a security advisory, include the severity, affected package, and fix version.
 
+        CITATION PRIORITY:
+        - When items from GH_RELEASES or GH_STARS exist for a technology, ALWAYS prefer them over
+          GH_TRENDING items for the same project. Release items link to specific changelogs;
+          trending items only link to repo homepages with no context about what changed.
+        - Build themes around releases and version updates when available. Trending repos should
+          only be cited when no release item exists for that project.
+
         Use the provided tools to search items by tag, fetch item details, and investigate.
         When you encounter a CVE-related item, call checkRepoForVulnerability to see if
         the user's repos are affected.
