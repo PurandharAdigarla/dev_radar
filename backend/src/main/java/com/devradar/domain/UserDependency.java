@@ -20,7 +20,7 @@ public class UserDependency {
     @Column(name = "repo_full_name", nullable = false, length = 255)
     private String repoFullName;
 
-    @Column(name = "file_path", nullable = false, length = 512)
+    @Column(name = "file_path", nullable = false, length = 255)
     private String filePath;
 
     @Column(nullable = false, length = 20)

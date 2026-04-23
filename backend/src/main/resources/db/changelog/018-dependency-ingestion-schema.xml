@@ -15,7 +15,7 @@
             <column name="repo_full_name" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="file_path" type="VARCHAR(512)">
+            <column name="file_path" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
             <column name="ecosystem" type="VARCHAR(20)">
