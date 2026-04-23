@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="018-create-user-dependency" author="devradar">
+        <createTable tableName="user_dependency">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repo_full_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_path" type="VARCHAR(512)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ecosystem" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="package_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="current_version" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="scanned_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="user_dependency"
+            columnNames="user_id, repo_full_name, file_path, package_name"
+            constraintName="uk_user_dependency"/>
+        <addForeignKeyConstraint
+            baseTableName="user_dependency" baseColumnNames="user_id"
+            referencedTableName="users" referencedColumnNames="id"
+            constraintName="fk_user_dependency_user"/>
+    </changeSet>
+
+    <changeSet id="018-seed-dep-release-source" author="devradar">
+        <sql>
+INSERT INTO sources (code, display_name, active, fetch_interval_minutes, created_at) VALUES
+  ('DEP_RELEASE', 'Dependency', true, 1440, NOW());
+        </sql>
+    </changeSet>
+</databaseChangeLog>
