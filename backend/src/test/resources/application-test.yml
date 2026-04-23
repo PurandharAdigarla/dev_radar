@@ -40,6 +40,12 @@ devradar:
     article:
       fixed-delay-ms: 86400000
       initial-delay-ms: 86400000
+    dep-scan:
+      fixed-delay-ms: 86400000
+      initial-delay-ms: 86400000
+    dep-release:
+      fixed-delay-ms: 86400000
+      initial-delay-ms: 86400000
 
 anthropic:
   api-key: test-only-not-used
