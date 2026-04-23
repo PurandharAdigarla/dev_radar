@@ -132,7 +132,23 @@ public class GitHubApiClient {
         return resp.path("html_url").asText();
     }
 
+    public List<DirEntry> listDirectoryEntries(String token, String repoFullName, String path) {
+        JsonNode arr = http.get()
+                .uri("/repos/" + repoFullName + "/contents/" + path)
+                .header("Authorization", "Bearer " + token)
+                .header("Accept", "application/vnd.github+json")
+                .retrieve().body(JsonNode.class);
+        List<DirEntry> out = new ArrayList<>();
+        if (arr != null && arr.isArray()) {
+            for (JsonNode n : arr) {
+                out.add(new DirEntry(n.path("name").asText(), n.path("type").asText()));
+            }
+        }
+        return out;
+    }
+
     public record AuthedUser(String login, long id) {}
     public record RepoInfo(String fullName, String defaultBranch) {}
     public record FileContent(String text, String sha, String base64) {}
+    public record DirEntry(String name, String type) {}
 }

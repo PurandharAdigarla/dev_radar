@@ -140,4 +140,25 @@ class GitHubApiClientTest {
 
         assertThat(starred).isEmpty();
     }
+
+    @Test
+    void listDirectoryEntries_returnsNamesAndTypes() {
+        wm.stubFor(WireMock.get(WireMock.urlPathEqualTo("/repos/alice/api/contents/"))
+            .willReturn(WireMock.okJson("""
+                [
+                  {"name": "pom.xml", "type": "file"},
+                  {"name": "src", "type": "dir"},
+                  {"name": "backend", "type": "dir"},
+                  {"name": "README.md", "type": "file"}
+                ]
+                """)));
+
+        List<GitHubApiClient.DirEntry> entries = client.listDirectoryEntries("token", "alice/api", "");
+
+        assertThat(entries).hasSize(4);
+        assertThat(entries.get(0).name()).isEqualTo("pom.xml");
+        assertThat(entries.get(0).type()).isEqualTo("file");
+        assertThat(entries.get(2).name()).isEqualTo("backend");
+        assertThat(entries.get(2).type()).isEqualTo("dir");
+    }
 }
