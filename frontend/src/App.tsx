@@ -14,6 +14,7 @@ import { RadarDetailPage } from "./pages/RadarDetailPage";
 import { GitHubCallback } from "./pages/GitHubCallback";
 import { ObservabilityPage } from "./pages/ObservabilityPage";
 import { ApiKeysPage } from "./pages/ApiKeysPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { ErrorBoundary } from "./ErrorBoundary";
 
@@ -31,6 +32,7 @@ export function AppRoutes() {
           <Route path="radars" element={<RadarListPage />} />
           <Route path="radars/:id" element={<RadarDetailPage />} />
           <Route path="interests" element={<InterestPickerPage />} />
+          <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/api-keys" element={<ApiKeysPage />} />
         </Route>
       </Route>

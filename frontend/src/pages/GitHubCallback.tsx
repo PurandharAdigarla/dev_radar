@@ -32,11 +32,13 @@ export function GitHubCallback() {
     // Clear the hash so the token doesn't linger in the address bar.
     window.history.replaceState({}, "", "/auth/github/complete");
 
+    const isLink = new URLSearchParams(window.location.search).get("from") === "link";
+
     (async () => {
       try {
         const me = await dispatch(authApi.endpoints.me.initiate()).unwrap();
         dispatch(loginSucceeded({ accessToken, user: me }));
-        navigate("/app", { replace: true });
+        navigate(isLink ? "/app/settings" : "/app", { replace: true });
       } catch {
         tokenStorage.clear();
         navigate("/login?error=oauth_me_failed", { replace: true });

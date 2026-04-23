@@ -17,7 +17,7 @@ type NavItem =
 const NAV_ITEMS: NavItem[] = [
   { key: "radars", label: "Radars", to: "/app/radars" },
   { key: "interests", label: "Interests", to: "/app/interests" },
-  { key: "settings", label: "Settings", to: "/app/settings/api-keys" },
+  { key: "settings", label: "Settings", to: "/app/settings" },
 ];
 
 interface NavLinkItemProps {

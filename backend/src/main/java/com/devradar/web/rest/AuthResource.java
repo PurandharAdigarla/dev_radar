@@ -101,12 +101,14 @@ public class AuthResource {
 
     /** Step 1 of GitHub OAuth: redirect user to GitHub consent (link to existing account). */
     @GetMapping("/github/link")
-    public ResponseEntity<Void> githubLink() {
-        Long uid = SecurityUtils.getCurrentUserId();
-        if (uid == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    public ResponseEntity<Void> githubLink(@RequestParam String token) {
+        var details = jwt.parseAccessToken(token);
+        if (details == null) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(frontendBaseUrl + "/app/settings?error=invalid_token"))
+                .build();
         }
-        return startOAuth(uid);
+        return startOAuth(details.userId());
     }
 
     private ResponseEntity<Void> startOAuth(Long linkUserId) {
@@ -161,7 +163,7 @@ public class AuthResource {
 
         String jwtToken = jwt.generateAccessToken(u.getId(), u.getEmail());
         return ResponseEntity.status(HttpStatus.FOUND)
-            .location(URI.create(frontendBaseUrl + "/settings?github=linked#accessToken=" + jwtToken))
+            .location(URI.create(frontendBaseUrl + "/auth/github/complete?from=link#accessToken=" + jwtToken))
             .build();
     }
 

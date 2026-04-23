@@ -171,6 +171,13 @@ export interface MetricsDay {
   evalScoreDistinctness: number | null;
 }
 
+// ─── GitHub ─────────────────────────────────────────────────────────
+
+export interface GitHubStatus {
+  linked: boolean;
+  login: string | null;
+}
+
 // ─── API Keys ───────────────────────────────────────────────────────
 
 export type ApiKeyScope = "READ" | "WRITE";
