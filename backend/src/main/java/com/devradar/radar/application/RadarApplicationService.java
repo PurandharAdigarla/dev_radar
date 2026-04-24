@@ -22,7 +22,9 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -90,7 +92,7 @@ public class RadarApplicationService {
         Long uid = SecurityUtils.getCurrentUserId();
         if (uid == null) throw new UserNotAuthenticatedException();
         Radar r = radarRepo.findById(radarId).orElseThrow();
-        if (!r.getUserId().equals(uid)) throw new RuntimeException("forbidden");
+        if (!r.getUserId().equals(uid)) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 
         var themes = themeRepo.findByRadarIdOrderByDisplayOrderAsc(radarId);
         List<RadarThemeDTO> themeDtos = new ArrayList<>();
@@ -114,7 +116,10 @@ public class RadarApplicationService {
     }
 
     private RadarSummaryDTO summary(Radar r) {
-        return new RadarSummaryDTO(r.getId(), r.getStatus(), r.getPeriodStart(), r.getPeriodEnd(), r.getGeneratedAt(), r.getGenerationMs(), r.getTokenCount());
+        int themeCount = (r.getStatus() == RadarStatus.READY)
+            ? themeRepo.findByRadarIdOrderByDisplayOrderAsc(r.getId()).size()
+            : 0;
+        return new RadarSummaryDTO(r.getId(), r.getStatus(), r.getPeriodStart(), r.getPeriodEnd(), r.getGeneratedAt(), r.getGenerationMs(), r.getTokenCount(), themeCount);
     }
 
     public Optional<RadarMcpDTO> getLatestForUser(Long userId) {

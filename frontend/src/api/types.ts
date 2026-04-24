@@ -38,6 +38,7 @@ export interface RadarSummary {
   generatedAt: string | null;
   generationMs: number | null;
   tokenCount: number | null;
+  themeCount: number | null;
 }
 
 export interface RadarItem {

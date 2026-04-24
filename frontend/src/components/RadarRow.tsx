@@ -65,7 +65,7 @@ export function RadarRow({ radar }: RadarRowProps) {
         >
           {radar.status === "READY" && tokensK != null && seconds != null && (
             <>
-              <span>3 themes</span>
+              <span>{radar.themeCount ?? 0} themes</span>
               <span>·</span>
               <span>{tokensK}k tokens</span>
               <span>·</span>

@@ -62,7 +62,9 @@ public class RadarEventBus {
     }
 
     private void remove(Long radarId, SseEmitter emitter) {
-        List<SseEmitter> list = subscribers.get(radarId);
-        if (list != null) list.remove(emitter);
+        subscribers.computeIfPresent(radarId, (k, list) -> {
+            list.remove(emitter);
+            return list.isEmpty() ? null : list;
+        });
     }
 }
