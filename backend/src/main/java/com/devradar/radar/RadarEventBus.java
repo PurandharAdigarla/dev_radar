@@ -48,6 +48,7 @@ public class RadarEventBus {
                 e.send(SseEmitter.event().name(eventName).data(data));
             } catch (IOException ex) {
                 LOG.debug("subscriber dropped for radar={}: {}", radarId, ex.toString());
+                remove(radarId, e);
             }
         }
     }

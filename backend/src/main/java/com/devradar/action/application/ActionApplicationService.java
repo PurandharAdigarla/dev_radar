@@ -7,8 +7,10 @@ import com.devradar.domain.exception.UserNotAuthenticatedException;
 import com.devradar.repository.ActionProposalRepository;
 import com.devradar.security.SecurityUtils;
 import com.devradar.web.rest.dto.ActionProposalDTO;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -33,14 +35,14 @@ public class ActionApplicationService {
     public ActionProposalDTO approve(Long proposalId, String fixVersion) {
         Long uid = currentUserId();
         ActionProposal p = repo.findById(proposalId).orElseThrow();
-        if (!p.getUserId().equals(uid)) throw new RuntimeException("forbidden");
+        if (!p.getUserId().equals(uid)) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         executor.execute(proposalId, fixVersion);
         return toDto(repo.findById(proposalId).orElseThrow());
     }
 
     public ActionProposalDTO approveForUser(Long userId, Long proposalId, String fixVersion) {
         ActionProposal p = repo.findById(proposalId).orElseThrow();
-        if (!p.getUserId().equals(userId)) throw new RuntimeException("forbidden");
+        if (!p.getUserId().equals(userId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         executor.execute(proposalId, fixVersion);
         return toDto(repo.findById(proposalId).orElseThrow());
     }
@@ -49,7 +51,7 @@ public class ActionApplicationService {
     public ActionProposalDTO dismiss(Long proposalId) {
         Long uid = currentUserId();
         ActionProposal p = repo.findById(proposalId).orElseThrow();
-        if (!p.getUserId().equals(uid)) throw new RuntimeException("forbidden");
+        if (!p.getUserId().equals(uid)) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         p.setStatus(ActionProposalStatus.DISMISSED);
         return toDto(repo.save(p));
     }

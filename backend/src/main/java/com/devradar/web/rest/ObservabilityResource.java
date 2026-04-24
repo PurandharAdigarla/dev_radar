@@ -26,6 +26,6 @@ public class ObservabilityResource {
     @GetMapping("/timeseries")
     public ResponseEntity<List<MetricsDayDTO>> timeseries(
             @RequestParam(defaultValue = "7") int days) {
-        return ResponseEntity.ok(service.getTimeseries(Math.min(days, 90)));
+        return ResponseEntity.ok(service.getTimeseries(Math.max(1, Math.min(days, 90))));
     }
 }

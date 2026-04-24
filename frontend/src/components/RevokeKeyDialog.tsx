@@ -20,8 +20,12 @@ export function RevokeKeyDialog({ open, keyId, keyName, onClose }: RevokeKeyDial
 
   async function handleRevoke() {
     if (keyId == null) return;
-    await revoke(keyId).unwrap().catch(() => null);
-    onClose();
+    try {
+      await revoke(keyId).unwrap();
+      onClose();
+    } catch {
+      // RTK Query sets `error` state — dialog stays open so user sees the Alert
+    }
   }
 
   return (
