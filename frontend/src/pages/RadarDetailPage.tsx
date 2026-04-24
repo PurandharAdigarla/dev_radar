@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { PulseDot } from "../components/PulseDot";
@@ -13,7 +13,7 @@ import { useListProposalsByRadarQuery } from "../api/actionApi";
 import { useGetMyInterestsQuery } from "../api/interestApi";
 import { useRadarStream } from "../radar/useRadarStream";
 import { generationFinished, generationStarted } from "../radar/radarGenerationSlice";
-import type { AppDispatch, RootState } from "../store";
+import type { AppDispatch } from "../store";
 import type { RadarTheme } from "../api/types";
 
 function formatDate(iso: string): string {
@@ -45,17 +45,19 @@ export function RadarDetailPage() {
   const stream = useRadarStream(radarId, isGenerating);
   const streaming = isGenerating && stream.status !== "complete" && stream.status !== "failed";
 
-  const sidebarGeneratingId = useSelector(
-    (s: RootState) => s.radarGeneration.currentGeneratingRadarId,
-  );
-
   // Track generating radar in the sidebar indicator.
   useEffect(() => {
-    if (isGenerating && sidebarGeneratingId !== radarId) {
+    if (isGenerating) {
       dispatch(generationStarted({ radarId, startedAt: new Date().toISOString() }));
+    } else {
+      dispatch(generationFinished());
     }
+  }, [dispatch, radarId, isGenerating]);
+
+  // Clear sidebar indicator on unmount.
+  useEffect(() => {
     return () => { dispatch(generationFinished()); };
-  }, [dispatch, radarId, isGenerating, sidebarGeneratingId]);
+  }, [dispatch]);
 
   // When the stream finishes, refetch the radar for full item metadata.
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Provider } from "react-redux";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -41,17 +41,22 @@ export function AppRoutes() {
   );
 }
 
+function LocationAwareErrorBoundary({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return <ErrorBoundary resetKey={location.pathname}>{children}</ErrorBoundary>;
+}
+
 export default function App() {
   return (
-    <ErrorBoundary>
-      <Provider store={store}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <BrowserRouter>
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter>
+          <LocationAwareErrorBoundary>
             <AppRoutes />
-          </BrowserRouter>
-        </ThemeProvider>
-      </Provider>
-    </ErrorBoundary>
+          </LocationAwareErrorBoundary>
+        </BrowserRouter>
+      </ThemeProvider>
+    </Provider>
   );
 }

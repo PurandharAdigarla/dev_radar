@@ -45,7 +45,7 @@ describe("RadarDetailPage", () => {
 
   it("renders action proposals panel when proposals exist", async () => {
     setup();
-    await waitFor(() => expect(screen.getByText(/CVE-2024-1234/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/GHSA-xxxx-yyyy-zzzz/)).toBeInTheDocument());
     expect(screen.getByRole("button", { name: /approve/i })).toBeInTheDocument();
   });
 });

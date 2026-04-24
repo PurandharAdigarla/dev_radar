@@ -1,13 +1,19 @@
 import { Component, type ReactNode } from "react";
 
 interface State { hasError: boolean }
-interface Props { children: ReactNode }
+interface Props { children: ReactNode; resetKey?: string }
 
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
   static getDerivedStateFromError(): State {
     return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
   }
 
   componentDidCatch(error: Error) {

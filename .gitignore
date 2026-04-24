@@ -29,3 +29,10 @@ dist/
 
 # Local Claude state (project-local settings stay)
 .claude/local/
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+.gstack/
+
+# Playwright MCP artifacts
+.playwright-mcp/

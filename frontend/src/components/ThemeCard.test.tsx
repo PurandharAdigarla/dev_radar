@@ -25,7 +25,7 @@ describe("ThemeCard", () => {
   it("renders title, summary, and source cards for each item", () => {
     render(withTheme(<ThemeCard theme={sample} />));
     expect(screen.getByRole("heading", { name: /spring boot ecosystem/i })).toBeInTheDocument();
-    expect(screen.getByText(/virtual thread support/i)).toBeInTheDocument();
+    expect(screen.getByText(/ships with virtual thread support/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /spring boot 3\.5 released/i })).toHaveAttribute("href", "https://spring.io/3.5");
     expect(screen.getByRole("link", { name: /virtual threads deep-dive/i })).toHaveAttribute("href", "https://example.com/vt");
   });

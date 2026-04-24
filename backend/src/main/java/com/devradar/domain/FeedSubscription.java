@@ -22,7 +22,7 @@ public class FeedSubscription {
     @Column(nullable = false, length = 255)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TINYINT(1)")
     private boolean active = true;
 
     public Long getId() { return id; }

@@ -78,9 +78,7 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
   }
 
   async function handleRetry() {
-    if (payload.fixVersion) {
-      await approve({ id: proposal.id, fixVersion: payload.fixVersion }).unwrap().catch(() => {});
-    }
+    setModalOpen(true);
   }
 
   async function handleDismiss() {
@@ -109,7 +107,7 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
           mb: "6px",
         }}
       >
-        {payload.cveId ?? "CVE"}
+        {payload.ghsa_id ?? "CVE"}
       </Box>
       <Typography
         sx={{
@@ -120,7 +118,7 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
           mb: "10px",
         }}
       >
-        {payload.packageName ?? "package"}
+        {payload.package ?? "package"}
       </Typography>
       <Box
         sx={{
@@ -134,11 +132,11 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
         }}
       >
         <Box component="span" sx={{ color: "text.secondary" }}>
-          {payload.currentVersion ?? "—"}
+          {payload.current_version ?? "—"}
         </Box>
         <ArrowIcon />
-        <Box component="span" sx={{ fontWeight: 500 }}>
-          {payload.fixVersion ?? "—"}
+        <Box component="span" sx={{ fontWeight: 500, color: "text.secondary" }}>
+          fix version on approve
         </Box>
       </Box>
 
@@ -193,11 +191,11 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
       <ProposalApproveModal
         open={modalOpen}
         context={{
-          cveId: payload.cveId ?? "CVE",
-          packageName: payload.packageName ?? "package",
-          fromVersion: payload.currentVersion ?? "—",
+          cveId: payload.ghsa_id ?? "CVE",
+          packageName: payload.package ?? "package",
+          fromVersion: payload.current_version ?? "—",
         }}
-        initialFixVersion={payload.fixVersion ?? ""}
+        initialFixVersion=""
         onCancel={() => setModalOpen(false)}
         onSubmit={handleApprove}
       />

@@ -40,8 +40,8 @@ public class AutoPrExecutor {
     @Transactional
     public void execute(Long proposalId, String fixVersion) {
         ActionProposal p = proposalRepo.findById(proposalId).orElseThrow();
-        if (p.getStatus() != ActionProposalStatus.PROPOSED) {
-            throw new IllegalStateException("proposal not in PROPOSED state: " + p.getStatus());
+        if (p.getStatus() != ActionProposalStatus.PROPOSED && p.getStatus() != ActionProposalStatus.FAILED) {
+            throw new IllegalStateException("proposal not in PROPOSED or FAILED state: " + p.getStatus());
         }
         try {
             JsonNode payload = json.readTree(p.getPayload());

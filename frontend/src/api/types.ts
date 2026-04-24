@@ -88,7 +88,7 @@ export interface InterestTag {
 
 // ─── Action proposals ───────────────────────────────────────────────────
 
-export type ActionProposalKind = "CVE_FIX_PR";
+export type ActionProposalKind = "auto_pr_cve";
 export type ActionProposalStatus = "PROPOSED" | "EXECUTED" | "DISMISSED" | "FAILED";
 
 export interface ActionProposal {
@@ -103,14 +103,14 @@ export interface ActionProposal {
   updatedAt: string;
 }
 
-/** Shape of `payloadJson` for CVE_FIX_PR kind once parsed. */
+/** Shape of `payloadJson` for auto_pr_cve kind once parsed. */
 export interface CveFixPayload {
-  cveId: string;
-  packageName: string;
-  currentVersion: string;
-  fixVersion: string;
-  repoOwner: string;
-  repoName: string;
+  ghsa_id: string;
+  package: string;
+  current_version: string;
+  repo: string;
+  file_path: string;
+  file_sha: string;
 }
 
 // ─── SSE events ─────────────────────────────────────────────────────────

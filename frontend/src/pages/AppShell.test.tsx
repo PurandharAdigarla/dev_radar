@@ -48,10 +48,9 @@ describe("AppShell", () => {
     expect(screen.getByTestId("child")).toHaveTextContent("child-content");
   });
 
-  it("shows Settings as disabled with 'soon' tag", () => {
+  it("shows Settings as an active nav link", () => {
     renderShell(true, false);
-    expect(screen.getByText(/settings/i)).toBeInTheDocument();
-    expect(screen.getByText(/^soon$/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /settings/i })).toBeInTheDocument();
   });
 
   it("renders Interests child content when on /app/interests", () => {

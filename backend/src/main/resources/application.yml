@@ -19,7 +19,7 @@ spring:
       port: ${REDIS_HOST_PORT:6379}
     web:
       pageable:
-        max-page-size: 100
+        max-page-size: 200
         default-page-size: 20
   ai:
     mcp:
