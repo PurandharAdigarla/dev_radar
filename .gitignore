@@ -1,6 +1,3 @@
-# Brainstorm artifacts (per .superpowers convention)
-.superpowers/
-
 # OS
 .DS_Store
 Thumbs.db
@@ -10,15 +7,22 @@ Thumbs.db
 .vscode/
 *.iml
 
+# Eclipse
+.classpath
+.factorypath
+.project
+.settings/
+
 # Java/Maven
 target/
 *.class
 *.jar
 
-# Node (for future frontend)
+# Node
 node_modules/
 dist/
 .cache/
+coverage/
 
 # Env
 .env
@@ -27,12 +31,18 @@ dist/
 # Logs
 *.log
 
-# Local Claude state (project-local settings stay)
+# Dev screenshots
+/*.png
+
+# Claude / tooling state
 .claude/local/
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 .claude/worktrees/
+.superpowers/
 .gstack/
-
-# Playwright MCP artifacts
 .playwright-mcp/
+
+# Generated design artifacts (keep plans/ and specs/)
+docs/superpowers/design-assets/
+docs/superpowers/design-briefs/
