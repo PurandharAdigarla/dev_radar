@@ -67,22 +67,37 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
   const [approve] = useApproveProposalMutation();
   const [dismiss, dismissState] = useDismissProposalMutation();
 
+  const [error, setError] = useState<string | null>(null);
+
   const isProposed = proposal.status === "PROPOSED";
   const isExecuted = proposal.status === "EXECUTED";
   const isDismissed = proposal.status === "DISMISSED";
   const isFailed = proposal.status === "FAILED";
 
   async function handleApprove(fixVersion: string) {
-    await approve({ id: proposal.id, fixVersion }).unwrap();
-    setModalOpen(false);
+    setError(null);
+    try {
+      await approve({ id: proposal.id, fixVersion }).unwrap();
+      setModalOpen(false);
+    } catch (err) {
+      const msg = (err as { data?: { message?: string } }).data?.message;
+      setError(msg ?? "Failed to approve proposal.");
+    }
   }
 
   async function handleRetry() {
+    setError(null);
     setModalOpen(true);
   }
 
   async function handleDismiss() {
-    await dismiss(proposal.id).unwrap().catch(() => {});
+    setError(null);
+    try {
+      await dismiss(proposal.id).unwrap();
+    } catch (err) {
+      const msg = (err as { data?: { message?: string } }).data?.message;
+      setError(msg ?? "Failed to dismiss proposal.");
+    }
   }
 
   return (
@@ -139,6 +154,12 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
           fix version on approve
         </Box>
       </Box>
+
+      {error && (
+        <Box sx={{ mb: 1.5 }}>
+          <Alert severity="error">{error}</Alert>
+        </Box>
+      )}
 
       {isFailed && (
         <Box sx={{ mb: 1.5 }}>
