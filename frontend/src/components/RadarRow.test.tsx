@@ -19,7 +19,7 @@ const ready: RadarSummary = {
   periodStart: "2026-04-13T00:00:00Z",
   periodEnd: "2026-04-20T00:00:00Z",
   generatedAt: "2026-04-20T10:00:00Z",
-  generationMs: 12000, tokenCount: 4200,
+  generationMs: 12000, tokenCount: 4200, themeCount: 3,
 };
 
 describe("RadarRow", () => {

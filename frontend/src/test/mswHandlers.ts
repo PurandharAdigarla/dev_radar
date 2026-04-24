@@ -103,6 +103,7 @@ export const handlers = [
           generatedAt: "2026-04-20T10:00:00Z",
           generationMs: 12000,
           tokenCount: 4200,
+          themeCount: 3,
         },
       ],
       totalElements: 1,
@@ -186,8 +187,7 @@ export const handlers = [
     return HttpResponse.json([]);
   }),
 
-  http.post("/api/actions/:id/approve", async ({ params, request }) => {
-    const body = (await request.json()) as { fix_version?: string };
+  http.post("/api/actions/:id/approve", async ({ params }) => {
     return HttpResponse.json({
       id: Number(params.id), radarId: 42, kind: "auto_pr_cve",
       payloadJson: JSON.stringify({
