@@ -62,8 +62,8 @@ function ChartEmpty() {
 
 export function ObservabilityPage() {
   const [days, setDays] = useState(7);
-  const { data: summary, isLoading: summaryLoading } = useGetSummaryQuery();
-  const { data: timeseries, isLoading: tsLoading } = useGetTimeseriesQuery(days);
+  const { data: summary, isLoading: summaryLoading, isError: summaryError } = useGetSummaryQuery();
+  const { data: timeseries, isLoading: tsLoading, isError: tsError } = useGetTimeseriesQuery(days);
 
   const hasTs = timeseries && timeseries.length > 0;
 
@@ -117,6 +117,11 @@ export function ObservabilityPage() {
         {summaryLoading && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
             Loading metrics…
+          </Typography>
+        )}
+        {summaryError && (
+          <Typography variant="body2" color="error" sx={{ mb: 4 }}>
+            Failed to load metrics. Try refreshing the page.
           </Typography>
         )}
         {summary && (
@@ -184,6 +189,9 @@ export function ObservabilityPage() {
 
         {tsLoading && (
           <Typography variant="body2" color="text.secondary">Loading charts…</Typography>
+        )}
+        {tsError && (
+          <Typography variant="body2" color="error">Failed to load chart data.</Typography>
         )}
 
         {!tsLoading && (
