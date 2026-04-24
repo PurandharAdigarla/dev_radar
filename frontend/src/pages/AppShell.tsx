@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { NavLink, Outlet, useLocation, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Box from "@mui/material/Box";
@@ -6,6 +7,7 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import { PulseDot } from "../components/PulseDot";
 import { useAuth } from "../auth/useAuth";
+import { useMeQuery } from "../api/authApi";
 import type { RootState } from "../store";
 
 const SIDEBAR_WIDTH = 240;
@@ -79,7 +81,11 @@ function NavLinkItem({ item, active, showGeneratingDot, variant }: NavLinkItemPr
 }
 
 export function AppShell() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated, _setUser } = useAuth();
+  const { data: meData } = useMeQuery(undefined, { skip: !isAuthenticated || user !== null });
+  useEffect(() => {
+    if (meData && !user) _setUser(meData);
+  }, [meData, user, _setUser]);
   const generatingRadarId = useSelector((s: RootState) => s.radarGeneration.currentGeneratingRadarId);
   const location = useLocation();
   const muiTheme = useTheme();
