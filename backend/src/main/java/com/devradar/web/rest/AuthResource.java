@@ -1,10 +1,12 @@
 package com.devradar.web.rest;
 
 import com.devradar.crypto.TokenEncryptor;
+import com.devradar.domain.OAuthState;
 import com.devradar.domain.User;
 import com.devradar.domain.UserGithubIdentity;
 import com.devradar.github.GitHubApiClient;
 import com.devradar.github.GitHubOAuthClient;
+import com.devradar.repository.OAuthStateRepository;
 import com.devradar.repository.UserGithubIdentityRepository;
 import com.devradar.repository.UserRepository;
 import com.devradar.security.JwtTokenProvider;
@@ -17,12 +19,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import com.devradar.security.SecurityUtils;
-
 import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,15 +34,12 @@ public class AuthResource {
     private final GitHubApiClient ghApi;
     private final UserRepository userRepo;
     private final UserGithubIdentityRepository identityRepo;
+    private final OAuthStateRepository oauthStateRepo;
     private final TokenEncryptor encryptor;
     private final JwtTokenProvider jwt;
     private final String authorizeUrl;
     private final String defaultScopes;
     private final String frontendBaseUrl;
-
-    record PendingOAuth(Instant expiresAt, Long linkUserId) {}
-
-    private final ConcurrentHashMap<String, PendingOAuth> issuedStates = new ConcurrentHashMap<>();
 
     public AuthResource(
         AuthService auth,
@@ -51,6 +47,7 @@ public class AuthResource {
         GitHubApiClient ghApi,
         UserRepository userRepo,
         UserGithubIdentityRepository identityRepo,
+        OAuthStateRepository oauthStateRepo,
         TokenEncryptor encryptor,
         JwtTokenProvider jwt,
         @Value("${github.oauth.authorize-url}") String authorizeUrl,
@@ -62,6 +59,7 @@ public class AuthResource {
         this.ghApi = ghApi;
         this.userRepo = userRepo;
         this.identityRepo = identityRepo;
+        this.oauthStateRepo = oauthStateRepo;
         this.encryptor = encryptor;
         this.jwt = jwt;
         this.authorizeUrl = authorizeUrl;
@@ -112,9 +110,9 @@ public class AuthResource {
     }
 
     private ResponseEntity<Void> startOAuth(Long linkUserId) {
-        purgeExpiredStates();
+        oauthStateRepo.deleteByExpiresAtBefore(Instant.now());
         String state = GitHubOAuthClient.generateState();
-        issuedStates.put(state, new PendingOAuth(Instant.now().plus(STATE_TTL), linkUserId));
+        oauthStateRepo.save(new OAuthState(state, Instant.now().plus(STATE_TTL), linkUserId));
         String url = ghOauth.buildAuthorizeUrl(authorizeUrl, state, defaultScopes);
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
     }
@@ -123,19 +121,22 @@ public class AuthResource {
     @GetMapping("/github/callback")
     @Transactional
     public ResponseEntity<Void> githubCallback(@RequestParam String code, @RequestParam String state) {
-        PendingOAuth pending = issuedStates.remove(state);
-        if (pending == null || pending.expiresAt().isBefore(Instant.now())) {
+        Optional<OAuthState> opt = oauthStateRepo.findById(state);
+        if (opt.isEmpty() || opt.get().getExpiresAt().isBefore(Instant.now())) {
+            opt.ifPresent(oauthStateRepo::delete);
             return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(frontendBaseUrl + "/login?error=oauth_state"))
                 .build();
         }
+        OAuthState pending = opt.get();
+        oauthStateRepo.delete(pending);
 
         var tokenResp = ghOauth.exchangeCode(code);
         var ghUser = ghApi.getAuthenticatedUser(tokenResp.accessToken());
         String encryptedToken = encryptor.encrypt(tokenResp.accessToken());
 
-        if (pending.linkUserId() != null) {
-            return handleLink(pending.linkUserId(), ghUser, encryptedToken, tokenResp.grantedScopes());
+        if (pending.getLinkUserId() != null) {
+            return handleLink(pending.getLinkUserId(), ghUser, encryptedToken, tokenResp.grantedScopes());
         }
         return handleLoginOrSignup(ghUser, encryptedToken, tokenResp.grantedScopes());
     }
@@ -198,10 +199,5 @@ public class AuthResource {
         String jwtToken = jwt.generateAccessToken(u.getId(), u.getEmail());
         String target = frontendBaseUrl + "/auth/github/complete#accessToken=" + jwtToken;
         return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(target)).build();
-    }
-
-    private void purgeExpiredStates() {
-        Instant now = Instant.now();
-        issuedStates.entrySet().removeIf(e -> e.getValue().expiresAt().isBefore(now));
     }
 }

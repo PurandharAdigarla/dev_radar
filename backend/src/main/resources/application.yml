@@ -69,6 +69,10 @@ github:
     base-url: https://api.github.com
 
 devradar:
+  scheduling:
+    enabled: ${SCHEDULING_ENABLED:false}
+  internal:
+    trigger-secret: ${TRIGGER_SECRET:}
   ingest:
     gh-releases:
       repos: >-
