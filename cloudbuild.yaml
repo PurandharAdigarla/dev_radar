@@ -1,0 +1,63 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/devradar:${SHORT_SHA}'
+      - -t
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/devradar:latest'
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/devradar'
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - devradar
+      - --image
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/devradar:${SHORT_SHA}'
+      - --region
+      - ${_REGION}
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --set-env-vars
+      - SPRING_PROFILES_ACTIVE=prod
+      - --set-secrets
+      - >-
+        JWT_SECRET=jwt-secret:latest,
+        GOOGLE_AI_API_KEY=google-ai-api-key:latest,
+        GROQ_API_KEY=groq-api-key:latest,
+        GITHUB_OAUTH_CLIENT_ID=github-oauth-client-id:latest,
+        GITHUB_OAUTH_CLIENT_SECRET=github-oauth-client-secret:latest,
+        GITHUB_TOKEN_ENCRYPTION_KEY=github-token-encryption-key:latest
+      - --add-cloudsql-instances
+      - ${_CLOUD_SQL_INSTANCE}
+      - --memory
+      - 512Mi
+      - --cpu
+      - '1'
+      - --min-instances
+      - '0'
+      - --max-instances
+      - '3'
+      - --timeout
+      - 300s
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/devradar:${SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/devradar:latest'
+
+substitutions:
+  _REGION: us-central1
+  _REPO: devradar
+  _CLOUD_SQL_INSTANCE: ${PROJECT_ID}:${_REGION}:devradar-mysql
+
+options:
+  logging: CLOUD_LOGGING_ONLY

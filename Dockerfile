@@ -24,6 +24,7 @@ COPY --from=backend-build /app/backend/target/devradar-backend-*.jar app.jar
 RUN chown -R appusr:appgrp /app
 USER appusr
 
+ENV SPRING_PROFILES_ACTIVE=prod
 EXPOSE 8080
 
 ENTRYPOINT ["java", \
