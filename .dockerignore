@@ -1,0 +1,9 @@
+**/target/
+**/node_modules/
+**/.git
+**/.idea
+**/.vscode
+**/dist/
+*.md
+docs/
+.playwright-mcp/

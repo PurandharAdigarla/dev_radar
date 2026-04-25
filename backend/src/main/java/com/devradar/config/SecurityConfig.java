@@ -43,6 +43,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/observability/**").permitAll()
                 .requestMatchers("/api/internal/**").permitAll()
                 .requestMatchers("/mcp/**").permitAll()
+                .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
+                .requestMatchers("/login", "/register", "/app/**", "/observability").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
