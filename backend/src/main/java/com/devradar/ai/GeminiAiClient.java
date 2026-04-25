@@ -5,37 +5,23 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Calls Google AI Studio's Gemini 2.0 Flash via REST. Free tier.
- * Activated with -Dspring-boot.run.profiles=gemini
- *
- * Translates the provider-agnostic AiClient contract to Gemini's REST format:
- * - "user"/"assistant" role -> "user"/"model"
- * - tool_use blocks -> functionCall in parts
- * - tool_result blocks -> functionResponse in parts (sent as user message)
+ * Calls Google AI Studio's Gemini API via REST.
+ * Instantiated by MultiProviderAiClient — not a Spring bean itself.
  */
-@Component
-@Profile("gemini")
 public class GeminiAiClient implements AiClient {
 
     private final RestClient http;
     private final String apiKey;
     private final ObjectMapper json = new ObjectMapper();
 
-    public GeminiAiClient(
-        RestClient.Builder builder,
-        @Value("${google-ai.base-url:https://generativelanguage.googleapis.com}") String baseUrl,
-        @Value("${google-ai.api-key:}") String apiKey
-    ) {
-        this.http = builder.baseUrl(baseUrl).build();
+    public GeminiAiClient(String baseUrl, String apiKey) {
+        this.http = RestClient.builder().baseUrl(baseUrl).build();
         this.apiKey = apiKey;
     }
 
@@ -127,13 +113,17 @@ public class GeminiAiClient implements AiClient {
                 .body(JsonNode.class);
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             int status = e.getStatusCode().value();
+            if (status == 429) {
+                throw new AiRateLimitException("gemini", extractGeminiError(e.getResponseBodyAsString()));
+            }
             String shortMsg = switch (status) {
-                case 429 -> "Gemini rate limit exceeded — free tier quota exhausted. Retry later.";
                 case 400 -> "Gemini bad request: " + extractGeminiError(e.getResponseBodyAsString());
                 case 403 -> "Gemini API key invalid or forbidden.";
                 default -> "Gemini API error " + status + ": " + extractGeminiError(e.getResponseBodyAsString());
             };
-            throw new RuntimeException(shortMsg, e);
+            throw new AiProviderException(shortMsg);
+        } catch (org.springframework.web.client.HttpServerErrorException e) {
+            throw new AiProviderException("Gemini server error: " + e.getStatusCode(), e);
         }
 
         // Parse response

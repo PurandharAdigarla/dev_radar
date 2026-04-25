@@ -73,9 +73,9 @@ public class RadarOrchestrator {
     private final int maxTokens;
 
     public RadarOrchestrator(AiClient ai, ToolRegistry tools,
-                             @Value("${anthropic.orchestrator-model}") String model,
-                             @Value("${anthropic.max-tool-iterations}") int maxIterations,
-                             @Value("${anthropic.max-tokens-per-call}") int maxTokens) {
+                             @Value("${devradar.ai.orchestrator-model}") String model,
+                             @Value("${devradar.ai.max-tool-iterations}") int maxIterations,
+                             @Value("${devradar.ai.max-tokens-per-call}") int maxTokens) {
         this.ai = ai; this.tools = tools; this.model = model;
         this.maxIterations = maxIterations; this.maxTokens = maxTokens;
     }

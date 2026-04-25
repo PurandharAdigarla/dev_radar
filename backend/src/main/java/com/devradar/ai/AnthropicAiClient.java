@@ -13,39 +13,29 @@ import com.devradar.ai.tools.ToolDefinition;
 import com.devradar.observability.DailyMetricsCounter;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-@Component
-@org.springframework.context.annotation.Profile("default | anthropic")
+/**
+ * Calls Anthropic's Claude API via the official Java SDK.
+ * Instantiated by MultiProviderAiClient — not a Spring bean itself.
+ */
 public class AnthropicAiClient implements AiClient {
 
     private final AnthropicClient sdk;
     private final ObjectMapper json = new ObjectMapper();
-    private final MeterRegistry meterRegistry;
-    private final DailyMetricsCounter dailyMetrics;
 
-    public AnthropicAiClient(
-            @Value("${anthropic.api-key:}") String apiKey,
-            MeterRegistry meterRegistry,
-            DailyMetricsCounter dailyMetrics) {
+    public AnthropicAiClient(String apiKey, MeterRegistry meterRegistry, DailyMetricsCounter dailyMetrics) {
         if (apiKey == null || apiKey.isBlank()) {
             this.sdk = AnthropicOkHttpClient.builder().fromEnv().build();
         } else {
             this.sdk = AnthropicOkHttpClient.builder().apiKey(apiKey).build();
         }
-        this.meterRegistry = meterRegistry;
-        this.dailyMetrics = dailyMetrics;
     }
 
     @Override
@@ -78,7 +68,6 @@ public class AnthropicAiClient implements AiClient {
                 }
             } else if ("assistant".equals(m.role())) {
                 if (m.toolCalls() != null && !m.toolCalls().isEmpty()) {
-                    // assistant turn with tool_use blocks — pass content as block params
                     List<ContentBlockParam> blocks = new ArrayList<>();
                     if (m.content() != null && !m.content().isBlank()) {
                         blocks.add(ContentBlockParam.ofText(
@@ -96,7 +85,7 @@ public class AnthropicAiClient implements AiClient {
                                             .input(JsonValue.fromJsonNode(inputNode))
                                             .build()));
                         } catch (Exception e) {
-                            throw new RuntimeException("invalid tool call input for " + tc.name(), e);
+                            throw new AiProviderException("invalid tool call input for " + tc.name(), e);
                         }
                     }
                     builder.addAssistantMessageOfBlockParams(blocks);
@@ -141,17 +130,18 @@ public class AnthropicAiClient implements AiClient {
                         .inputSchema(isBuilder.build())
                         .build());
             } catch (Exception e) {
-                throw new RuntimeException("invalid tool schema for " + t.name(), e);
+                throw new AiProviderException("invalid tool schema for " + t.name(), e);
             }
         }
 
-        var sample = Timer.start(meterRegistry);
-
-        Message resp = sdk.messages().create(builder.build());
-
-        sample.stop(Timer.builder("ai.client.duration")
-                .tag("model", model)
-                .register(meterRegistry));
+        Message resp;
+        try {
+            resp = sdk.messages().create(builder.build());
+        } catch (com.anthropic.errors.RateLimitException e) {
+            throw new AiRateLimitException("anthropic", e.getMessage());
+        } catch (Exception e) {
+            throw new AiProviderException("anthropic: " + e.getMessage(), e);
+        }
 
         StringBuilder textOut = new StringBuilder();
         List<AiToolCall> toolCalls = new ArrayList<>();
@@ -171,25 +161,6 @@ public class AnthropicAiClient implements AiClient {
         String stop = resp.stopReason().map(Object::toString).orElse("end_turn");
         int in = (int) resp.usage().inputTokens();
         int out = (int) resp.usage().outputTokens();
-
-        Counter.builder("ai.client.tokens")
-                .tag("model", model)
-                .tag("direction", "input")
-                .register(meterRegistry)
-                .increment(in);
-
-        Counter.builder("ai.client.tokens")
-                .tag("model", model)
-                .tag("direction", "output")
-                .register(meterRegistry)
-                .increment(out);
-
-        var today = LocalDate.now();
-        if (model.contains("sonnet")) {
-            dailyMetrics.incrementSonnetCalls(today);
-        } else if (model.contains("haiku")) {
-            dailyMetrics.incrementHaikuCalls(today);
-        }
 
         return new AiResponse(textOut.toString(), toolCalls, stop, in, out);
     }

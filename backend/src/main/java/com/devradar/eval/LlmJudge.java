@@ -22,7 +22,7 @@ public class LlmJudge {
     private final String judgeModel;
 
     public LlmJudge(AiClient aiClient,
-                     @Value("${anthropic.orchestrator-model:claude-sonnet-4-6}") String judgeModel) {
+                     @Value("${devradar.ai.scoring-model}") String judgeModel) {
         this.aiClient = aiClient;
         this.judgeModel = judgeModel;
     }

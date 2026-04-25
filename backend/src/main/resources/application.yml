@@ -43,14 +43,15 @@ server:
 
 anthropic:
   api-key: ${ANTHROPIC_API_KEY:}
-  orchestrator-model: claude-sonnet-4-6
-  scoring-model: claude-haiku-4-5-20251001
-  max-tool-iterations: 8
-  max-tokens-per-call: 4096
 
 google-ai:
   api-key: ${GOOGLE_AI_API_KEY:}
   base-url: https://generativelanguage.googleapis.com
+
+groq:
+  api-key: ${GROQ_API_KEY:}
+  base-url: https://api.groq.com/openai/v1
+  default-model: llama-3.3-70b-versatile
 
 encryption:
   github-token-key-base64: ${GITHUB_TOKEN_ENCRYPTION_KEY:UEjGRJjRBYGZQRdsB7Cln1mLG0qlxPEAU+Vq/Sx0iYE=}
@@ -69,6 +70,14 @@ github:
     base-url: https://api.github.com
 
 devradar:
+  ai:
+    orchestrator-model: ${AI_ORCHESTRATOR_MODEL:gemini-2.5-flash}
+    scoring-model: ${AI_SCORING_MODEL:llama-3.3-70b-versatile}
+    max-tool-iterations: 8
+    max-tokens-per-call: 4096
+    retry:
+      max-attempts: 3
+      initial-delay-ms: 1000
   scheduling:
     enabled: ${SCHEDULING_ENABLED:false}
   internal:
