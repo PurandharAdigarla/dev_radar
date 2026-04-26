@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="023-1" author="devradar">
+    <createTable tableName="teams">
+      <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true"/></column>
+      <column name="name" type="VARCHAR(100)"><constraints nullable="false"/></column>
+      <column name="slug" type="VARCHAR(100)"><constraints nullable="false" unique="true"/></column>
+      <column name="plan" type="VARCHAR(32)" defaultValue="TEAM"><constraints nullable="false"/></column>
+      <column name="owner_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_team_owner" references="users(id)"/></column>
+      <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+      <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="023-2" author="devradar">
+    <createTable tableName="team_members">
+      <column name="team_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_tm_team" references="teams(id)"/></column>
+      <column name="user_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_tm_user" references="users(id)"/></column>
+      <column name="role" type="VARCHAR(32)" defaultValue="MEMBER"><constraints nullable="false"/></column>
+      <column name="joined_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+    </createTable>
+    <addPrimaryKey tableName="team_members" columnNames="team_id, user_id" constraintName="pk_team_members"/>
+  </changeSet>
+
+  <changeSet id="023-3" author="devradar">
+    <createTable tableName="team_radars">
+      <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true"/></column>
+      <column name="team_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_tr_team" references="teams(id)"/></column>
+      <column name="radar_id" type="BIGINT"><constraints nullable="false" foreignKeyName="fk_tr_radar" references="radars(id)"/></column>
+      <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+    </createTable>
+  </changeSet>
+
+</databaseChangeLog>

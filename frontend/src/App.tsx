@@ -16,6 +16,8 @@ import { ObservabilityPage } from "./pages/ObservabilityPage";
 import { ApiKeysPage } from "./pages/ApiKeysPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { TeamDashboardPage } from "./pages/TeamDashboardPage";
+import { TeamDetailPage } from "./pages/TeamDetailPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { ErrorBoundary } from "./ErrorBoundary";
 
@@ -36,6 +38,8 @@ export function AppRoutes() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/api-keys" element={<ApiKeysPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="teams" element={<TeamDashboardPage />} />
+          <Route path="teams/:teamId" element={<TeamDetailPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

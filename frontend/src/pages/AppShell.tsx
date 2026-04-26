@@ -18,6 +18,7 @@ type NavItem =
 
 const NAV_ITEMS: NavItem[] = [
   { key: "radars", label: "Radars", to: "/app/radars" },
+  { key: "teams", label: "Teams", to: "/app/teams" },
   { key: "interests", label: "Interests", to: "/app/interests" },
   { key: "settings", label: "Settings", to: "/app/settings" },
   { key: "notifications", label: "Notifications", to: "/app/notifications" },

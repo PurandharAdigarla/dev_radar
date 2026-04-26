@@ -25,4 +25,5 @@
     <include file="db/changelog/020-oauth-state-table.xml"/>
     <include file="db/changelog/021-notification-preferences.xml"/>
     <include file="db/changelog/022-engagement-tracking.xml"/>
+    <include file="db/changelog/023-teams-schema.xml"/>
 </databaseChangeLog>
