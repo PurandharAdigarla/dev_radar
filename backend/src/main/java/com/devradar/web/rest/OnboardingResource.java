@@ -1,0 +1,44 @@
+package com.devradar.web.rest;
+
+import com.devradar.domain.exception.UserNotAuthenticatedException;
+import com.devradar.onboarding.GitHubRepoScanService;
+import com.devradar.security.SecurityUtils;
+import com.devradar.service.UserInterestService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/onboarding")
+public class OnboardingResource {
+
+    private final GitHubRepoScanService scanService;
+    private final UserInterestService interestService;
+
+    public OnboardingResource(GitHubRepoScanService scanService, UserInterestService interestService) {
+        this.scanService = scanService;
+        this.interestService = interestService;
+    }
+
+    @PostMapping("/scan")
+    public GitHubRepoScanService.ScanResult scan() {
+        Long userId = currentUserId();
+        return scanService.scanUserRepos(userId);
+    }
+
+    @PostMapping("/apply")
+    public ResponseEntity<Map<String, String>> apply(@RequestBody ApplyRequest request) {
+        Long userId = currentUserId();
+        interestService.setInterestsForUser(userId, request.tagSlugs());
+        return ResponseEntity.ok(Map.of("status", "ok", "count", String.valueOf(request.tagSlugs().size())));
+    }
+
+    private Long currentUserId() {
+        return SecurityUtils.getCurrentUserId()
+            .orElseThrow(() -> new UserNotAuthenticatedException("Not authenticated"));
+    }
+
+    public record ApplyRequest(List<String> tagSlugs) {}
+}

@@ -7,6 +7,7 @@ import type { AppDispatch } from "../store";
 import { tokenStorage } from "../auth/tokenStorage";
 import { loginSucceeded } from "../auth/authSlice";
 import { authApi } from "../api/authApi";
+import { interestApi } from "../api/interestApi";
 
 export function GitHubCallback() {
   const navigate = useNavigate();
@@ -39,7 +40,12 @@ export function GitHubCallback() {
       try {
         const me = await dispatch(authApi.endpoints.me.initiate()).unwrap();
         dispatch(loginSucceeded({ accessToken, user: me }));
-        navigate(isLink ? "/app/settings" : "/app", { replace: true });
+        if (isLink) {
+          navigate("/app/settings", { replace: true });
+        } else {
+          const interests = await dispatch(interestApi.endpoints.getMyInterests.initiate()).unwrap();
+          navigate(interests.length === 0 ? "/app/onboarding" : "/app", { replace: true });
+        }
       } catch {
         tokenStorage.clear();
         navigate("/login?error=oauth_me_failed", { replace: true });

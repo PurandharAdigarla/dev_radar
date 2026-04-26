@@ -20,6 +20,7 @@ import { TeamDashboardPage } from "./pages/TeamDashboardPage";
 import { TeamDetailPage } from "./pages/TeamDetailPage";
 import { SharedRadarPage } from "./pages/SharedRadarPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { OnboardingPage } from "./pages/OnboardingPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { ErrorBoundary } from "./ErrorBoundary";
 
@@ -33,6 +34,7 @@ export function AppRoutes() {
       <Route path="/observability" element={<ObservabilityPage />} />
       <Route path="/radar/shared/:shareToken" element={<SharedRadarPage />} />
       <Route element={<ProtectedRoute />}>
+        <Route path="/app/onboarding" element={<OnboardingPage />} />
         <Route path="/app" element={<AppShell />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
