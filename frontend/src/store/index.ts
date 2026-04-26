@@ -7,6 +7,7 @@ import { actionApi } from "../api/actionApi";
 import { observabilityApi } from "../api/observabilityApi";
 import { apiKeyApi } from "../api/apiKeyApi";
 import { githubApi } from "../api/githubApi";
+import { notificationApi } from "../api/notificationApi";
 import { radarGenerationReducer } from "../radar/radarGenerationSlice";
 
 export function makeStore() {
@@ -21,6 +22,7 @@ export function makeStore() {
       [observabilityApi.reducerPath]: observabilityApi.reducer,
       [apiKeyApi.reducerPath]: apiKeyApi.reducer,
       [githubApi.reducerPath]: githubApi.reducer,
+      [notificationApi.reducerPath]: notificationApi.reducer,
     },
     middleware: (getDefault) =>
       getDefault()
@@ -30,7 +32,8 @@ export function makeStore() {
         .concat(actionApi.middleware)
         .concat(observabilityApi.middleware)
         .concat(apiKeyApi.middleware)
-        .concat(githubApi.middleware),
+        .concat(githubApi.middleware)
+        .concat(notificationApi.middleware),
   });
 }
 

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+  <changeSet id="021-1" author="devradar">
+    <createTable tableName="notification_preferences">
+      <column name="id" type="BIGINT" autoIncrement="true"><constraints primaryKey="true"/></column>
+      <column name="user_id" type="BIGINT"><constraints nullable="false" unique="true" foreignKeyName="fk_notif_pref_user" references="users(id)"/></column>
+      <column name="email_enabled" type="BOOLEAN" defaultValueBoolean="false"><constraints nullable="false"/></column>
+      <column name="email_address" type="VARCHAR(255)"/>
+      <column name="digest_day_of_week" type="INT" defaultValueNumeric="1"><constraints nullable="false"/></column>
+      <column name="digest_hour_utc" type="INT" defaultValueNumeric="9"><constraints nullable="false"/></column>
+      <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+      <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"><constraints nullable="false"/></column>
+    </createTable>
+  </changeSet>
+</databaseChangeLog>

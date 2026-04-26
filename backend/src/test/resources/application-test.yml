@@ -6,6 +6,9 @@ spring:
       hibernate:
         type:
           preferred_boolean_jdbc_type: tinyint
+  mail:
+    host: localhost
+    port: 0
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
   ai:

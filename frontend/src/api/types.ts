@@ -179,6 +179,15 @@ export interface GitHubStatus {
   login: string | null;
 }
 
+// ─── Notification preferences ───────────────────────────────────────
+
+export interface NotificationPreference {
+  emailEnabled: boolean;
+  emailAddress: string | null;
+  digestDayOfWeek: number;
+  digestHourUtc: number;
+}
+
 // ─── API Keys ───────────────────────────────────────────────────────
 
 export type ApiKeyScope = "READ" | "WRITE";

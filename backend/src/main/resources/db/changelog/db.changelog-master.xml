@@ -23,4 +23,5 @@
     <include file="db/changelog/018-dependency-ingestion-schema.xml"/>
     <include file="db/changelog/019-expand-interest-tags.xml"/>
     <include file="db/changelog/020-oauth-state-table.xml"/>
+    <include file="db/changelog/021-notification-preferences.xml"/>
 </databaseChangeLog>

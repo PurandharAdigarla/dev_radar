@@ -11,6 +11,18 @@ spring:
     open-in-view: false
     properties:
       hibernate.dialect: org.hibernate.dialect.MySQLDialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:purandharptr@gmail.com}
+    password: ${MAIL_PASSWORD:cvcj pzzp zbng mmcq}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    from: ${MAIL_FROM:purandharptr@gmail.com}
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
   data:

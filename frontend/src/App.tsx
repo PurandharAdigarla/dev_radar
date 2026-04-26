@@ -15,6 +15,7 @@ import { GitHubCallback } from "./pages/GitHubCallback";
 import { ObservabilityPage } from "./pages/ObservabilityPage";
 import { ApiKeysPage } from "./pages/ApiKeysPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { ErrorBoundary } from "./ErrorBoundary";
 
@@ -34,6 +35,7 @@ export function AppRoutes() {
           <Route path="interests" element={<InterestPickerPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/api-keys" element={<ApiKeysPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
