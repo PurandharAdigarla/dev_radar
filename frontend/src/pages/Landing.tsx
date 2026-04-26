@@ -10,6 +10,76 @@ import { Button } from "../components/Button";
 import { GitHubButton } from "../components/GitHubButton";
 import { ThemeCard } from "../components/ThemeCard";
 import { useGetSampleRadarQuery } from "../api/radarApi";
+import type { RadarTheme } from "../api/types";
+
+const FALLBACK_THEMES: RadarTheme[] = [
+  {
+    id: -1,
+    displayOrder: 0,
+    title: "React 19 Concurrent Features Now Stable",
+    summary:
+      "React 19 ships stable concurrent rendering, use() hook, and server components. " +
+      "If your project uses React 18's experimental concurrent features, you can now " +
+      "remove the opt-in flags. The new use() hook simplifies data fetching in client " +
+      "components and replaces many useEffect patterns.",
+    items: [
+      {
+        id: -1,
+        title: "React 19 Release Notes",
+        description: "Official changelog covering concurrent mode, use(), and server component improvements.",
+        url: "https://react.dev/blog",
+        author: "React Team",
+        sourceName: "GH_RELEASES",
+      },
+      {
+        id: -2,
+        title: "Migrating to React 19 concurrent features",
+        description: "Community guide on removing experimental flags and adopting stable APIs.",
+        url: "https://react.dev/blog",
+        author: null,
+        sourceName: "HN",
+      },
+    ],
+  },
+  {
+    id: -2,
+    displayOrder: 1,
+    title: "CVE-2026-21234: Critical Path Traversal in express-static",
+    summary:
+      "A critical path traversal vulnerability (CVSS 9.1) was disclosed in express-static " +
+      "versions < 1.16.3. Attackers can read arbitrary files from the server filesystem. " +
+      "If your Node.js services use express.static() middleware, upgrade to 1.16.3+ immediately.",
+    items: [
+      {
+        id: -3,
+        title: "GHSA-xxxx-xxxx: express-static path traversal",
+        description: "GitHub Advisory detailing the vulnerability and affected versions.",
+        url: "https://github.com/advisories",
+        author: null,
+        sourceName: "GHSA",
+      },
+    ],
+  },
+  {
+    id: -3,
+    displayOrder: 2,
+    title: "Bun 1.2 Reaches Feature Parity with Node.js",
+    summary:
+      "Bun 1.2 adds full node:http2 support, closing the last major Node.js compatibility " +
+      "gap. Teams evaluating Bun as a drop-in Node replacement now have fewer blockers. " +
+      "Benchmarks show 3x faster cold-start times for typical Express/Fastify apps.",
+    items: [
+      {
+        id: -4,
+        title: "Bun 1.2 — full Node.js compat, 3x faster cold starts",
+        description: "Announcement post with benchmarks and migration guide.",
+        url: "https://bun.sh/blog",
+        author: "Jarred Sumner",
+        sourceName: "HN",
+      },
+    ],
+  },
+];
 
 function HowItWorksStep({ number, title, description }: { number: string; title: string; description: string }) {
   return (
@@ -56,31 +126,14 @@ function SampleRadarPreview() {
     );
   }
 
-  if (isError || !sampleRadar) {
-    return (
-      <Paper
-        elevation={0}
-        sx={{
-          p: 4,
-          border: "1px solid",
-          borderColor: "divider",
-          borderRadius: 2,
-          textAlign: "center",
-        }}
-      >
-        <Typography color="text.secondary">
-          No sample radar available yet. Create an account to generate your first one.
-        </Typography>
-      </Paper>
-    );
-  }
+  const themes = (isError || !sampleRadar) ? FALLBACK_THEMES : sampleRadar.themes;
 
   return (
     <Box>
       <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 2 }}>
         Sample Radar
       </Typography>
-      {sampleRadar.themes.map((theme) => (
+      {themes.map((theme) => (
         <ThemeCard key={theme.id} theme={theme} />
       ))}
     </Box>
