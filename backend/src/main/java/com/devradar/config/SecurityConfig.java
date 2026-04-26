@@ -50,6 +50,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/observability/**").permitAll()
                 .requestMatchers("/api/sample-radar").permitAll()
                 .requestMatchers("/api/radars/shared/**").permitAll()
+                .requestMatchers("/api/badges/**").permitAll()
+                .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/internal/**").authenticated()
                 .requestMatchers("/mcp/**").authenticated()
                 .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
