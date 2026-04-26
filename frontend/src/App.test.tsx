@@ -26,7 +26,7 @@ function renderAt(path: string) {
 describe("App routing", () => {
   it("shows landing at /", () => {
     renderAt("/");
-    expect(screen.getByText(/weekly brief/i)).toBeInTheDocument();
+    expect(screen.getByText(/know what changed in your stack/i)).toBeInTheDocument();
   });
 
   it("redirects /app to /login when not authenticated", () => {
@@ -36,7 +36,7 @@ describe("App routing", () => {
     expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
   });
 
-  it("login flow lands at /app/radars with the Radars heading", async () => {
+  it("login flow lands at /app/dashboard with the Dashboard heading", async () => {
     localStorage.clear();
     tokenStorage.clear();
     const { user } = renderAt("/login");
@@ -44,7 +44,7 @@ describe("App routing", () => {
     await user.type(screen.getByLabelText(/password/i), "ok");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
     await waitFor(() =>
-      expect(screen.getByRole("heading", { name: /^radars$/i, level: 1 })).toBeInTheDocument(),
+      expect(screen.getByRole("heading", { name: /^dashboard$/i, level: 1 })).toBeInTheDocument(),
     );
   });
 });
