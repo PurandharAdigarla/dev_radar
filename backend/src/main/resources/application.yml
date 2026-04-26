@@ -15,15 +15,15 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME:purandharptr@gmail.com}
-    password: ${MAIL_PASSWORD:cvcj pzzp zbng mmcq}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-    from: ${MAIL_FROM:purandharptr@gmail.com}
+    from: ${MAIL_FROM:}
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
   data:
@@ -67,7 +67,7 @@ groq:
   default-model: llama-3.3-70b-versatile
 
 encryption:
-  github-token-key-base64: ${GITHUB_TOKEN_ENCRYPTION_KEY:UEjGRJjRBYGZQRdsB7Cln1mLG0qlxPEAU+Vq/Sx0iYE=}
+  github-token-key-base64: ${GITHUB_TOKEN_ENCRYPTION_KEY:}
 
 frontend:
   base-url: ${FRONTEND_BASE_URL:http://localhost:5173}

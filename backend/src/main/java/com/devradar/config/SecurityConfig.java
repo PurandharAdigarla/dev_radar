@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/interest-tags/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
-                .requestMatchers("/actuator/prometheus").permitAll()
+                .requestMatchers("/actuator/**").authenticated()
                 .requestMatchers("/api/observability/**").permitAll()
                 .requestMatchers("/api/sample-radar").permitAll()
                 .requestMatchers("/api/radars/shared/**").permitAll()
