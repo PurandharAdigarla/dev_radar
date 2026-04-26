@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
 import { monoStack } from "../theme";
 import type { RadarItem } from "../api/types";
@@ -20,12 +22,40 @@ function sourceBadgeColor(sourceName: string): string {
   }
 }
 
+const EPSS_REGEX = /\[EPSS:\s*(\d+(?:\.\d+)%)\s*\(([^)]+)\)\]/;
+
+interface EpssInfo {
+  percent: string;
+  label: string;
+  numericPercent: number;
+}
+
+function parseEpss(description: string | null): EpssInfo | null {
+  if (!description) return null;
+  const m = description.match(EPSS_REGEX);
+  if (!m) return null;
+  return {
+    percent: m[1],
+    label: m[2],
+    numericPercent: parseFloat(m[1]),
+  };
+}
+
+function stripEpssTag(description: string): string {
+  return description.replace(/\.\s*\[EPSS:.*?\]/, "").replace(/\[EPSS:.*?\]/, "").trim();
+}
+
 interface SourceCardProps {
   item: RadarItem;
 }
 
 export function SourceCard({ item }: SourceCardProps) {
   const label = SOURCE_LABELS[item.sourceName] ?? item.sourceName;
+  const epss = useMemo(() => parseEpss(item.description), [item.description]);
+  const cleanDescription = useMemo(
+    () => (item.description ? stripEpssTag(item.description) : null),
+    [item.description],
+  );
 
   return (
     <Box
@@ -78,7 +108,7 @@ export function SourceCard({ item }: SourceCardProps) {
         >
           {item.title}
         </Typography>
-        {item.description && (
+        {cleanDescription && (
           <Typography
             sx={{
               fontSize: "0.8125rem",
@@ -92,8 +122,24 @@ export function SourceCard({ item }: SourceCardProps) {
               WebkitBoxOrient: "vertical",
             }}
           >
-            {item.description}
+            {cleanDescription}
           </Typography>
+        )}
+        {epss && (
+          <Chip
+            size="small"
+            label={`EPSS: ${epss.percent} (${epss.label})`}
+            sx={{
+              mt: "4px",
+              height: 20,
+              fontSize: "0.6875rem",
+              fontFamily: monoStack,
+              fontWeight: 600,
+              ...(epss.numericPercent >= 10
+                ? { bgcolor: "rgba(211,47,47,0.12)", color: "#b71c1c" }
+                : { bgcolor: "rgba(237,108,2,0.12)", color: "#e65100" }),
+            }}
+          />
         )}
       </Box>
     </Box>
