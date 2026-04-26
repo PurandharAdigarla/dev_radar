@@ -70,11 +70,14 @@ github:
     base-url: https://api.github.com
 
 devradar:
+  rate-limit:
+    radar-per-hour: 10
   ai:
     orchestrator-model: ${AI_ORCHESTRATOR_MODEL:gemini-2.5-flash}
     scoring-model: ${AI_SCORING_MODEL:llama-3.3-70b-versatile}
     max-tool-iterations: 8
     max-tokens-per-call: 4096
+    daily-budget-usd: ${AI_DAILY_BUDGET_USD:5.0}
     retry:
       max-attempts: 3
       initial-delay-ms: 1000

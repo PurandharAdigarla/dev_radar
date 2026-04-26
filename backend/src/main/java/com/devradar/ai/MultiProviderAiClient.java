@@ -32,6 +32,7 @@ public class MultiProviderAiClient implements AiClient {
     private final DailyMetricsCounter dailyMetrics;
     private final int maxRetries;
     private final long initialDelayMs;
+    private final double dailyBudgetUsd;
 
     public MultiProviderAiClient(
             MeterRegistry meterRegistry,
@@ -43,12 +44,14 @@ public class MultiProviderAiClient implements AiClient {
             @Value("${groq.default-model:llama-3.3-70b-versatile}") String groqDefaultModel,
             @Value("${anthropic.api-key:}") String anthropicKey,
             @Value("${devradar.ai.retry.max-attempts:3}") int maxRetries,
-            @Value("${devradar.ai.retry.initial-delay-ms:1000}") long initialDelayMs
+            @Value("${devradar.ai.retry.initial-delay-ms:1000}") long initialDelayMs,
+            @Value("${devradar.ai.daily-budget-usd:5.0}") double dailyBudgetUsd
     ) {
         this.meterRegistry = meterRegistry;
         this.dailyMetrics = dailyMetrics;
         this.maxRetries = maxRetries;
         this.initialDelayMs = initialDelayMs;
+        this.dailyBudgetUsd = dailyBudgetUsd;
         this.providers = new ArrayList<>();
 
         if (isConfigured(geminiKey)) {
@@ -79,6 +82,9 @@ public class MultiProviderAiClient implements AiClient {
                                List<ToolDefinition> tools, int maxTokens) {
         if (providers.isEmpty()) {
             throw new AiProviderException("No AI provider configured. Set at least one of: GOOGLE_AI_API_KEY, GROQ_API_KEY, ANTHROPIC_API_KEY");
+        }
+        if (dailyMetrics.estimatedCostUsd(LocalDate.now()) >= dailyBudgetUsd) {
+            throw new AiProviderException("Daily AI budget of $" + dailyBudgetUsd + " exhausted. Resets at midnight UTC.");
         }
         Provider primary = resolveProvider(model);
 
@@ -178,6 +184,8 @@ public class MultiProviderAiClient implements AiClient {
                 .increment(resp.outputTokens());
 
         var today = LocalDate.now();
+        dailyMetrics.incrementTokens(today, providerName, "input", resp.inputTokens());
+        dailyMetrics.incrementTokens(today, providerName, "output", resp.outputTokens());
         if (model.contains("sonnet")) dailyMetrics.incrementSonnetCalls(today);
         else if (model.contains("haiku")) dailyMetrics.incrementHaikuCalls(today);
     }

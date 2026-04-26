@@ -28,7 +28,10 @@ steps:
       - managed
       - --allow-unauthenticated
       - --set-env-vars
-      - SPRING_PROFILES_ACTIVE=prod
+      - >-
+        SPRING_PROFILES_ACTIVE=prod,
+        FRONTEND_BASE_URL=${_FRONTEND_BASE_URL},
+        GITHUB_OAUTH_REDIRECT_URI=${_GITHUB_OAUTH_REDIRECT_URI}
       - --set-secrets
       - >-
         JWT_SECRET=jwt-secret:latest,
@@ -58,6 +61,8 @@ substitutions:
   _REGION: us-central1
   _REPO: devradar
   _CLOUD_SQL_INSTANCE: ${PROJECT_ID}:${_REGION}:devradar-mysql
+  _FRONTEND_BASE_URL: https://devradar.example.com
+  _GITHUB_OAUTH_REDIRECT_URI: https://devradar.example.com/api/auth/github/callback
 
 options:
   logging: CLOUD_LOGGING_ONLY

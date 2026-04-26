@@ -2,6 +2,8 @@ package com.devradar.config;
 
 import com.devradar.security.ApiKeyAuthenticationFilter;
 import com.devradar.security.JwtAuthenticationFilter;
+import com.devradar.security.RateLimitFilter;
+import com.devradar.security.TriggerSecretFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -18,10 +20,15 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
     private final ApiKeyAuthenticationFilter apiKeyFilter;
+    private final RateLimitFilter rateLimitFilter;
+    private final TriggerSecretFilter triggerSecretFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter, ApiKeyAuthenticationFilter apiKeyFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtFilter, ApiKeyAuthenticationFilter apiKeyFilter,
+                          RateLimitFilter rateLimitFilter, TriggerSecretFilter triggerSecretFilter) {
         this.jwtFilter = jwtFilter;
         this.apiKeyFilter = apiKeyFilter;
+        this.rateLimitFilter = rateLimitFilter;
+        this.triggerSecretFilter = triggerSecretFilter;
     }
 
     @Bean
@@ -41,15 +48,17 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/prometheus").permitAll()
                 .requestMatchers("/api/observability/**").permitAll()
-                .requestMatchers("/api/internal/**").permitAll()
-                .requestMatchers("/mcp/**").permitAll()
+                .requestMatchers("/api/internal/**").authenticated()
+                .requestMatchers("/mcp/**").authenticated()
                 .requestMatchers("/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
                 .requestMatchers("/login", "/register", "/app/**", "/observability").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+            .addFilterBefore(triggerSecretFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
         return http.build();
     }
 }

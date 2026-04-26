@@ -3,10 +3,6 @@ spring:
     url: jdbc:mysql:///${DB_NAME:devradar}?cloudSqlInstance=${CLOUD_SQL_INSTANCE}&socketFactory=com.google.cloud.sql.mysql.SocketFactory&useSSL=false
     username: ${DB_USER}
     password: ${DB_PASSWORD}
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT:6379}
 
 server:
   port: ${PORT:8080}

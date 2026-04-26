@@ -23,6 +23,8 @@ jwt:
   refresh-token-ttl-days: 1
 
 devradar:
+  rate-limit:
+    radar-per-hour: 100
   ai:
     orchestrator-model: gemini-2.5-flash
     scoring-model: llama-3.3-70b-versatile
