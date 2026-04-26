@@ -4,8 +4,9 @@ import Typography from "@mui/material/Typography";
 import { Button } from "./Button";
 import { Alert } from "./Alert";
 import { ProposalApproveModal } from "./ProposalApproveModal";
-import { monoStack } from "../theme";
+import { monoStack, serifStack } from "../theme";
 import { useApproveProposalMutation, useDismissProposalMutation } from "../api/actionApi";
+import { useGetPlanQuery, useStartTrialMutation } from "../api/planApi";
 import type { ActionProposal, CveFixPayload } from "../api/types";
 
 function parsePayload(json: string): Partial<CveFixPayload> {
@@ -66,8 +67,14 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [approve] = useApproveProposalMutation();
   const [dismiss, dismissState] = useDismissProposalMutation();
+  const { data: plan } = useGetPlanQuery();
+  const [startTrial, trialState] = useStartTrialMutation();
 
   const [error, setError] = useState<string | null>(null);
+
+  const hasAutoFixAccess =
+    plan && (plan.plan === "PRO" || plan.plan === "TEAM" || plan.trialActive);
+  const trialUsed = plan?.trialUsed ?? false;
 
   const isProposed = proposal.status === "PROPOSED";
   const isExecuted = proposal.status === "EXECUTED";
@@ -167,7 +174,7 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
         </Box>
       )}
 
-      {isProposed && (
+      {isProposed && hasAutoFixAccess && (
         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
           <Button size="small" onClick={() => setModalOpen(true)}>
             Approve
@@ -175,6 +182,47 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
           <Button variant="text" onClick={handleDismiss} disabled={dismissState.isLoading}>
             Dismiss
           </Button>
+        </Box>
+      )}
+
+      {isProposed && !hasAutoFixAccess && (
+        <Box
+          sx={{
+            mt: 1,
+            p: 2,
+            border: "1px dashed",
+            borderColor: "divider",
+            borderRadius: 1,
+            textAlign: "center",
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: serifStack,
+              fontSize: 14,
+              fontStyle: "italic",
+              color: "text.primary",
+              mb: 1,
+            }}
+          >
+            Auto-fix PRs require Pro
+          </Typography>
+          {!trialUsed ? (
+            <Button
+              size="small"
+              onClick={() => startTrial()}
+              disabled={trialState.isLoading}
+            >
+              {trialState.isLoading ? "Starting..." : "Start 14-day free trial"}
+            </Button>
+          ) : (
+            <Button size="small" disabled>Trial already used</Button>
+          )}
+          {trialState.isError && (
+            <Typography sx={{ fontSize: 12, color: "error.main", mt: 1 }}>
+              Failed to start trial.
+            </Typography>
+          )}
         </Box>
       )}
 

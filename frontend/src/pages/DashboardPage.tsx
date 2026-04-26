@@ -4,6 +4,7 @@ import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
+import Chip from "@mui/material/Chip";
 import Skeleton from "@mui/material/Skeleton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -12,6 +13,7 @@ import ListItemText from "@mui/material/ListItemText";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import NewReleasesOutlined from "@mui/icons-material/NewReleasesOutlined";
 import { Button } from "../components/Button";
 import { useGetUserStatsQuery, useGetDependencySummaryQuery } from "../api/dashboardApi";
 import { useGitHubStatusQuery } from "../api/githubApi";
@@ -147,6 +149,34 @@ export function DashboardPage() {
         <Card variant="outlined" sx={{ mb: 3 }}>
           <CardContent>
             <OnboardingChecklist steps={checklistSteps} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* New items since last radar */}
+      {!statsLoading && stats && stats.newItemsSinceLastRadar > 0 && (
+        <Card
+          variant="outlined"
+          sx={{
+            mb: 3,
+            borderColor: "primary.main",
+            bgcolor: "primary.50",
+          }}
+        >
+          <CardContent sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", "&:last-child": { pb: 2 } }}>
+            <NewReleasesOutlined sx={{ color: "primary.main" }} />
+            <Typography sx={{ flex: 1, fontSize: "0.9375rem", fontWeight: 500, color: "text.primary" }}>
+              <Chip
+                label={stats.newItemsSinceLastRadar}
+                size="small"
+                color="primary"
+                sx={{ mr: 1, fontWeight: 600 }}
+              />
+              new items since your last radar
+            </Typography>
+            <Button component={RouterLink} to="/app/radars" size="small">
+              Generate Radar
+            </Button>
           </CardContent>
         </Card>
       )}

@@ -52,4 +52,25 @@ public interface SourceItemRepository extends JpaRepository<SourceItem, Long> {
     default List<SourceItem> findRecentByUserInterests(Long userId, Instant since, String tagSlug, int limit) {
         return findRecentByUserInterestsPaged(userId, since, tagSlug, PageRequest.of(0, limit));
     }
+
+    @Query("""
+        SELECT COUNT(DISTINCT si.id) FROM SourceItem si, SourceItemTag sit, InterestTag it, UserInterest ui
+         WHERE sit.sourceItemId = si.id
+           AND it.id = sit.interestTagId
+           AND ui.interestTagId = it.id
+           AND ui.userId = :userId
+           AND si.fetchedAt > :since
+        """)
+    long countNewItemsForUserSince(@Param("userId") Long userId, @Param("since") Instant since);
+
+    @Query("""
+        SELECT COUNT(DISTINCT si.id) FROM SourceItem si, SourceItemTag sit, InterestTag it, UserInterest ui
+         WHERE sit.sourceItemId = si.id
+           AND it.id = sit.interestTagId
+           AND ui.interestTagId = it.id
+           AND ui.userId = :userId
+           AND si.sourceId = :sourceId
+           AND si.fetchedAt > :since
+        """)
+    long countNewItemsBySourceForUserSince(@Param("userId") Long userId, @Param("sourceId") Long sourceId, @Param("since") Instant since);
 }

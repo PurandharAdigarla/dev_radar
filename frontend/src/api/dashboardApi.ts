@@ -6,6 +6,7 @@ export interface UserStats {
   themeCount: number;
   engagementCount: number;
   latestRadarDate: string | null;
+  newItemsSinceLastRadar: number;
 }
 
 export interface DependencySummary {
