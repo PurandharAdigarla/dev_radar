@@ -1,9 +1,19 @@
+import { useState, useCallback } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import ThumbUpOutlined from "@mui/icons-material/ThumbUpOutlined";
+import ThumbUp from "@mui/icons-material/ThumbUp";
+import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
+import ThumbDown from "@mui/icons-material/ThumbDown";
+import ShareOutlined from "@mui/icons-material/ShareOutlined";
 import { keyframes } from "@mui/system";
 import { serifStack } from "../theme";
 import { SourceCard } from "./SourceCard";
+import { usePostEngagementMutation } from "../api/engagementApi";
 import type { RadarTheme } from "../api/types";
+import type { EventType } from "../api/engagementApi";
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(6px); }
@@ -12,9 +22,49 @@ const fadeIn = keyframes`
 
 export interface ThemeCardProps {
   theme: RadarTheme;
+  radarId?: number;
 }
 
-export function ThemeCard({ theme }: ThemeCardProps) {
+type ThumbState = "up" | "down" | null;
+
+export function ThemeCard({ theme, radarId }: ThemeCardProps) {
+  const [postEngagement] = usePostEngagementMutation();
+  const [thumb, setThumb] = useState<ThumbState>(null);
+  const [shared, setShared] = useState(false);
+
+  const sendEngagement = useCallback(
+    (eventType: EventType) => {
+      if (radarId == null) return;
+      postEngagement({
+        radarId,
+        themeIndex: theme.displayOrder,
+        eventType,
+      });
+    },
+    [postEngagement, radarId, theme.displayOrder],
+  );
+
+  const handleThumbUp = useCallback(() => {
+    const next: ThumbState = thumb === "up" ? null : "up";
+    setThumb(next);
+    if (next === "up") sendEngagement("THUMBS_UP");
+  }, [thumb, sendEngagement]);
+
+  const handleThumbDown = useCallback(() => {
+    const next: ThumbState = thumb === "down" ? null : "down";
+    setThumb(next);
+    if (next === "down") sendEngagement("THUMBS_DOWN");
+  }, [thumb, sendEngagement]);
+
+  const handleShare = useCallback(() => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    });
+    sendEngagement("SHARE");
+  }, [sendEngagement]);
+
   return (
     <Box component="article" sx={{ mb: 6, animation: `${fadeIn} 400ms ease-out` }}>
       <Typography
@@ -59,6 +109,40 @@ export function ThemeCard({ theme }: ThemeCardProps) {
           {theme.items.map((item) => (
             <SourceCard key={item.id} item={item} />
           ))}
+        </Box>
+      )}
+
+      {radarId != null && (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 2 }}>
+          <Tooltip title="Like this theme">
+            <IconButton
+              size="small"
+              onClick={handleThumbUp}
+              color={thumb === "up" ? "primary" : "default"}
+              aria-label="thumbs up"
+            >
+              {thumb === "up" ? <ThumbUp fontSize="small" /> : <ThumbUpOutlined fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Dislike this theme">
+            <IconButton
+              size="small"
+              onClick={handleThumbDown}
+              color={thumb === "down" ? "error" : "default"}
+              aria-label="thumbs down"
+            >
+              {thumb === "down" ? <ThumbDown fontSize="small" /> : <ThumbDownOutlined fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={shared ? "Link copied!" : "Copy link"}>
+            <IconButton
+              size="small"
+              onClick={handleShare}
+              aria-label="share"
+            >
+              <ShareOutlined fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       )}
     </Box>

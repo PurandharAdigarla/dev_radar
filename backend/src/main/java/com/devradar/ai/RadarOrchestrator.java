@@ -2,6 +2,8 @@ package com.devradar.ai;
 
 import com.devradar.ai.tools.ToolContext;
 import com.devradar.ai.tools.ToolRegistry;
+import com.devradar.service.EngagementProfileService;
+import com.devradar.service.EngagementProfileService.UserEngagementProfile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -68,25 +70,35 @@ public class RadarOrchestrator {
 
     private final AiClient ai;
     private final ToolRegistry tools;
+    private final EngagementProfileService engagementProfileService;
     private final String model;
     private final int maxIterations;
     private final int maxTokens;
 
     public RadarOrchestrator(AiClient ai, ToolRegistry tools,
+                             EngagementProfileService engagementProfileService,
                              @Value("${devradar.ai.orchestrator-model}") String model,
                              @Value("${devradar.ai.max-tool-iterations}") int maxIterations,
                              @Value("${devradar.ai.max-tokens-per-call}") int maxTokens) {
-        this.ai = ai; this.tools = tools; this.model = model;
+        this.ai = ai; this.tools = tools;
+        this.engagementProfileService = engagementProfileService;
+        this.model = model;
         this.maxIterations = maxIterations; this.maxTokens = maxTokens;
     }
 
     public RadarOrchestrationResult generate(List<String> userInterests, List<Long> candidateItemIds, ToolContext ctx) {
+        return generate(userInterests, candidateItemIds, ctx, null);
+    }
+
+    public RadarOrchestrationResult generate(List<String> userInterests, List<Long> candidateItemIds, ToolContext ctx, Long userId) {
         String userMsg = """
             User interests: %s
             Candidate item ids (from last 7 days, pre-filtered to user's tags): %s
 
             Use the tools to look up titles, fetch full details, check the user's repos for vulnerabilities, and produce the final themes JSON.
             """.formatted(userInterests, candidateItemIds);
+
+        String systemPrompt = buildSystemPrompt(userId);
 
         List<AiMessage> messages = new ArrayList<>();
         messages.add(AiMessage.userText(userMsg));
@@ -95,7 +107,7 @@ public class RadarOrchestrator {
         String lastText = "";
 
         for (int iter = 0; iter < maxIterations; iter++) {
-            AiResponse resp = ai.generate(model, SYSTEM_PROMPT, messages, tools.definitions(), maxTokens);
+            AiResponse resp = ai.generate(model, systemPrompt, messages, tools.definitions(), maxTokens);
             totalIn += resp.inputTokens();
             totalOut += resp.outputTokens();
             if (resp.text() != null && !resp.text().isBlank()) lastText = resp.text();
@@ -134,6 +146,27 @@ public class RadarOrchestrator {
         }
 
         return new RadarOrchestrationResult(themes, totalIn, totalOut);
+    }
+
+    private String buildSystemPrompt(Long userId) {
+        if (userId == null) return SYSTEM_PROMPT;
+        try {
+            UserEngagementProfile profile = engagementProfileService.buildProfile(userId);
+            if (profile.totalInteractions() == 0) return SYSTEM_PROMPT;
+            StringBuilder sb = new StringBuilder(SYSTEM_PROMPT);
+            sb.append("\n\n## User Preferences\n");
+            if (!profile.thumbsUpThemes().isEmpty()) {
+                sb.append("The user has indicated they like: ").append(profile.thumbsUpThemes()).append(". ");
+            }
+            if (!profile.thumbsDownThemes().isEmpty()) {
+                sb.append("They dislike: ").append(profile.thumbsDownThemes()).append(". ");
+            }
+            sb.append("Prioritize similar topics and deprioritize disliked ones.");
+            return sb.toString();
+        } catch (Exception e) {
+            LOG.warn("failed to build engagement profile for userId={}: {}", userId, e.getMessage());
+            return SYSTEM_PROMPT;
+        }
     }
 
     private static String extractJsonObject(String text) {

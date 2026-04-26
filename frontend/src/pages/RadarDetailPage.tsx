@@ -177,7 +177,7 @@ export function RadarDetailPage() {
         </Box>
 
         {themes.map((t) => (
-          <ThemeCard key={t.id} theme={t} />
+          <ThemeCard key={t.id} theme={t} radarId={radarId} />
         ))}
         {streaming &&
           Array.from({ length: pendingCount }).map((_, i) => (

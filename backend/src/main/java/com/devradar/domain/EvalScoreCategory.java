@@ -4,5 +4,6 @@ public enum EvalScoreCategory {
     RELEVANCE,
     CITATIONS,
     DISTINCTNESS,
-    COST_DISCIPLINE
+    COST_DISCIPLINE,
+    PERSONALIZATION
 }

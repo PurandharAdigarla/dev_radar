@@ -54,6 +54,21 @@ public class LlmJudge {
         return callJudge(prompt);
     }
 
+    public BigDecimal scorePersonalization(List<String> thumbsUpThemes, List<String> thumbsDownThemes, List<String> themeTitles) {
+        String prompt = String.format("""
+                You are an eval judge. Rate how well these radar themes reflect the user's engagement preferences.
+
+                User liked themes: %s
+                User disliked themes: %s
+                Generated theme titles: %s
+
+                Respond with JSON only: {"score": <0.0 to 1.0>, "reasoning": "<brief explanation>"}
+                Score 1.0 means the generated themes perfectly align with liked topics and avoid disliked ones. Score 0.0 means they ignore preferences entirely.""",
+                thumbsUpThemes, thumbsDownThemes, themeTitles);
+
+        return callJudge(prompt);
+    }
+
     private BigDecimal callJudge(String prompt) {
         try {
             var response = aiClient.generate(

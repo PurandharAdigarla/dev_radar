@@ -24,4 +24,5 @@
     <include file="db/changelog/019-expand-interest-tags.xml"/>
     <include file="db/changelog/020-oauth-state-table.xml"/>
     <include file="db/changelog/021-notification-preferences.xml"/>
+    <include file="db/changelog/022-engagement-tracking.xml"/>
 </databaseChangeLog>

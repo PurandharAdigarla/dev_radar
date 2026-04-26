@@ -57,7 +57,7 @@ public class RadarGenerationService {
         events.publishStarted(new RadarStartedEvent(radarId));
         var sample = Timer.start(meterRegistry);
         try {
-            var result = orchestrator.generate(userInterests, candidateIds, new com.devradar.ai.tools.ToolContext(userId, radarId));
+            var result = orchestrator.generate(userInterests, candidateIds, new com.devradar.ai.tools.ToolContext(userId, radarId), userId);
             sample.stop(Timer.builder("radar.generation.duration").register(meterRegistry));
             meterRegistry.counter("radar.generation", "status", "success").increment();
             persistAndStream(radarId, result.themes());
