@@ -1,16 +1,35 @@
 # Dev Radar — Project Notes for Claude
 
 ## Stack
-- **Backend:** Java 21 + Spring Boot 3.5+, MySQL 8, Redis (later), Liquibase, JJWT, MapStruct, JUnit 5 + Testcontainers
-- **Frontend (later):** React + Redux Toolkit + MUI
-- **Layout:** `backend/` and `frontend/` (later) under repo root. Git repo is at the root.
+- **Backend:** Java 21 + Spring Boot 3.5+, MySQL 8, Liquibase, JJWT, MapStruct, JUnit 5 + Testcontainers
+- **Frontend:** React + Redux Toolkit + MUI, served by Spring Boot (single deployable)
+- **AI:** Gemini 2.5 Flash via Google AI SDK (agentic radar generation with tool use)
+- **Layout:** `backend/` and `frontend/` under repo root. Single Dockerfile at root.
 
-## Commands (backend)
+## Commands
 - Build: `cd backend && mvn -DskipTests compile`
 - Test: `cd backend && mvn test`
 - Verify (all): `cd backend && mvn verify`
 - Run: `cd backend && mvn spring-boot:run`
 - Local MySQL: `cd backend && docker compose up -d` (override host port via `DB_HOST_PORT` env var, default 3306)
+- Deploy to Cloud Run: `./deploy.sh`
+
+## Branches
+- `main` — stable base
+- `demo` — deployed to Cloud Run (this is the primary working branch)
+
+## Profiles
+- base (`application.yml`) — local development (localhost MySQL, localhost Redis)
+- `demo` — Cloud Run deployment (Cloud SQL socket factory, secrets from env vars)
+- `prod` — Cloud Run deployment (identical to demo currently)
+
+## Cloud Run Deployment
+- **Service:** `https://devradar-414645578716.us-central1.run.app` (single fullstack service)
+- **Database:** `devradar` on Cloud SQL instance `devradar-mysql` (us-central1, MySQL 8.0)
+- **DB User:** `devradar_user`
+- **Service Account:** `agent-482@project-323da946-d916-4f40-98e.iam.gserviceaccount.com`
+- **Registry:** `us-central1-docker.pkg.dev/project-323da946-d916-4f40-98e/app-registry/`
+- **Secrets:** `dr-jwt-secret`, `dr-db-password`, `dr-google-ai-api-key`, `dr-github-oauth-client-id`, `dr-github-oauth-client-secret`, `dr-github-token-enc-key`, `dr-trigger-secret`, `ar-smtp-password`
 
 ## Commit conventions
 - Format: `type(scope): subject` (e.g., `feat(domain): add User entity`, `fix(backend): ...`)
@@ -26,6 +45,9 @@
 - Modular monolith, clean architecture: `domain/` → `repository/` → `service/` → `service/application/` → `web/rest/`
 - Stateless JWT auth (HS256), refresh tokens stored hashed
 - Liquibase owns the schema; JPA `ddl-auto: validate`
+- GitHub OAuth integration for connecting developer accounts
+- Agentic AI radar generation: orchestrator model with tool-calling (GitHub API, scoring)
+- Rate-limited radar generation (10/hour per user)
 
 ## Subagent guidance
 - When dispatching subagents that commit, **explicitly instruct them not to add `Co-Authored-By: Claude` trailers**.
