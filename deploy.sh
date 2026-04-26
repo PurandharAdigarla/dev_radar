@@ -36,7 +36,7 @@ gcloud run deploy devradar \
   --max-instances=3 \
   --add-cloudsql-instances="$SQL_CONN" \
   --service-account="$SERVICE_ACCOUNT" \
-  --set-env-vars="^|^SPRING_PROFILES_ACTIVE=prod|CLOUD_SQL_INSTANCE=$SQL_CONN|DB_NAME=devradar|DB_USER=devradar_user|SCHEDULING_ENABLED=false|FRONTEND_BASE_URL=$SERVICE_URL|GITHUB_OAUTH_REDIRECT_URI=https://devradar-755wjr4w2a-uc.a.run.app/api/auth/github/callback" \
+  --set-env-vars="^|^SPRING_PROFILES_ACTIVE=demo|CLOUD_SQL_INSTANCE=$SQL_CONN|DB_NAME=devradar|DB_USER=devradar_user|SCHEDULING_ENABLED=false|FRONTEND_BASE_URL=$SERVICE_URL|GITHUB_OAUTH_REDIRECT_URI=https://devradar-755wjr4w2a-uc.a.run.app/api/auth/github/callback" \
   --set-secrets="JWT_SECRET=dr-jwt-secret:latest,GOOGLE_AI_API_KEY=dr-google-ai-api-key:latest,GITHUB_OAUTH_CLIENT_ID=dr-github-oauth-client-id:latest,GITHUB_OAUTH_CLIENT_SECRET=dr-github-oauth-client-secret:latest,GITHUB_TOKEN_ENCRYPTION_KEY=dr-github-token-enc-key:latest,MAIL_PASSWORD=ar-smtp-password:latest,TRIGGER_SECRET=dr-trigger-secret:latest,DB_PASSWORD=dr-db-password:latest"
 
 echo ""
