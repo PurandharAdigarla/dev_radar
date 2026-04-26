@@ -29,12 +29,13 @@ class TeamServiceTest {
     @Mock TeamMemberRepository memberRepo;
     @Mock TeamAuthorizationService authz;
     @Mock PlanEnforcer planEnforcer;
+    @Mock com.devradar.plan.PlanEnforcementService planEnforcementService;
 
     TeamService service;
 
     @BeforeEach
     void setUp() {
-        service = new TeamService(teamRepo, memberRepo, authz, planEnforcer);
+        service = new TeamService(teamRepo, memberRepo, authz, planEnforcer, planEnforcementService);
     }
 
     @Test
