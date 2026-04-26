@@ -62,7 +62,8 @@ public class PlanResource {
     }
 
     private Long currentUserId() {
-        return SecurityUtils.getCurrentUserId()
-            .orElseThrow(() -> new UserNotAuthenticatedException("Not authenticated"));
+        Long uid = SecurityUtils.getCurrentUserId();
+        if (uid == null) throw new UserNotAuthenticatedException();
+        return uid;
     }
 }
