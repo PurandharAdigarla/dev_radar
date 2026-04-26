@@ -11,6 +11,7 @@ import com.devradar.domain.exception.UserNotAuthenticatedException;
 import com.devradar.mcp.dto.CitationMcpDTO;
 import com.devradar.mcp.dto.RadarMcpDTO;
 import com.devradar.mcp.dto.ThemeMcpDTO;
+import com.devradar.plan.PlanEnforcementService;
 import com.devradar.repository.*;
 import com.devradar.security.SecurityUtils;
 import com.devradar.radar.RadarGenerationService;
@@ -42,6 +43,7 @@ public class RadarApplicationService {
     private final SourceRepository sourceRepo;
     private final UserInterestService interests;
     private final GitHubStarsReleaseFetcher starsFetcher;
+    private final PlanEnforcementService planEnforcement;
 
     private final Map<Long, String> sourceNameCache = new ConcurrentHashMap<>();
 
@@ -54,7 +56,8 @@ public class RadarApplicationService {
         SourceItemRepository sourceItemRepo,
         SourceRepository sourceRepo,
         UserInterestService interests,
-        GitHubStarsReleaseFetcher starsFetcher
+        GitHubStarsReleaseFetcher starsFetcher,
+        PlanEnforcementService planEnforcement
     ) {
         this.radarService = radarService;
         this.generation = generation;
@@ -65,11 +68,13 @@ public class RadarApplicationService {
         this.sourceRepo = sourceRepo;
         this.interests = interests;
         this.starsFetcher = starsFetcher;
+        this.planEnforcement = planEnforcement;
     }
 
     public RadarSummaryDTO createForCurrentUser() {
         Long uid = SecurityUtils.getCurrentUserId();
         if (uid == null) throw new UserNotAuthenticatedException();
+        planEnforcement.checkRadarLimit(uid);
 
         starsFetcher.tryFetchForUser(uid);
 

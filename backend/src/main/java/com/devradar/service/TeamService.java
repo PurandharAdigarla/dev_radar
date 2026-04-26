@@ -3,6 +3,7 @@ package com.devradar.service;
 import com.devradar.domain.Team;
 import com.devradar.domain.TeamMember;
 import com.devradar.domain.TeamRole;
+import com.devradar.plan.PlanEnforcementService;
 import com.devradar.repository.TeamMemberRepository;
 import com.devradar.repository.TeamRepository;
 import org.springframework.http.HttpStatus;
@@ -25,17 +26,21 @@ public class TeamService {
     private final TeamMemberRepository memberRepo;
     private final TeamAuthorizationService authz;
     private final PlanEnforcer planEnforcer;
+    private final PlanEnforcementService planEnforcement;
 
     public TeamService(TeamRepository teamRepo, TeamMemberRepository memberRepo,
-                       TeamAuthorizationService authz, PlanEnforcer planEnforcer) {
+                       TeamAuthorizationService authz, PlanEnforcer planEnforcer,
+                       PlanEnforcementService planEnforcement) {
         this.teamRepo = teamRepo;
         this.memberRepo = memberRepo;
         this.authz = authz;
         this.planEnforcer = planEnforcer;
+        this.planEnforcement = planEnforcement;
     }
 
     @Transactional
     public Team createTeam(String name, Long ownerId) {
+        planEnforcement.checkTeamAccess(ownerId);
         String slug = generateSlug(name);
         if (teamRepo.findBySlug(slug).isPresent()) {
             slug = slug + "-" + System.currentTimeMillis();
