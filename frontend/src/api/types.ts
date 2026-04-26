@@ -70,7 +70,20 @@ export interface PageResponse<T> {
   size: number;
 }
 
-// ─── Interest tag ───────────────────────────────────────────────────────
+// ─── Public weekly radar ────���───────────────────────────────────────────
+
+export interface PublicWeeklyRadar {
+  title: string;
+  tagSlug: string;
+  tagDisplayName: string;
+  weekNumber: number;
+  year: number;
+  periodStart: string;
+  periodEnd: string;
+  themes: RadarTheme[];
+}
+
+// ─��─ Interest tag ───────────────────────────────────────────────────────
 
 export type InterestCategory =
   | "language"
