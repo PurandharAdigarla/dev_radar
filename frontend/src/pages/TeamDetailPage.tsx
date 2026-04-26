@@ -14,6 +14,7 @@ import {
   useRemoveMemberMutation,
   useListTeamRadarsQuery,
   useGenerateTeamRadarMutation,
+  useLazySearchUserByEmailQuery,
 } from "../api/teamApi";
 import { useAuth } from "../auth/useAuth";
 
@@ -27,13 +28,16 @@ export function TeamDetailPage() {
   const { data: members = [] } = useListMembersQuery(teamId, { skip: !teamId });
   const { data: radars = [] } = useListTeamRadarsQuery(teamId, { skip: !teamId });
 
-  const [addMember, addState] = useAddMemberMutation();
+  const [addMember] = useAddMemberMutation();
   const [removeMember] = useRemoveMemberMutation();
   const [generateRadar, generateState] = useGenerateTeamRadarMutation();
+  const [searchUser] = useLazySearchUserByEmailQuery();
 
-  const [addUserId, setAddUserId] = useState("");
+  const [addEmail, setAddEmail] = useState("");
   const [addRole, setAddRole] = useState("MEMBER");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   const isAdmin = members.some(
     (m) => m.userId === user?.id && (m.role === "OWNER" || m.role === "ADMIN")
@@ -41,11 +45,29 @@ export function TeamDetailPage() {
 
   async function onAddMember(e: React.FormEvent) {
     e.preventDefault();
-    const uid = Number(addUserId);
-    if (!uid) return;
-    await addMember({ teamId, userId: uid, role: addRole }).unwrap().catch(() => null);
-    setAddUserId("");
-    setShowAddForm(false);
+    const email = addEmail.trim();
+    if (!email) return;
+
+    setInviteError(null);
+    setInviteLoading(true);
+
+    try {
+      const result = await searchUser(email).unwrap();
+      await addMember({ teamId, userId: result.id, role: addRole }).unwrap();
+      setAddEmail("");
+      setShowAddForm(false);
+    } catch (err: unknown) {
+      const apiErr = err as { status?: number; data?: { message?: string } };
+      if (apiErr.status === 404) {
+        setInviteError("No user found with that email address.");
+      } else if (apiErr.status === 409) {
+        setInviteError("That user is already a team member.");
+      } else {
+        setInviteError("Could not add member. Please try again.");
+      }
+    } finally {
+      setInviteLoading(false);
+    }
   }
 
   async function onRemoveMember(userId: number) {
@@ -136,9 +158,9 @@ export function TeamDetailPage() {
           )}
         </Box>
 
-        {addState.isError && (
+        {inviteError && (
           <Box sx={{ mb: 3 }}>
-            <Alert severity="error">Could not add member. Check the user ID and try again.</Alert>
+            <Alert severity="error">{inviteError}</Alert>
           </Box>
         )}
 
@@ -158,13 +180,13 @@ export function TeamDetailPage() {
               flexWrap: "wrap",
             }}
           >
-            <Box sx={{ flex: 1, minWidth: 120 }}>
+            <Box sx={{ flex: 1, minWidth: 200 }}>
               <TextField
-                label="User ID"
-                value={addUserId}
-                onChange={(e) => setAddUserId(e.target.value)}
-                placeholder="e.g. 42"
-                type="number"
+                label="Email address"
+                value={addEmail}
+                onChange={(e) => { setAddEmail(e.target.value); setInviteError(null); }}
+                placeholder="colleague@example.com"
+                type="email"
                 autoFocus
               />
             </Box>
@@ -180,10 +202,10 @@ export function TeamDetailPage() {
                 <option value="ADMIN">Admin</option>
               </TextField>
             </Box>
-            <Button type="submit" disabled={!addUserId || addState.isLoading}>
-              {addState.isLoading ? "Adding..." : "Add"}
+            <Button type="submit" disabled={!addEmail.trim() || inviteLoading}>
+              {inviteLoading ? "Adding..." : "Add"}
             </Button>
-            <Button variant="text" onClick={() => { setShowAddForm(false); setAddUserId(""); }}>
+            <Button variant="text" onClick={() => { setShowAddForm(false); setAddEmail(""); setInviteError(null); }}>
               Cancel
             </Button>
           </Box>

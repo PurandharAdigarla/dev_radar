@@ -10,6 +10,8 @@ import com.devradar.web.rest.dto.EngagementEventDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/engagement")
 public class EngagementResource {
@@ -41,6 +43,7 @@ public class EngagementResource {
         event.setUserId(userId);
         event.setRadarId(dto.radarId());
         event.setThemeIndex(dto.themeIndex());
+        event.setThemeId(dto.themeId());
         event.setEventType(eventType);
         engagementRepo.save(event);
 
@@ -55,4 +58,21 @@ public class EngagementResource {
         }
         return ResponseEntity.ok(profileService.buildProfile(userId));
     }
+
+    /** Returns the current user's thumb engagements for a specific radar. */
+    @GetMapping("/radar/{radarId}")
+    public ResponseEntity<List<RadarEngagementDTO>> radarEngagements(@PathVariable Long radarId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        List<EngagementEvent> events = engagementRepo.findByUserIdAndRadarId(userId, radarId);
+        List<RadarEngagementDTO> dtos = events.stream()
+            .filter(e -> e.getEventType() == EventType.THUMBS_UP || e.getEventType() == EventType.THUMBS_DOWN)
+            .map(e -> new RadarEngagementDTO(e.getThemeIndex(), e.getEventType().name()))
+            .toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+    public record RadarEngagementDTO(int themeIndex, String eventType) {}
 }

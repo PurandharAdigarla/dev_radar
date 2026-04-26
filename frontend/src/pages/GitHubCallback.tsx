@@ -24,6 +24,9 @@ export function GitHubCallback() {
       return;
     }
 
+    // Read query params before clearing the URL.
+    const isLink = new URLSearchParams(window.location.search).get("from") === "link";
+
     tokenStorage.setAccess(accessToken);
     // OAuth flow issues access-token-only; no refresh token. Session lives
     // as long as the access token; re-auth via GitHub on expiry.
@@ -31,8 +34,6 @@ export function GitHubCallback() {
 
     // Clear the hash so the token doesn't linger in the address bar.
     window.history.replaceState({}, "", "/auth/github/complete");
-
-    const isLink = new URLSearchParams(window.location.search).get("from") === "link";
 
     (async () => {
       try {

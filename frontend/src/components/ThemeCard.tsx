@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
@@ -8,10 +8,11 @@ import ThumbUp from "@mui/icons-material/ThumbUp";
 import ThumbDownOutlined from "@mui/icons-material/ThumbDownOutlined";
 import ThumbDown from "@mui/icons-material/ThumbDown";
 import ShareOutlined from "@mui/icons-material/ShareOutlined";
+import SecurityOutlined from "@mui/icons-material/SecurityOutlined";
 import { keyframes } from "@mui/system";
 import { serifStack } from "../theme";
 import { SourceCard } from "./SourceCard";
-import { usePostEngagementMutation } from "../api/engagementApi";
+import { usePostEngagementMutation, useGetRadarEngagementsQuery } from "../api/engagementApi";
 import type { RadarTheme } from "../api/types";
 import type { EventType } from "../api/engagementApi";
 
@@ -19,6 +20,12 @@ const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 `;
+
+const SECURITY_KEYWORDS = /cve|vulnerability|vulnerabilities|security|exploit/i;
+
+function isSecurityTheme(theme: RadarTheme): boolean {
+  return SECURITY_KEYWORDS.test(theme.title) || SECURITY_KEYWORDS.test(theme.summary);
+}
 
 export interface ThemeCardProps {
   theme: RadarTheme;
@@ -29,8 +36,30 @@ type ThumbState = "up" | "down" | null;
 
 export function ThemeCard({ theme, radarId }: ThemeCardProps) {
   const [postEngagement] = usePostEngagementMutation();
+  const { data: radarEngagements } = useGetRadarEngagementsQuery(radarId!, {
+    skip: radarId == null,
+  });
+
+  const savedThumb = useMemo<ThumbState>(() => {
+    if (!radarEngagements) return null;
+    const match = radarEngagements.find((e) => e.themeIndex === theme.displayOrder);
+    if (!match) return null;
+    return match.eventType === "THUMBS_UP" ? "up" : "down";
+  }, [radarEngagements, theme.displayOrder]);
+
   const [thumb, setThumb] = useState<ThumbState>(null);
   const [shared, setShared] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Sync from server once data loads
+  useEffect(() => {
+    if (savedThumb !== null && !hydrated) {
+      setThumb(savedThumb);
+      setHydrated(true);
+    } else if (radarEngagements && !hydrated) {
+      setHydrated(true);
+    }
+  }, [savedThumb, radarEngagements, hydrated]);
 
   const sendEngagement = useCallback(
     (eventType: EventType) => {
@@ -65,8 +94,22 @@ export function ThemeCard({ theme, radarId }: ThemeCardProps) {
     sendEngagement("SHARE");
   }, [sendEngagement]);
 
+  const isSecurity = isSecurityTheme(theme);
+
   return (
-    <Box component="article" sx={{ mb: 6, animation: `${fadeIn} 400ms ease-out` }}>
+    <Box
+      component="article"
+      sx={{
+        mb: 6,
+        animation: `${fadeIn} 400ms ease-out`,
+        ...(isSecurity && {
+          borderLeft: "4px solid #d32f2f",
+          backgroundColor: "rgba(211, 47, 47, 0.04)",
+          pl: 2.5,
+          borderRadius: 1,
+        }),
+      }}
+    >
       <Typography
         component="h2"
         sx={{
@@ -77,8 +120,14 @@ export function ThemeCard({ theme, radarId }: ThemeCardProps) {
           fontWeight: 500,
           letterSpacing: "-0.01em",
           color: "text.primary",
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
         }}
       >
+        {isSecurity && (
+          <SecurityOutlined sx={{ color: "#d32f2f", fontSize: "1.25rem" }} />
+        )}
         {theme.title}
       </Typography>
 

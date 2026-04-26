@@ -16,6 +16,11 @@ export interface EngagementSummary {
   topEventTypes: Record<string, number>;
 }
 
+export interface RadarEngagement {
+  themeIndex: number;
+  eventType: "THUMBS_UP" | "THUMBS_DOWN";
+}
+
 export const engagementApi = createApi({
   reducerPath: "engagementApi",
   baseQuery: baseQueryWithRefresh,
@@ -33,10 +38,15 @@ export const engagementApi = createApi({
       query: () => ({ url: "/api/engagement/summary" }),
       providesTags: ["EngagementSummary"],
     }),
+    getRadarEngagements: b.query<RadarEngagement[], number>({
+      query: (radarId) => ({ url: `/api/engagement/radar/${radarId}` }),
+      providesTags: (_r, _e, radarId) => [{ type: "EngagementSummary", id: radarId }],
+    }),
   }),
 });
 
 export const {
   usePostEngagementMutation,
   useGetEngagementSummaryQuery,
+  useGetRadarEngagementsQuery,
 } = engagementApi;

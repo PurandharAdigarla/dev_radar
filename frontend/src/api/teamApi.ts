@@ -26,6 +26,12 @@ export interface AddTeamMemberRequest {
   role: string;
 }
 
+export interface UserSearchResult {
+  id: number;
+  displayName: string;
+  email: string;
+}
+
 export const teamApi = createApi({
   reducerPath: "teamApi",
   baseQuery: baseQueryWithRefresh,
@@ -79,6 +85,9 @@ export const teamApi = createApi({
       }),
       invalidatesTags: (_r, _e, teamId) => [{ type: "TeamRadars", id: teamId }],
     }),
+    searchUserByEmail: b.query<UserSearchResult, string>({
+      query: (email) => ({ url: `/api/users/search?email=${encodeURIComponent(email)}` }),
+    }),
   }),
 });
 
@@ -91,4 +100,5 @@ export const {
   useRemoveMemberMutation,
   useListTeamRadarsQuery,
   useGenerateTeamRadarMutation,
+  useLazySearchUserByEmailQuery,
 } = teamApi;
