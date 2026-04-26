@@ -5,6 +5,7 @@ import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
 import { Button } from "../components/Button";
 import { ThemeCard } from "../components/ThemeCard";
+import { ViralCta } from "../components/ViralCta";
 import { useGetSharedRadarQuery } from "../api/radarApi";
 
 function formatDate(iso: string): string {
@@ -88,27 +89,7 @@ export function SharedRadarPage() {
           <ThemeCard key={theme.id} theme={theme} />
         ))}
 
-        {/* CTA */}
-        <Box
-          sx={{
-            mt: 6,
-            p: 4,
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 2,
-            textAlign: "center",
-          }}
-        >
-          <Typography sx={{ fontSize: "1.25rem", fontWeight: 500, mb: 1 }}>
-            Get your own radar
-          </Typography>
-          <Typography color="text.secondary" sx={{ mb: 3 }}>
-            Connect your GitHub and get a personalized weekly radar tailored to your stack.
-          </Typography>
-          <Button component={RouterLink} to="/register">
-            Create account
-          </Button>
-        </Box>
+        <ViralCta />
       </Container>
     </Box>
   );
