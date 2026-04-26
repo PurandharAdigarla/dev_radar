@@ -29,7 +29,7 @@ class MultiProviderAiClientBudgetTest {
         client = new MultiProviderAiClient(
                 new SimpleMeterRegistry(),
                 dailyMetrics,
-                "", "", "", "", "llama-3.3-70b-versatile", "",
+                "", "",
                 0, 100, 5.0
         );
 
