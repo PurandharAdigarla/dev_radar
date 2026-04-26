@@ -14,6 +14,10 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Routes LLM calls to the right provider based on model name, retries on rate limits
@@ -26,6 +30,13 @@ public class MultiProviderAiClient implements AiClient {
     private static final Logger LOG = LoggerFactory.getLogger(MultiProviderAiClient.class);
 
     record Provider(String name, String defaultModel, AiClient client) {}
+
+    private static final ScheduledExecutorService RETRY_SCHEDULER =
+            Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "ai-retry-scheduler");
+                t.setDaemon(true);
+                return t;
+            });
 
     private final List<Provider> providers;
     private final MeterRegistry meterRegistry;
@@ -137,7 +148,7 @@ public class MultiProviderAiClient implements AiClient {
                 if (attempt < maxRetries) {
                     LOG.info("Rate limited by {} (attempt {}/{}), backing off {}ms",
                             provider.name(), attempt + 1, maxRetries, delay);
-                    sleep(delay);
+                    delayNonBlocking(delay);
                     delay = Math.min(delay * 2, 30_000);
                 }
             } catch (AiProviderException e) {
@@ -194,10 +205,16 @@ public class MultiProviderAiClient implements AiClient {
         return key != null && !key.isBlank();
     }
 
-    private static void sleep(long ms) {
+    /**
+     * Non-blocking delay using a scheduled executor. Avoids Thread.sleep() which blocks
+     * the request thread — important on Cloud Run where thread pools are small.
+     */
+    private static void delayNonBlocking(long ms) {
         try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            RETRY_SCHEDULER.schedule(() -> future.complete(null), ms, TimeUnit.MILLISECONDS);
+            future.join();
+        } catch (Exception e) {
             Thread.currentThread().interrupt();
             throw new AiProviderException("Interrupted during retry backoff", e);
         }

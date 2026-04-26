@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,16 +76,19 @@ public class RadarOrchestrator {
     private final String model;
     private final int maxIterations;
     private final int maxTokens;
+    private final int maxDurationSeconds;
 
     public RadarOrchestrator(AiClient ai, ToolRegistry tools,
                              EngagementProfileService engagementProfileService,
                              @Value("${devradar.ai.orchestrator-model}") String model,
                              @Value("${devradar.ai.max-tool-iterations}") int maxIterations,
-                             @Value("${devradar.ai.max-tokens-per-call}") int maxTokens) {
+                             @Value("${devradar.ai.max-tokens-per-call}") int maxTokens,
+                             @Value("${devradar.ai.max-duration-seconds:120}") int maxDurationSeconds) {
         this.ai = ai; this.tools = tools;
         this.engagementProfileService = engagementProfileService;
         this.model = model;
         this.maxIterations = maxIterations; this.maxTokens = maxTokens;
+        this.maxDurationSeconds = maxDurationSeconds;
     }
 
     public RadarOrchestrationResult generate(List<String> userInterests, List<Long> candidateItemIds, ToolContext ctx) {
@@ -105,8 +110,14 @@ public class RadarOrchestrator {
 
         int totalIn = 0, totalOut = 0;
         String lastText = "";
+        Instant start = Instant.now();
 
         for (int iter = 0; iter < maxIterations; iter++) {
+            if (Duration.between(start, Instant.now()).toSeconds() > maxDurationSeconds) {
+                LOG.warn("orchestrator wall-clock timeout after {}s, returning partial result with {} iterations",
+                        maxDurationSeconds, iter);
+                break;
+            }
             AiResponse resp = ai.generate(model, systemPrompt, messages, tools.definitions(), maxTokens);
             totalIn += resp.inputTokens();
             totalOut += resp.outputTokens();

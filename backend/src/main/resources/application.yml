@@ -90,6 +90,7 @@ devradar:
     scoring-model: ${AI_SCORING_MODEL:llama-3.3-70b-versatile}
     max-tool-iterations: 8
     max-tokens-per-call: 4096
+    max-duration-seconds: ${AI_MAX_DURATION_SECONDS:120}
     daily-budget-usd: ${AI_DAILY_BUDGET_USD:5.0}
     retry:
       max-attempts: 3

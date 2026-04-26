@@ -1,11 +1,19 @@
 package com.devradar.web.rest;
 
 import com.devradar.ingest.job.*;
+import com.devradar.notification.DigestService;
 import com.devradar.observability.MetricsAggregationJob;
+import com.devradar.domain.NotificationPreference;
+import com.devradar.repository.NotificationPreferenceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.DayOfWeek;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/internal/ingest")
@@ -21,12 +29,15 @@ public class IngestionTriggerResource {
     private final DependencyReleaseIngestor depReleases;
     private final DependencyScanJob depScan;
     private final MetricsAggregationJob metrics;
+    private final DigestService digestService;
+    private final NotificationPreferenceRepository prefRepo;
 
     public IngestionTriggerResource(
         RssFeedIngestor rss, HackerNewsIngestor hn, GHSAIngestor ghsa,
         GitHubTrendingIngestor ghTrending, GitHubReleasesIngestor ghReleases,
         DependencyReleaseIngestor depReleases, DependencyScanJob depScan,
-        MetricsAggregationJob metrics
+        MetricsAggregationJob metrics, DigestService digestService,
+        NotificationPreferenceRepository prefRepo
     ) {
         this.rss = rss;
         this.hn = hn;
@@ -36,6 +47,8 @@ public class IngestionTriggerResource {
         this.depReleases = depReleases;
         this.depScan = depScan;
         this.metrics = metrics;
+        this.digestService = digestService;
+        this.prefRepo = prefRepo;
     }
 
     @PostMapping("/rss")
@@ -104,6 +117,26 @@ public class IngestionTriggerResource {
         ghReleases.run();
         depReleases.run();
         depScan.run();
+        return ResponseEntity.ok().build();
+    }
+
+    /** HTTP trigger for weekly digest — use Cloud Scheduler to call this hourly on Cloud Run. */
+    @PostMapping("/weekly-digest")
+    public ResponseEntity<Void> triggerWeeklyDigest() {
+        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+        int dayOfWeek = now.getDayOfWeek().getValue();
+        int hour = now.getHour();
+        LOG.info("trigger: weekly-digest day={} hour={}", dayOfWeek, hour);
+
+        List<NotificationPreference> prefs =
+                prefRepo.findByEmailEnabledTrueAndDigestDayOfWeekAndDigestHourUtc(dayOfWeek, hour);
+        for (var pref : prefs) {
+            try {
+                digestService.sendDigestForUser(pref.getUserId());
+            } catch (Exception e) {
+                LOG.error("Failed to send digest for user={}: {}", pref.getUserId(), e.getMessage(), e);
+            }
+        }
         return ResponseEntity.ok().build();
     }
 }

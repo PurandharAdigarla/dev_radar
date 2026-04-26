@@ -13,6 +13,13 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+/**
+ * Cloud Run (min-instances=0): the @Scheduled cron below will NOT fire reliably because
+ * instances may be scaled to zero when the cron triggers. Use an external Cloud Scheduler
+ * job hitting POST /api/internal/ingest/weekly-digest (see IngestionTriggerResource) to
+ * ensure the digest runs. The @Scheduled annotation is kept for local/always-on deployments
+ * where scheduling is enabled.
+ */
 @Component
 @ConditionalOnProperty(name = "devradar.scheduling.enabled", havingValue = "true")
 public class WeeklyDigestJob {
