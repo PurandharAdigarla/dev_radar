@@ -90,6 +90,46 @@ export const handlers = [
     return HttpResponse.json(all.filter((t) => body.tagSlugs.includes(t.slug)));
   }),
 
+  http.get("/api/engagement/summary", () => {
+    return HttpResponse.json({
+      thumbsUpThemes: [],
+      thumbsDownThemes: [],
+      totalInteractions: 0,
+      topEventTypes: {},
+    });
+  }),
+
+  http.get("/api/engagement/radar/:radarId", () => {
+    return HttpResponse.json([]);
+  }),
+
+  http.get("/api/users/me/stats", () => {
+    return HttpResponse.json({
+      radarCount: 1,
+      themeCount: 3,
+      engagementCount: 0,
+      latestRadarDate: "2026-04-20T10:00:00Z",
+      newItemsSinceLastRadar: 5,
+    });
+  }),
+
+  http.get("/api/users/me/dependency-summary", () => {
+    return HttpResponse.json({
+      repoCount: 0,
+      dependencyCount: 0,
+      vulnerabilityCount: 0,
+      ecosystems: [],
+    });
+  }),
+
+  http.get("/api/users/me/suggested-interests", () => {
+    return HttpResponse.json([]);
+  }),
+
+  http.get("/api/github/status", () => {
+    return HttpResponse.json({ linked: false, login: null });
+  }),
+
   http.get("/api/radars", ({ request }) => {
     const auth = request.headers.get("Authorization");
     if (!auth?.startsWith("Bearer ")) return HttpResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -208,6 +248,38 @@ export const handlers = [
       payloadJson: "{}",
       status: "DISMISSED", prUrl: null, failureReason: null,
       createdAt: "2026-04-20T10:00:00Z", updatedAt: "2026-04-20T10:06:00Z",
+    });
+  }),
+
+  http.get("/api/plan", () => {
+    return HttpResponse.json({
+      plan: "PRO",
+      radarsPerMonth: 50,
+      sourcesPerRadar: 10,
+      maxInterests: 50,
+      teamAccess: false,
+      emailDigest: true,
+      apiKeyAccess: true,
+      autoFixPrs: true,
+      trialActive: false,
+      trialUsed: false,
+      planExpiresAt: null,
+    });
+  }),
+
+  http.post("/api/plan/start-trial", () => {
+    return HttpResponse.json({
+      plan: "PRO",
+      radarsPerMonth: 50,
+      sourcesPerRadar: 10,
+      maxInterests: 50,
+      teamAccess: false,
+      emailDigest: true,
+      apiKeyAccess: true,
+      autoFixPrs: true,
+      trialActive: true,
+      trialUsed: true,
+      planExpiresAt: "2026-05-11T00:00:00Z",
     });
   }),
 ];

@@ -37,6 +37,8 @@ public class PlanResource {
             limits.maxInterests(),
             limits.teamAccess(),
             limits.emailDigest(),
+            limits.apiKeyAccess(),
+            limits.autoFixPrs(),
             planService.isTrialActive(user),
             user.getTrialStartedAt() != null,
             user.getPlanExpiresAt()
@@ -55,6 +57,8 @@ public class PlanResource {
             limits.maxInterests(),
             limits.teamAccess(),
             limits.emailDigest(),
+            limits.apiKeyAccess(),
+            limits.autoFixPrs(),
             true,
             true,
             user.getPlanExpiresAt()
