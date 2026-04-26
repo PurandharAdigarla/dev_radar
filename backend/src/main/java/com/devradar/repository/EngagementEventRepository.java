@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface EngagementEventRepository extends JpaRepository<EngagementEvent, Long> {
     List<EngagementEvent> findByUserIdOrderByCreatedAtDesc(Long userId);
+    long countByUserId(Long userId);
     long countByUserIdAndEventType(Long userId, EventType eventType);
     List<EngagementEvent> findByUserIdAndRadarId(Long userId, Long radarId);
 }

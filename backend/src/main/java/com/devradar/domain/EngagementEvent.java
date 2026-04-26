@@ -18,6 +18,9 @@ public class EngagementEvent {
     @Column(name = "theme_index", nullable = false)
     private int themeIndex;
 
+    @Column(name = "theme_id")
+    private Long themeId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false, length = 32)
     private EventType eventType;
@@ -36,6 +39,8 @@ public class EngagementEvent {
     public void setRadarId(Long radarId) { this.radarId = radarId; }
     public int getThemeIndex() { return themeIndex; }
     public void setThemeIndex(int themeIndex) { this.themeIndex = themeIndex; }
+    public Long getThemeId() { return themeId; }
+    public void setThemeId(Long themeId) { this.themeId = themeId; }
     public EventType getEventType() { return eventType; }
     public void setEventType(EventType eventType) { this.eventType = eventType; }
     public Instant getCreatedAt() { return createdAt; }

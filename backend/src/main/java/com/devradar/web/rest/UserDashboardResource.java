@@ -1,6 +1,6 @@
 package com.devradar.web.rest;
 
-import com.devradar.radar.application.RadarApplicationService;
+import com.devradar.radar.application.RadarStatsService;
 import com.devradar.web.rest.dto.DependencySummaryDTO;
 import com.devradar.web.rest.dto.UserStatsDTO;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,24 +13,24 @@ import java.util.List;
 @RequestMapping("/api/users/me")
 public class UserDashboardResource {
 
-    private final RadarApplicationService app;
+    private final RadarStatsService statsService;
 
-    public UserDashboardResource(RadarApplicationService app) {
-        this.app = app;
+    public UserDashboardResource(RadarStatsService statsService) {
+        this.statsService = statsService;
     }
 
     @GetMapping("/stats")
     public UserStatsDTO getStats() {
-        return app.getUserStats();
+        return statsService.getUserStats();
     }
 
     @GetMapping("/dependency-summary")
     public DependencySummaryDTO getDependencySummary() {
-        return app.getDependencySummary();
+        return statsService.getDependencySummary();
     }
 
     @GetMapping("/suggested-interests")
     public List<String> getSuggestedInterests() {
-        return app.getSuggestedInterests();
+        return statsService.getSuggestedInterests();
     }
 }

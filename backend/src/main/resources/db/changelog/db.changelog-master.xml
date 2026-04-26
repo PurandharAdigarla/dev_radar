@@ -27,4 +27,5 @@
     <include file="db/changelog/022-engagement-tracking.xml"/>
     <include file="db/changelog/023-teams-schema.xml"/>
     <include file="db/changelog/024-shareable-radars.xml"/>
+    <include file="db/changelog/025-engagement-theme-id.xml"/>
 </databaseChangeLog>

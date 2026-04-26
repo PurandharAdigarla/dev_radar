@@ -8,10 +8,28 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
 public interface SourceItemRepository extends JpaRepository<SourceItem, Long> {
+
+    @Query("""
+        SELECT si.id FROM SourceItem si, SourceItemTag sit, InterestTag it
+         WHERE sit.sourceItemId = si.id AND sit.interestTagId = it.id
+           AND it.slug IN :slugs AND si.postedAt > :cutoff
+         GROUP BY si.id
+         ORDER BY MAX(si.postedAt) DESC
+        """)
+    List<Long> findCandidateIdsBySlugs(@Param("slugs") List<String> slugs,
+                                       @Param("cutoff") Instant cutoff,
+                                       Pageable pageable);
+
+    default List<Long> preFilterCandidates(List<String> slugs) {
+        if (slugs.isEmpty()) return List.of();
+        Instant cutoff = Instant.now().minus(7, ChronoUnit.DAYS);
+        return findCandidateIdsBySlugs(slugs, cutoff, PageRequest.of(0, 200));
+    }
     Optional<SourceItem> findBySourceIdAndExternalId(Long sourceId, String externalId);
     boolean existsBySourceIdAndExternalId(Long sourceId, String externalId);
 

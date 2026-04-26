@@ -3,16 +3,13 @@ package com.devradar.service;
 import com.devradar.domain.*;
 import com.devradar.radar.RadarGenerationService;
 import com.devradar.radar.RadarService;
+import com.devradar.repository.SourceItemRepository;
 import com.devradar.repository.TeamMemberRepository;
 import com.devradar.repository.TeamRadarRepository;
 import com.devradar.web.rest.dto.RadarSummaryDTO;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -24,21 +21,22 @@ public class TeamRadarService {
     private final RadarService radarService;
     private final RadarGenerationService generation;
     private final PlanEnforcer planEnforcer;
-
-    @PersistenceContext private EntityManager em;
+    private final SourceItemRepository sourceItemRepo;
 
     public TeamRadarService(TeamMemberRepository memberRepo,
                             TeamRadarRepository teamRadarRepo,
                             UserInterestService interestService,
                             RadarService radarService,
                             RadarGenerationService generation,
-                            PlanEnforcer planEnforcer) {
+                            PlanEnforcer planEnforcer,
+                            SourceItemRepository sourceItemRepo) {
         this.memberRepo = memberRepo;
         this.teamRadarRepo = teamRadarRepo;
         this.interestService = interestService;
         this.radarService = radarService;
         this.generation = generation;
         this.planEnforcer = planEnforcer;
+        this.sourceItemRepo = sourceItemRepo;
     }
 
     @Transactional
@@ -55,7 +53,7 @@ public class TeamRadarService {
         }
 
         List<String> slugList = List.copyOf(mergedSlugs);
-        List<Long> candidateIds = preFilterCandidates(slugList);
+        List<Long> candidateIds = sourceItemRepo.preFilterCandidates(slugList);
 
         Radar radar = radarService.createPending(requesterId);
         generation.runGeneration(radar.getId(), requesterId, slugList, candidateIds);
@@ -77,19 +75,4 @@ public class TeamRadarService {
         return teamRadarRepo.findByTeamIdOrderByCreatedAtDesc(teamId);
     }
 
-    @SuppressWarnings("unchecked")
-    private List<Long> preFilterCandidates(List<String> slugs) {
-        if (slugs.isEmpty()) return List.of();
-        Instant cutoff = Instant.now().minus(7, ChronoUnit.DAYS);
-        return em.createQuery(
-            "SELECT si.id FROM SourceItem si, SourceItemTag sit, InterestTag it " +
-            "WHERE sit.sourceItemId = si.id AND sit.interestTagId = it.id " +
-            "AND it.slug IN :slugs AND si.postedAt > :cutoff " +
-            "GROUP BY si.id " +
-            "ORDER BY MAX(si.postedAt) DESC")
-            .setParameter("slugs", slugs)
-            .setParameter("cutoff", cutoff)
-            .setMaxResults(200)
-            .getResultList();
-    }
 }

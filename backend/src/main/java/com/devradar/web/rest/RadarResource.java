@@ -1,6 +1,7 @@
 package com.devradar.web.rest;
 
 import com.devradar.radar.application.RadarApplicationService;
+import com.devradar.radar.application.RadarSharingService;
 import com.devradar.web.rest.dto.RadarDetailDTO;
 import com.devradar.web.rest.dto.RadarSummaryDTO;
 import com.devradar.web.rest.dto.ShareRadarResponseDTO;
@@ -15,7 +16,12 @@ import org.springframework.web.bind.annotation.*;
 public class RadarResource {
 
     private final RadarApplicationService app;
-    public RadarResource(RadarApplicationService app) { this.app = app; }
+    private final RadarSharingService sharing;
+
+    public RadarResource(RadarApplicationService app, RadarSharingService sharing) {
+        this.app = app;
+        this.sharing = sharing;
+    }
 
     @PostMapping
     public ResponseEntity<RadarSummaryDTO> create() {
@@ -40,12 +46,12 @@ public class RadarResource {
         if ((request.getScheme().equals("http") && port != 80) || (request.getScheme().equals("https") && port != 443)) {
             baseUrl += ":" + port;
         }
-        return app.shareRadar(id, baseUrl);
+        return sharing.shareRadar(id, baseUrl);
     }
 
     @GetMapping("/shared/{shareToken}")
     public ResponseEntity<RadarDetailDTO> getShared(@PathVariable String shareToken) {
-        return app.getByShareToken(shareToken)
+        return sharing.getByShareToken(shareToken)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
