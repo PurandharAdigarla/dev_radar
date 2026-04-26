@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <changeSet id="024-1" author="devradar">
+    <addColumn tableName="radars">
+      <column name="share_token" type="VARCHAR(64)">
+        <constraints nullable="true" unique="true" uniqueConstraintName="uq_radars_share_token"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="024-2" author="devradar">
+    <addColumn tableName="radars">
+      <column name="is_public" type="BOOLEAN" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="024-3" author="devradar">
+    <createIndex tableName="radars" indexName="idx_radars_share_token">
+      <column name="share_token"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>

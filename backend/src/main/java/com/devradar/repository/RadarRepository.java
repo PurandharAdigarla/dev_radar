@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface RadarRepository extends JpaRepository<Radar, Long> {
     Page<Radar> findByUserIdOrderByGeneratedAtDesc(Long userId, Pageable pageable);
@@ -27,4 +28,10 @@ public interface RadarRepository extends JpaRepository<Radar, Long> {
 
     @Query("SELECT r.generationMs FROM Radar r WHERE r.status = 'READY' AND FUNCTION('DATE', r.generatedAt) = :date ORDER BY r.generationMs ASC")
     List<Long> findGenerationMsByDate(@Param("date") LocalDate date);
+
+    Optional<Radar> findByShareToken(String shareToken);
+
+    Optional<Radar> findFirstByIsPublicTrueAndStatusOrderByGeneratedAtDesc(RadarStatus status);
+
+    long countByUserIdAndStatus(Long userId, RadarStatus status);
 }

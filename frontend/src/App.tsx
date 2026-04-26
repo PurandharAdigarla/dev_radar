@@ -18,6 +18,8 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { TeamDashboardPage } from "./pages/TeamDashboardPage";
 import { TeamDetailPage } from "./pages/TeamDetailPage";
+import { SharedRadarPage } from "./pages/SharedRadarPage";
+import { DashboardPage } from "./pages/DashboardPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { ErrorBoundary } from "./ErrorBoundary";
 
@@ -29,9 +31,11 @@ export function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/auth/github/complete" element={<GitHubCallback />} />
       <Route path="/observability" element={<ObservabilityPage />} />
+      <Route path="/radar/shared/:shareToken" element={<SharedRadarPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/app" element={<AppShell />}>
-          <Route index element={<Navigate to="radars" replace />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="radars" element={<RadarListPage />} />
           <Route path="radars/:id" element={<RadarDetailPage />} />
           <Route path="interests" element={<InterestPickerPage />} />

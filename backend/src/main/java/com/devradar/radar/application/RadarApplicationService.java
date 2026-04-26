@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -46,6 +47,7 @@ public class RadarApplicationService {
     private final SourceRepository sourceRepo;
     private final UserInterestService interests;
     private final GitHubStarsReleaseFetcher starsFetcher;
+    private final EngagementEventRepository engagementRepo;
 
     private final Map<Long, String> sourceNameCache = new ConcurrentHashMap<>();
 
@@ -60,7 +62,8 @@ public class RadarApplicationService {
         SourceItemRepository sourceItemRepo,
         SourceRepository sourceRepo,
         UserInterestService interests,
-        GitHubStarsReleaseFetcher starsFetcher
+        GitHubStarsReleaseFetcher starsFetcher,
+        EngagementEventRepository engagementRepo
     ) {
         this.radarService = radarService;
         this.generation = generation;
@@ -71,6 +74,7 @@ public class RadarApplicationService {
         this.sourceRepo = sourceRepo;
         this.interests = interests;
         this.starsFetcher = starsFetcher;
+        this.engagementRepo = engagementRepo;
     }
 
     public RadarSummaryDTO createForCurrentUser() {
@@ -120,6 +124,89 @@ public class RadarApplicationService {
             ? themeRepo.findByRadarIdOrderByDisplayOrderAsc(r.getId()).size()
             : 0;
         return new RadarSummaryDTO(r.getId(), r.getStatus(), r.getPeriodStart(), r.getPeriodEnd(), r.getGeneratedAt(), r.getGenerationMs(), r.getTokenCount(), themeCount);
+    }
+
+    public ShareRadarResponseDTO shareRadar(Long radarId, String baseUrl) {
+        Long uid = SecurityUtils.getCurrentUserId();
+        if (uid == null) throw new UserNotAuthenticatedException();
+        Radar r = radarRepo.findById(radarId).orElseThrow();
+        if (!r.getUserId().equals(uid)) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+
+        if (r.getShareToken() == null) {
+            r.setShareToken(UUID.randomUUID().toString().replace("-", ""));
+        }
+        r.setPublic(true);
+        radarRepo.save(r);
+
+        String shareUrl = baseUrl + "/radar/shared/" + r.getShareToken();
+        return new ShareRadarResponseDTO(r.getShareToken(), shareUrl);
+    }
+
+    public Optional<RadarDetailDTO> getByShareToken(String shareToken) {
+        return radarRepo.findByShareToken(shareToken)
+                .filter(Radar::isPublic)
+                .map(this::toDetail);
+    }
+
+    public Optional<RadarDetailDTO> getLatestPublicRadar() {
+        return radarRepo.findFirstByIsPublicTrueAndStatusOrderByGeneratedAtDesc(RadarStatus.READY)
+                .map(this::toDetail);
+    }
+
+    public UserStatsDTO getUserStats() {
+        Long uid = SecurityUtils.getCurrentUserId();
+        if (uid == null) throw new UserNotAuthenticatedException();
+
+        long radarCount = radarRepo.countByUserIdAndStatus(uid, RadarStatus.READY);
+        var latestPage = radarRepo.findByUserIdOrderByGeneratedAtDesc(uid, PageRequest.of(0, 1));
+        String latestDate = latestPage.getContent().stream()
+                .filter(r -> r.getGeneratedAt() != null)
+                .findFirst()
+                .map(r -> r.getGeneratedAt().toString())
+                .orElse(null);
+
+        int themeCount = 0;
+        for (var radar : radarRepo.findByUserIdOrderByGeneratedAtDesc(uid, PageRequest.of(0, 50)).getContent()) {
+            if (radar.getStatus() == RadarStatus.READY) {
+                themeCount += themeRepo.findByRadarId(radar.getId()).size();
+            }
+        }
+
+        int engagementCount = engagementRepo.findByUserIdOrderByCreatedAtDesc(uid).size();
+
+        return new UserStatsDTO((int) radarCount, themeCount, engagementCount, latestDate);
+    }
+
+    public DependencySummaryDTO getDependencySummary() {
+        Long uid = SecurityUtils.getCurrentUserId();
+        if (uid == null) throw new UserNotAuthenticatedException();
+        // Placeholder: dependency scanning is not yet implemented
+        return new DependencySummaryDTO(0, 0, 0, List.of());
+    }
+
+    public List<String> getSuggestedInterests() {
+        Long uid = SecurityUtils.getCurrentUserId();
+        if (uid == null) throw new UserNotAuthenticatedException();
+        // Placeholder: returns existing user interest slugs as suggestions
+        return interests.findInterestsForUser(uid).stream()
+                .map(InterestTag::getSlug)
+                .toList();
+    }
+
+    private RadarDetailDTO toDetail(Radar r) {
+        var themes = themeRepo.findByRadarIdOrderByDisplayOrderAsc(r.getId());
+        List<RadarThemeDTO> themeDtos = new ArrayList<>();
+        for (var t : themes) {
+            var rtis = themeItemRepo.findByThemeIdOrderByDisplayOrderAsc(t.getId());
+            List<RadarItemDTO> itemDtos = new ArrayList<>();
+            for (var rti : rtis) {
+                SourceItem si = sourceItemRepo.findById(rti.getSourceItemId()).orElse(null);
+                if (si == null) continue;
+                itemDtos.add(new RadarItemDTO(si.getId(), si.getTitle(), si.getDescription(), si.getUrl(), si.getAuthor(), resolveSourceName(si.getSourceId())));
+            }
+            themeDtos.add(new RadarThemeDTO(t.getId(), t.getTitle(), t.getSummary(), t.getDisplayOrder(), itemDtos));
+        }
+        return new RadarDetailDTO(r.getId(), r.getStatus(), r.getPeriodStart(), r.getPeriodEnd(), r.getGeneratedAt(), r.getGenerationMs(), r.getTokenCount(), themeDtos);
     }
 
     public Optional<RadarMcpDTO> getLatestForUser(Long userId) {

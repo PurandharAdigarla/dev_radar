@@ -1,14 +1,16 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Snackbar from "@mui/material/Snackbar";
+import { Button } from "../components/Button";
 import { PulseDot } from "../components/PulseDot";
 import { ThemeCard } from "../components/ThemeCard";
 import { ThemeSkeleton } from "../components/ThemeSkeleton";
 import { ProposalCard } from "../components/ProposalCard";
 import { Alert } from "../components/Alert";
-import { useGetRadarQuery, radarApi } from "../api/radarApi";
+import { useGetRadarQuery, useShareRadarMutation, radarApi } from "../api/radarApi";
 import { useListProposalsByRadarQuery } from "../api/actionApi";
 import { useGetMyInterestsQuery } from "../api/interestApi";
 import { useRadarStream } from "../radar/useRadarStream";
@@ -40,6 +42,18 @@ export function RadarDetailPage() {
   const { data: radar, error } = useGetRadarQuery(radarId, { skip: !radarId });
   const { data: proposals = [] } = useListProposalsByRadarQuery(radarId, { skip: !radarId });
   const { data: myInterests } = useGetMyInterestsQuery();
+  const [shareRadar] = useShareRadarMutation();
+  const [shareSnackbar, setShareSnackbar] = useState<string | null>(null);
+
+  const handleShare = useCallback(async () => {
+    try {
+      const result = await shareRadar(radarId).unwrap();
+      await navigator.clipboard.writeText(result.shareUrl);
+      setShareSnackbar("Share link copied to clipboard!");
+    } catch {
+      setShareSnackbar("Failed to generate share link.");
+    }
+  }, [shareRadar, radarId]);
 
   const isGenerating = radar?.status === "GENERATING";
   const stream = useRadarStream(radarId, isGenerating);
@@ -161,6 +175,14 @@ export function RadarDetailPage() {
             )}
           </Box>
 
+          {!streaming && radar.status === "READY" && (
+            <Box sx={{ mt: 2 }}>
+              <Button variant="outlined" size="small" onClick={handleShare}>
+                Share this radar
+              </Button>
+            </Box>
+          )}
+
           {stream.status === "failed" && (
             <Typography variant="body2" color="error" sx={{ mt: 2 }}>
               Generation failed: {stream.error ?? "unknown error"}
@@ -212,6 +234,13 @@ export function RadarDetailPage() {
           ))}
         </Box>
       )}
+
+      <Snackbar
+        open={shareSnackbar !== null}
+        autoHideDuration={3000}
+        onClose={() => setShareSnackbar(null)}
+        message={shareSnackbar}
+      />
     </Box>
   );
 }

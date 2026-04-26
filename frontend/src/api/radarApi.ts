@@ -7,6 +7,11 @@ export interface ListRadarsArgs {
   size?: number;
 }
 
+export interface ShareRadarResponse {
+  shareToken: string;
+  shareUrl: string;
+}
+
 export const radarApi = createApi({
   reducerPath: "radarApi",
   baseQuery: baseQueryWithRefresh,
@@ -27,6 +32,15 @@ export const radarApi = createApi({
       query: () => ({ url: "/api/radars", method: "POST" }),
       invalidatesTags: ["RadarList"],
     }),
+    shareRadar: b.mutation<ShareRadarResponse, number>({
+      query: (id) => ({ url: `/api/radars/${id}/share`, method: "POST" }),
+    }),
+    getSharedRadar: b.query<RadarDetail, string>({
+      query: (shareToken) => ({ url: `/api/radars/shared/${shareToken}` }),
+    }),
+    getSampleRadar: b.query<RadarDetail, void>({
+      query: () => ({ url: "/api/sample-radar" }),
+    }),
   }),
 });
 
@@ -34,4 +48,7 @@ export const {
   useListQuery: useListRadarsQuery,
   useGetQuery: useGetRadarQuery,
   useCreateMutation: useCreateRadarMutation,
+  useShareRadarMutation,
+  useGetSharedRadarQuery,
+  useGetSampleRadarQuery,
 } = radarApi;

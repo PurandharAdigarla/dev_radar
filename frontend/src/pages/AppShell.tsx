@@ -17,6 +17,7 @@ type NavItem =
   | { key: string; label: string; disabled: true };
 
 const NAV_ITEMS: NavItem[] = [
+  { key: "dashboard", label: "Dashboard", to: "/app/dashboard" },
   { key: "radars", label: "Radars", to: "/app/radars" },
   { key: "teams", label: "Teams", to: "/app/teams" },
   { key: "interests", label: "Interests", to: "/app/interests" },

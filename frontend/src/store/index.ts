@@ -10,6 +10,7 @@ import { githubApi } from "../api/githubApi";
 import { notificationApi } from "../api/notificationApi";
 import { engagementApi } from "../api/engagementApi";
 import { teamApi } from "../api/teamApi";
+import { dashboardApi } from "../api/dashboardApi";
 import { radarGenerationReducer } from "../radar/radarGenerationSlice";
 
 export function makeStore() {
@@ -27,6 +28,7 @@ export function makeStore() {
       [notificationApi.reducerPath]: notificationApi.reducer,
       [engagementApi.reducerPath]: engagementApi.reducer,
       [teamApi.reducerPath]: teamApi.reducer,
+      [dashboardApi.reducerPath]: dashboardApi.reducer,
     },
     middleware: (getDefault) =>
       getDefault()
@@ -39,7 +41,8 @@ export function makeStore() {
         .concat(githubApi.middleware)
         .concat(notificationApi.middleware)
         .concat(engagementApi.middleware)
-        .concat(teamApi.middleware),
+        .concat(teamApi.middleware)
+        .concat(dashboardApi.middleware),
   });
 }
 

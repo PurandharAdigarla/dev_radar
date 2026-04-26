@@ -43,6 +43,12 @@ public class Radar {
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Column(name = "share_token", length = 64, unique = true)
+    private String shareToken;
+
+    @Column(name = "is_public", nullable = false)
+    private boolean isPublic;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -73,5 +79,9 @@ public class Radar {
     public void setErrorCode(String v) { this.errorCode = v; }
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String v) { this.errorMessage = v; }
+    public String getShareToken() { return shareToken; }
+    public void setShareToken(String v) { this.shareToken = v; }
+    public boolean isPublic() { return isPublic; }
+    public void setPublic(boolean v) { this.isPublic = v; }
     public Instant getCreatedAt() { return createdAt; }
 }
