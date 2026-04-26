@@ -19,7 +19,7 @@ public class MockAiClient implements AiClient {
           "themes": [
             {
               "title": "DEMO MODE — Spring Boot 3.5 release patterns",
-              "summary": "This is a stub response from MockAiClient. To see real AI-generated radars, run with -Dspring-boot.run.profiles=gemini (free) or -Dspring-boot.run.profiles=anthropic (paid).",
+              "summary": "This is a stub response from MockAiClient. Set GOOGLE_AI_API_KEY to enable real AI-generated radars.",
               "item_ids": []
             },
             {

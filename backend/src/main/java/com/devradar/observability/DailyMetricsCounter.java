@@ -18,7 +18,11 @@ public class DailyMetricsCounter {
         this.redis = redis;
     }
 
+    /** @deprecated Kept for backwards compatibility with Redis keys; no longer incremented. */
+    @Deprecated
     public void incrementSonnetCalls(LocalDate date) { increment(key(date, "sonnet_calls"), 1); }
+    /** @deprecated Kept for backwards compatibility with Redis keys; no longer incremented. */
+    @Deprecated
     public void incrementHaikuCalls(LocalDate date) { increment(key(date, "haiku_calls"), 1); }
     public void incrementCacheHit(LocalDate date) { increment(key(date, "cache_hits"), 1); }
     public void incrementCacheMiss(LocalDate date) { increment(key(date, "cache_misses"), 1); }
@@ -40,11 +44,6 @@ public class DailyMetricsCounter {
         int geminiOut = getTokens(date, "gemini", "output");
         cost += geminiIn * (0.15 / 1_000_000.0);
         cost += geminiOut * (0.60 / 1_000_000.0);
-
-        int anthropicIn = getTokens(date, "anthropic", "input");
-        int anthropicOut = getTokens(date, "anthropic", "output");
-        cost += anthropicIn * (3.00 / 1_000_000.0);
-        cost += anthropicOut * (15.00 / 1_000_000.0);
 
         return cost;
     }

@@ -60,17 +60,9 @@ devradar:
       fixed-delay-ms: 86400000
       initial-delay-ms: 86400000
 
-anthropic:
-  api-key: ""
-
 google-ai:
   api-key: ""
   base-url: http://localhost:0
-
-groq:
-  api-key: ""
-  base-url: http://localhost:0
-  default-model: llama-3.3-70b-versatile
 
 encryption:
   github-token-key-base64: UEjGRJjRBYGZQRdsB7Cln1mLG0qlxPEAU+Vq/Sx0iYE=

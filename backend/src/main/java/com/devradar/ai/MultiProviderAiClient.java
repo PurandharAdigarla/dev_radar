@@ -50,10 +50,6 @@ public class MultiProviderAiClient implements AiClient {
             DailyMetricsCounter dailyMetrics,
             @Value("${google-ai.api-key:}") String geminiKey,
             @Value("${google-ai.base-url:https://generativelanguage.googleapis.com}") String geminiUrl,
-            @Value("${groq.api-key:}") String groqKey,
-            @Value("${groq.base-url:https://api.groq.com/openai/v1}") String groqUrl,
-            @Value("${groq.default-model:llama-3.3-70b-versatile}") String groqDefaultModel,
-            @Value("${anthropic.api-key:}") String anthropicKey,
             @Value("${devradar.ai.retry.max-attempts:3}") int maxRetries,
             @Value("${devradar.ai.retry.initial-delay-ms:1000}") long initialDelayMs,
             @Value("${devradar.ai.daily-budget-usd:5.0}") double dailyBudgetUsd
@@ -70,21 +66,9 @@ public class MultiProviderAiClient implements AiClient {
                     new GeminiAiClient(geminiUrl, geminiKey)));
             LOG.info("AI provider registered: gemini (default model: gemini-2.5-flash)");
         }
-        if (isConfigured(groqKey)) {
-            providers.add(new Provider("groq", groqDefaultModel,
-                    new OpenAiCompatibleClient(groqUrl, groqKey, "groq", groqDefaultModel)));
-            LOG.info("AI provider registered: groq (default model: {})", groqDefaultModel);
-        }
-        if (isConfigured(anthropicKey)) {
-            providers.add(new Provider("anthropic", "claude-sonnet-4-6",
-                    new AnthropicAiClient(anthropicKey, meterRegistry, dailyMetrics)));
-            LOG.info("AI provider registered: anthropic (default model: claude-sonnet-4-6)");
-        }
 
         if (providers.isEmpty()) {
-            LOG.warn("No AI provider configured. Set at least one of: GOOGLE_AI_API_KEY, GROQ_API_KEY, ANTHROPIC_API_KEY");
-        } else {
-            LOG.info("AI providers ready: {} (primary: {})", providers.stream().map(Provider::name).toList(), providers.get(0).name());
+            LOG.warn("No AI provider configured. Set GOOGLE_AI_API_KEY to enable AI features.");
         }
     }
 
@@ -92,7 +76,7 @@ public class MultiProviderAiClient implements AiClient {
     public AiResponse generate(String model, String systemPrompt, List<AiMessage> messages,
                                List<ToolDefinition> tools, int maxTokens) {
         if (providers.isEmpty()) {
-            throw new AiProviderException("No AI provider configured. Set at least one of: GOOGLE_AI_API_KEY, GROQ_API_KEY, ANTHROPIC_API_KEY");
+            throw new AiProviderException("No AI provider configured. Set GOOGLE_AI_API_KEY to enable AI features.");
         }
         if (dailyMetrics.estimatedCostUsd(LocalDate.now()) >= dailyBudgetUsd) {
             throw new AiProviderException("Daily AI budget of $" + dailyBudgetUsd + " exhausted. Resets at midnight UTC.");
@@ -163,21 +147,7 @@ public class MultiProviderAiClient implements AiClient {
     }
 
     private Provider resolveProvider(String model) {
-        if (model == null || model.isBlank()) return providers.get(0);
-
-        for (Provider p : providers) {
-            if (model.startsWith("gemini") && "gemini".equals(p.name())) return p;
-            if (model.startsWith("claude") && "anthropic".equals(p.name())) return p;
-            if (isGroqModel(model) && "groq".equals(p.name())) return p;
-        }
-
         return providers.get(0);
-    }
-
-    private static boolean isGroqModel(String model) {
-        return model.startsWith("llama") || model.startsWith("gemma")
-                || model.startsWith("mixtral") || model.startsWith("deepseek")
-                || model.startsWith("qwen");
     }
 
     private void trackMetrics(String providerName, String model, AiResponse resp) {
@@ -197,8 +167,6 @@ public class MultiProviderAiClient implements AiClient {
         var today = LocalDate.now();
         dailyMetrics.incrementTokens(today, providerName, "input", resp.inputTokens());
         dailyMetrics.incrementTokens(today, providerName, "output", resp.outputTokens());
-        if (model.contains("sonnet")) dailyMetrics.incrementSonnetCalls(today);
-        else if (model.contains("haiku")) dailyMetrics.incrementHaikuCalls(today);
     }
 
     private static boolean isConfigured(String key) {

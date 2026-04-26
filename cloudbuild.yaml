@@ -36,11 +36,9 @@ steps:
       - >-
         JWT_SECRET=jwt-secret:latest,
         GOOGLE_AI_API_KEY=google-ai-api-key:latest,
-        GROQ_API_KEY=groq-api-key:latest,
         GITHUB_OAUTH_CLIENT_ID=github-oauth-client-id:latest,
         GITHUB_OAUTH_CLIENT_SECRET=github-oauth-client-secret:latest,
         GITHUB_TOKEN_ENCRYPTION_KEY=github-token-encryption-key:latest,
-        ANTHROPIC_API_KEY=anthropic-api-key:latest,
         MAIL_PASSWORD=mail-password:latest,
         TRIGGER_SECRET=trigger-secret:latest
       - --add-cloudsql-instances
