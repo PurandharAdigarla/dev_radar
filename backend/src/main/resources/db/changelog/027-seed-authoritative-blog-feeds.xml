@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+      Seed authoritative developer blog feeds.
+      Feeds already seeded in 017/019 are skipped (Spring, React, Go, Rust, TypeScript,
+      Node.js, Kubernetes, Docker, Python, Cloudflare, Vercel, etc.).
+      New feeds below cover Vue, Angular, Deno, GitHub Blog, and additional
+      cross-tag mappings for broader coverage.
+    -->
+    <changeSet id="027-seed-authoritative-blog-feeds" author="devradar">
+        <sql>
+INSERT INTO feed_subscriptions (tag_slug, feed_url, title, active) VALUES
+  ('vue',          'https://blog.vuejs.org/feed.rss',                 'Vue.js Blog',         true),
+  ('angular',      'https://blog.angular.dev/feed',                   'Angular Blog',        true),
+  ('typescript',   'https://deno.com/blog/rss.xml',                   'Deno Blog',           true),
+  ('javascript',   'https://deno.com/blog/rss.xml',                   'Deno Blog',           true),
+  ('open_source',  'https://github.blog/feed/',                       'GitHub Blog',         true),
+  ('react',        'https://vercel.com/blog/rss.xml',                 'Vercel Blog',         true),
+  ('frontend',     'https://vercel.com/blog/rss.xml',                 'Vercel Blog',         true),
+  ('javascript',   'https://nodejs.org/en/feed/blog.xml',             'Node.js Blog',        true),
+  ('java',         'https://spring.io/blog.atom',                     'Spring Blog',         true),
+  ('devops',       'https://blog.cloudflare.com/rss/',                'Cloudflare Blog',     true),
+  ('react',        'https://react.dev/blog/rss.xml',                  'React Blog',          true),
+  ('devops',       'https://www.docker.com/blog/feed/',               'Docker Blog',         true),
+  ('devops',       'https://kubernetes.io/feed.xml',                  'Kubernetes Blog',     true),
+  ('frontend',     'https://blog.vuejs.org/feed.rss',                 'Vue.js Blog',         true),
+  ('frontend',     'https://blog.angular.dev/feed',                   'Angular Blog',        true);
+        </sql>
+    </changeSet>
+</databaseChangeLog>

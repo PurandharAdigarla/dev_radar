@@ -61,6 +61,27 @@ public class EmailRenderer {
         return sb.toString();
     }
 
+    public String renderCveAlert(String displayName, int cveCount) {
+        var sb = new StringBuilder();
+        sb.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body style=\"margin:0;padding:0;background:#faf9f7;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;\">");
+        sb.append("<div style=\"max-width:600px;margin:0 auto;padding:40px 24px;\">");
+        sb.append("<h1 style=\"margin:0 0 8px;font-size:20px;font-weight:500;color:#d32f2f;\">Dev Radar — CVE Alert</h1>");
+        sb.append("<div style=\"height:1px;background:#e8e4df;margin-bottom:24px;\"></div>");
+        sb.append("<p style=\"font-size:15px;line-height:24px;color:#2d2a26;margin:0 0 16px;\">Hi ").append(escape(displayName)).append(",</p>");
+        sb.append("<p style=\"font-size:15px;line-height:24px;color:#6b655e;margin:0 0 16px;\">")
+          .append(cveCount).append(" new CVE").append(cveCount != 1 ? "s" : "")
+          .append(" affecting your stack ").append(cveCount != 1 ? "have" : "has")
+          .append(" been published in the last 7 days. Generate a new radar to see the details.</p>");
+        sb.append("<div style=\"margin-top:24px;\">");
+        sb.append("<a href=\"").append(escape(frontendBaseUrl)).append("/app\" style=\"display:inline-block;padding:12px 20px;background:#d32f2f;color:#ffffff;text-decoration:none;border-radius:999px;font-size:14px;font-weight:500;\">Open Dev Radar</a>");
+        sb.append("</div>");
+        sb.append("<div style=\"margin-top:32px;padding-top:16px;border-top:1px solid #e8e4df;\">");
+        sb.append("<p style=\"font-size:12px;line-height:18px;color:#9e9891;margin:0;\">You're receiving this because you enabled email digests in Dev Radar.</p>");
+        sb.append("</div>");
+        sb.append("</div></body></html>");
+        return sb.toString();
+    }
+
     public String renderTestEmail(String displayName) {
         var sb = new StringBuilder();
         sb.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body style=\"margin:0;padding:0;background:#faf9f7;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;\">");

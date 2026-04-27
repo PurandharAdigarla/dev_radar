@@ -1,22 +1,24 @@
-import { useParams, Link as RouterLink } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
-import { Button } from "../components/Button";
 import { ThemeCard } from "../components/ThemeCard";
 import { ViralCta } from "../components/ViralCta";
-import { useGetSharedRadarQuery } from "../api/radarApi";
+import { useGetPublicWeeklyRadarQuery } from "../api/radarApi";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function SharedRadarPage() {
-  const { shareToken } = useParams<{ shareToken: string }>();
-  const { data: radar, isLoading, isError } = useGetSharedRadarQuery(shareToken ?? "", {
-    skip: !shareToken,
-  });
+export function PublicStackRadarPage() {
+  const { tagSlug, weekNumber } = useParams<{ tagSlug: string; weekNumber: string }>();
+  const week = Number(weekNumber);
+
+  const { data: radar, isLoading, isError } = useGetPublicWeeklyRadarQuery(
+    { tagSlug: tagSlug ?? "", weekNumber: week },
+    { skip: !tagSlug || !weekNumber || isNaN(week) },
+  );
 
   if (isLoading) {
     return (
@@ -51,11 +53,8 @@ export function SharedRadarPage() {
             Radar not found
           </Typography>
           <Typography color="text.secondary" sx={{ mb: 4 }}>
-            This shared radar may have been removed or the link is invalid.
+            No radar data found for this technology and week.
           </Typography>
-          <Button component={RouterLink} to="/">
-            Go home
-          </Button>
         </Box>
       </Box>
     );
@@ -65,7 +64,7 @@ export function SharedRadarPage() {
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
       <Container maxWidth="md" sx={{ pt: 8, pb: 10, px: 4 }}>
         <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-          Shared Radar &middot; Week of {formatDate(radar.periodStart)} &ndash; {formatDate(radar.periodEnd)}
+          Public Radar &middot; {formatDate(radar.periodStart)} &ndash; {formatDate(radar.periodEnd)}
         </Typography>
         <Typography
           component="h1"
@@ -79,15 +78,29 @@ export function SharedRadarPage() {
             color: "text.primary",
           }}
         >
-          This week in the stack
+          {radar.title}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 5 }}>
-          {radar.themes.length} themes
+          {radar.themes.length} {radar.themes.length === 1 ? "theme" : "themes"}
         </Typography>
 
-        {radar.themes.map((theme) => (
-          <ThemeCard key={theme.id} theme={theme} />
-        ))}
+        {radar.themes.length === 0 ? (
+          <Box
+            sx={{
+              p: 4,
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 2,
+              textAlign: "center",
+            }}
+          >
+            <Typography color="text.secondary">
+              No themes found for {radar.tagDisplayName} in week {radar.weekNumber}, {radar.year}.
+            </Typography>
+          </Box>
+        ) : (
+          radar.themes.map((theme) => <ThemeCard key={theme.id} theme={theme} />)
+        )}
 
         <ViralCta />
       </Container>

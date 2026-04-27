@@ -20,6 +20,7 @@ import {
   useApplyInterestsMutation,
   type ScanResult,
 } from "../api/onboardingApi";
+import { useCreateRadarMutation } from "../api/radarApi";
 
 const steps = ["Scan Repos", "Choose Interests", "Generate Radar"];
 
@@ -30,6 +31,8 @@ export function OnboardingPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [scanRepos, { isLoading: scanning, error: scanError }] = useScanReposMutation();
   const [applyInterests, { isLoading: applying }] = useApplyInterestsMutation();
+  const [createRadar] = useCreateRadarMutation();
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const handleScan = async () => {
     try {
@@ -55,7 +58,14 @@ export function OnboardingPage() {
     if (selected.size === 0) return;
     await applyInterests({ tagSlugs: Array.from(selected) }).unwrap();
     setActiveStep(2);
-    setTimeout(() => navigate("/app/radars"), 1500);
+    setGenerationError(null);
+    try {
+      const radar = await createRadar().unwrap();
+      navigate(`/app/radars/${radar.id}`);
+    } catch {
+      setGenerationError("Radar generation failed. You can try again from the Radars page.");
+      setTimeout(() => navigate("/app/radars"), 3000);
+    }
   };
 
   return (
@@ -152,12 +162,20 @@ export function OnboardingPage() {
           <Box>
             <RocketLaunchIcon sx={{ fontSize: 64, color: "primary.main", mb: 2 }} />
             <Typography variant="h6" gutterBottom>
-              You&apos;re all set!
+              {generationError ? "Almost there!" : "Generating your first radar…"}
             </Typography>
-            <Typography color="text.secondary">
-              Redirecting to generate your first radar…
-            </Typography>
-            <CircularProgress sx={{ mt: 2 }} />
+            {generationError ? (
+              <Alert severity="warning" sx={{ mt: 2, textAlign: "left" }}>
+                {generationError}
+              </Alert>
+            ) : (
+              <>
+                <Typography color="text.secondary">
+                  Hang tight — your personalized radar is being built now.
+                </Typography>
+                <CircularProgress sx={{ mt: 2 }} />
+              </>
+            )}
           </Box>
         )}
       </Paper>

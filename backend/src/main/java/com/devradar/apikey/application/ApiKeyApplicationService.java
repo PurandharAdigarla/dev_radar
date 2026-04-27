@@ -2,6 +2,7 @@ package com.devradar.apikey.application;
 
 import com.devradar.apikey.ApiKeyService;
 import com.devradar.domain.exception.UserNotAuthenticatedException;
+import com.devradar.plan.PlanEnforcementService;
 import com.devradar.security.SecurityUtils;
 import com.devradar.web.rest.dto.ApiKeyCreateRequest;
 import com.devradar.web.rest.dto.ApiKeyCreateResponse;
@@ -15,11 +16,16 @@ import java.util.List;
 public class ApiKeyApplicationService {
 
     private final ApiKeyService service;
+    private final PlanEnforcementService planService;
 
-    public ApiKeyApplicationService(ApiKeyService service) { this.service = service; }
+    public ApiKeyApplicationService(ApiKeyService service, PlanEnforcementService planService) {
+        this.service = service;
+        this.planService = planService;
+    }
 
     public ApiKeyCreateResponse create(ApiKeyCreateRequest req) {
         Long uid = currentUser();
+        planService.checkApiKeyAccess(uid);
         ApiKeyService.GeneratedKey g = service.generate(uid, req.name(), req.scope());
         return new ApiKeyCreateResponse(g.id(), g.name(), g.scope(), g.rawKey(), g.keyPrefix(), Instant.now());
     }

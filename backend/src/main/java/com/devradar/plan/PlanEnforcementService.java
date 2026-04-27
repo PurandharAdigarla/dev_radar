@@ -46,6 +46,26 @@ public class PlanEnforcementService {
         }
     }
 
+    public void checkApiKeyAccess(Long userId) {
+        User user = getUser(userId);
+        checkAndDowngradeExpiredTrial(user);
+        PlanLimits limits = PlanLimits.forPlan(user.getPlan());
+        if (!limits.apiKeyAccess()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "API keys require a Pro plan");
+        }
+    }
+
+    public void checkAutoFixPrs(Long userId) {
+        User user = getUser(userId);
+        checkAndDowngradeExpiredTrial(user);
+        PlanLimits limits = PlanLimits.forPlan(user.getPlan());
+        if (!limits.autoFixPrs()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Auto-fix PRs require a Pro plan");
+        }
+    }
+
     public PlanLimits getLimits(Long userId) {
         User user = getUser(userId);
         checkAndDowngradeExpiredTrial(user);

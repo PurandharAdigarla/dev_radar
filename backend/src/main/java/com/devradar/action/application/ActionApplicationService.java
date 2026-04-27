@@ -4,6 +4,7 @@ import com.devradar.action.AutoPrExecutor;
 import com.devradar.domain.ActionProposal;
 import com.devradar.domain.ActionProposalStatus;
 import com.devradar.domain.exception.UserNotAuthenticatedException;
+import com.devradar.plan.PlanEnforcementService;
 import com.devradar.repository.ActionProposalRepository;
 import com.devradar.security.SecurityUtils;
 import com.devradar.web.rest.dto.ActionProposalDTO;
@@ -19,9 +20,13 @@ public class ActionApplicationService {
 
     private final ActionProposalRepository repo;
     private final AutoPrExecutor executor;
+    private final PlanEnforcementService planService;
 
-    public ActionApplicationService(ActionProposalRepository repo, AutoPrExecutor executor) {
-        this.repo = repo; this.executor = executor;
+    public ActionApplicationService(ActionProposalRepository repo, AutoPrExecutor executor,
+                                    PlanEnforcementService planService) {
+        this.repo = repo;
+        this.executor = executor;
+        this.planService = planService;
     }
 
     public List<ActionProposalDTO> listForRadar(Long radarId) {
@@ -34,6 +39,7 @@ public class ActionApplicationService {
 
     public ActionProposalDTO approve(Long proposalId, String fixVersion) {
         Long uid = currentUserId();
+        planService.checkAutoFixPrs(uid);
         ActionProposal p = repo.findById(proposalId).orElseThrow();
         if (!p.getUserId().equals(uid)) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         executor.execute(proposalId, fixVersion);
@@ -41,6 +47,7 @@ public class ActionApplicationService {
     }
 
     public ActionProposalDTO approveForUser(Long userId, Long proposalId, String fixVersion) {
+        planService.checkAutoFixPrs(userId);
         ActionProposal p = repo.findById(proposalId).orElseThrow();
         if (!p.getUserId().equals(userId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         executor.execute(proposalId, fixVersion);

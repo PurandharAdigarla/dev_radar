@@ -19,6 +19,7 @@ import { NotificationsPage } from "./pages/NotificationsPage";
 import { TeamDashboardPage } from "./pages/TeamDashboardPage";
 import { TeamDetailPage } from "./pages/TeamDetailPage";
 import { SharedRadarPage } from "./pages/SharedRadarPage";
+import { PublicStackRadarPage } from "./pages/PublicStackRadarPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
@@ -33,6 +34,7 @@ export function AppRoutes() {
       <Route path="/auth/github/complete" element={<GitHubCallback />} />
       <Route path="/observability" element={<ObservabilityPage />} />
       <Route path="/radar/shared/:shareToken" element={<SharedRadarPage />} />
+      <Route path="/radar/:tagSlug/week/:weekNumber" element={<PublicStackRadarPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/app/onboarding" element={<OnboardingPage />} />
         <Route path="/app" element={<AppShell />}>

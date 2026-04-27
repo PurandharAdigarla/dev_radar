@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Snackbar from "@mui/material/Snackbar";
+import MuiAlert from "@mui/material/Alert";
 import { Button } from "../components/Button";
 import { PulseDot } from "../components/PulseDot";
 import { ThemeCard } from "../components/ThemeCard";
@@ -12,6 +13,7 @@ import { ProposalCard } from "../components/ProposalCard";
 import { Alert } from "../components/Alert";
 import { useGetRadarQuery, useShareRadarMutation, radarApi } from "../api/radarApi";
 import { useListProposalsByRadarQuery } from "../api/actionApi";
+import { useGetEngagementSummaryQuery } from "../api/engagementApi";
 import { useGetMyInterestsQuery } from "../api/interestApi";
 import { useRadarStream } from "../radar/useRadarStream";
 import { generationFinished, generationStarted } from "../radar/radarGenerationSlice";
@@ -42,8 +44,11 @@ export function RadarDetailPage() {
   const { data: radar, error } = useGetRadarQuery(radarId, { skip: !radarId });
   const { data: proposals = [] } = useListProposalsByRadarQuery(radarId, { skip: !radarId });
   const { data: myInterests } = useGetMyInterestsQuery();
+  const { data: engagementSummary } = useGetEngagementSummaryQuery();
   const [shareRadar] = useShareRadarMutation();
   const [shareSnackbar, setShareSnackbar] = useState<string | null>(null);
+  const [feedbackAck, setFeedbackAck] = useState(false);
+  const initialEngagementCount = useRef<number | null>(null);
 
   const handleShare = useCallback(async () => {
     try {
@@ -79,6 +84,21 @@ export function RadarDetailPage() {
       dispatch(radarApi.util.invalidateTags([{ type: "Radar", id: radarId }]));
     }
   }, [stream.status, dispatch, radarId]);
+
+  // Track session engagement count for feedback acknowledgment banner
+  useEffect(() => {
+    if (engagementSummary == null) return;
+    if (initialEngagementCount.current === null) {
+      initialEngagementCount.current = engagementSummary.totalInteractions;
+      return;
+    }
+    const sessionDelta = engagementSummary.totalInteractions - initialEngagementCount.current;
+    const alreadyAcked = localStorage.getItem("devradar.feedbackAcked") === "true";
+    if (sessionDelta >= 3 && !alreadyAcked && !feedbackAck) {
+      setFeedbackAck(true);
+      localStorage.setItem("devradar.feedbackAcked", "true");
+    }
+  }, [engagementSummary, feedbackAck]);
 
   // Redirect on 404 / 403.
   useEffect(() => {
@@ -241,6 +261,21 @@ export function RadarDetailPage() {
         onClose={() => setShareSnackbar(null)}
         message={shareSnackbar}
       />
+      <Snackbar
+        open={feedbackAck}
+        autoHideDuration={6000}
+        onClose={() => setFeedbackAck(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <MuiAlert
+          onClose={() => setFeedbackAck(false)}
+          severity="success"
+          variant="filled"
+          sx={{ width: "100%" }}
+        >
+          Your radar is learning your preferences — future radars will be more relevant.
+        </MuiAlert>
+      </Snackbar>
     </Box>
   );
 }

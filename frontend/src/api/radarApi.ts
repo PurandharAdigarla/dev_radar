@@ -1,10 +1,15 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithRefresh } from "./apiClient";
-import type { PageResponse, RadarDetail, RadarSummary } from "./types";
+import type { PageResponse, PublicWeeklyRadar, RadarDetail, RadarSummary } from "./types";
 
 export interface ListRadarsArgs {
   page?: number;
   size?: number;
+}
+
+export interface PublicWeeklyRadarArgs {
+  tagSlug: string;
+  weekNumber: number;
 }
 
 export interface ShareRadarResponse {
@@ -41,6 +46,11 @@ export const radarApi = createApi({
     getSampleRadar: b.query<RadarDetail, void>({
       query: () => ({ url: "/api/sample-radar" }),
     }),
+    getPublicWeeklyRadar: b.query<PublicWeeklyRadar, PublicWeeklyRadarArgs>({
+      query: ({ tagSlug, weekNumber }) => ({
+        url: `/api/public/radar/${tagSlug}/week/${weekNumber}`,
+      }),
+    }),
   }),
 });
 
@@ -51,4 +61,5 @@ export const {
   useShareRadarMutation,
   useGetSharedRadarQuery,
   useGetSampleRadarQuery,
+  useGetPublicWeeklyRadarQuery,
 } = radarApi;

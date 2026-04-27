@@ -10,6 +10,8 @@ public record PlanInfoDTO(
     int maxInterests,
     boolean teamAccess,
     boolean emailDigest,
+    boolean apiKeyAccess,
+    boolean autoFixPrs,
     boolean trialActive,
     boolean trialUsed,
     Instant planExpiresAt

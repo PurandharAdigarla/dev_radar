@@ -1,6 +1,7 @@
 package com.devradar.web.rest;
 
 import com.devradar.ingest.job.*;
+import com.devradar.notification.CveAlertService;
 import com.devradar.notification.DigestService;
 import com.devradar.observability.MetricsAggregationJob;
 import com.devradar.domain.NotificationPreference;
@@ -30,6 +31,7 @@ public class IngestionTriggerResource {
     private final DependencyScanJob depScan;
     private final MetricsAggregationJob metrics;
     private final DigestService digestService;
+    private final CveAlertService cveAlertService;
     private final NotificationPreferenceRepository prefRepo;
 
     public IngestionTriggerResource(
@@ -37,6 +39,7 @@ public class IngestionTriggerResource {
         GitHubTrendingIngestor ghTrending, GitHubReleasesIngestor ghReleases,
         DependencyReleaseIngestor depReleases, DependencyScanJob depScan,
         MetricsAggregationJob metrics, DigestService digestService,
+        CveAlertService cveAlertService,
         NotificationPreferenceRepository prefRepo
     ) {
         this.rss = rss;
@@ -48,6 +51,7 @@ public class IngestionTriggerResource {
         this.depScan = depScan;
         this.metrics = metrics;
         this.digestService = digestService;
+        this.cveAlertService = cveAlertService;
         this.prefRepo = prefRepo;
     }
 
@@ -117,6 +121,14 @@ public class IngestionTriggerResource {
         ghReleases.run();
         depReleases.run();
         depScan.run();
+        return ResponseEntity.ok().build();
+    }
+
+    /** HTTP trigger for weekly CVE alert — sends lightweight CVE count emails to all users. */
+    @PostMapping("/cve-alerts")
+    public ResponseEntity<Void> triggerCveAlerts() {
+        LOG.info("trigger: cve-alerts");
+        cveAlertService.sendCveAlertsForAllUsers();
         return ResponseEntity.ok().build();
     }
 

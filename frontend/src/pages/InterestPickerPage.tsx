@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
+import AddCircleOutline from "@mui/icons-material/AddCircleOutline";
 import { Button } from "../components/Button";
 import { TextField } from "../components/TextField";
 import { Alert } from "../components/Alert";
@@ -11,6 +13,7 @@ import {
   useListTagsQuery,
   useSetMyInterestsMutation,
 } from "../api/interestApi";
+import { useGetSuggestedInterestsQuery } from "../api/dashboardApi";
 import type { InterestCategory, InterestTag } from "../api/types";
 
 const CATEGORY_ORDER: InterestCategory[] = [
@@ -34,6 +37,7 @@ const CATEGORY_LABEL: Record<InterestCategory, string> = {
 export function InterestPickerPage() {
   const { data: tagsPage, isLoading: tagsLoading } = useListTagsQuery({});
   const { data: myInterests } = useGetMyInterestsQuery();
+  const { data: suggestedSlugs } = useGetSuggestedInterestsQuery();
   const [setMyInterests, saveState] = useSetMyInterestsMutation();
 
   const [query, setQuery] = useState("");
@@ -76,6 +80,31 @@ export function InterestPickerPage() {
     for (const s of selected) if (!serverSlugs.has(s)) return true;
     return false;
   }, [selected, serverSlugs]);
+
+  // Suggested interests from dependency scan that aren't already selected
+  const suggestions = useMemo(() => {
+    if (!suggestedSlugs || suggestedSlugs.length === 0 || !tagsPage) return [];
+    const allTags = tagsPage.content ?? [];
+    return allTags.filter(
+      (t) => suggestedSlugs.includes(t.slug) && !selected.has(t.slug),
+    );
+  }, [suggestedSlugs, tagsPage, selected]);
+
+  const addSuggestion = useCallback((slug: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.add(slug);
+      return next;
+    });
+  }, []);
+
+  const addAllSuggestions = useCallback(() => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const s of suggestions) next.add(s.slug);
+      return next;
+    });
+  }, [suggestions]);
 
   function toggle(slug: string) {
     setSelected((prev) => {
@@ -145,6 +174,42 @@ export function InterestPickerPage() {
       {saveState.isError && (
         <Box sx={{ mb: 4 }}>
           <Alert severity="error">Couldn't save your interests. Try again.</Alert>
+        </Box>
+      )}
+
+      {suggestions.length > 0 && (
+        <Box
+          sx={{
+            mb: 5,
+            p: 2.5,
+            border: "1px solid",
+            borderColor: "primary.main",
+            borderRadius: 2,
+            bgcolor: "primary.50",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+            <AddCircleOutline sx={{ color: "primary.main", fontSize: 20 }} />
+            <Typography sx={{ fontSize: 14, fontWeight: 500, color: "text.primary" }}>
+              Detected from your repos
+            </Typography>
+            <Box sx={{ flex: 1 }} />
+            <Button size="small" variant="outlined" onClick={addAllSuggestions}>
+              Add all
+            </Button>
+          </Box>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            {suggestions.map((t) => (
+              <Chip
+                key={t.slug}
+                label={t.displayName}
+                size="small"
+                variant="outlined"
+                onClick={() => addSuggestion(t.slug)}
+                sx={{ cursor: "pointer", fontWeight: 500 }}
+              />
+            ))}
+          </Box>
         </Box>
       )}
 

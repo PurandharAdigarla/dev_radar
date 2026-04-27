@@ -42,7 +42,8 @@ describe("ProposalCard", () => {
 
   it("opens approve modal on Approve click", async () => {
     const { user } = setup(PROPOSED);
-    await user.click(screen.getByRole("button", { name: /approve/i }));
+    const btn = await screen.findByRole("button", { name: /approve/i });
+    await user.click(btn);
     expect(screen.getByRole("dialog", { name: /open migration pr/i })).toBeInTheDocument();
   });
 
