@@ -27,9 +27,6 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
   data:
-    redis:
-      host: localhost
-      port: ${REDIS_HOST_PORT:6379}
     web:
       pageable:
         max-page-size: 200
