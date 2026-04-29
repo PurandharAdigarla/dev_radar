@@ -1,5 +1,6 @@
 package com.devradar.radar;
 
+import com.devradar.ai.AiProviderException;
 import com.devradar.ai.AiSummaryCache;
 import com.devradar.ai.RadarOrchestrator;
 import com.devradar.domain.RadarTheme;
@@ -57,6 +58,11 @@ public class RadarGenerationService {
         events.publishStarted(new RadarStartedEvent(radarId));
         var sample = Timer.start(meterRegistry);
         try {
+            if (candidateIds.isEmpty()) {
+                throw new IllegalStateException(
+                    "No source items found matching your interests in the last 7 days. "
+                    + "Try adding more interest tags or check back after ingestion runs.");
+            }
             var result = orchestrator.generate(userInterests, candidateIds, new com.devradar.ai.tools.ToolContext(userId, radarId), userId);
             sample.stop(Timer.builder("radar.generation.duration").register(meterRegistry));
             meterRegistry.counter("radar.generation", "status", "success").increment();
@@ -69,11 +75,18 @@ public class RadarGenerationService {
             int tokens = result.totalInputTokens() + result.totalOutputTokens();
             radarService.markReady(radarId, elapsed, tokens, result.totalInputTokens(), result.totalOutputTokens());
             events.publishComplete(new RadarCompleteEvent(radarId, elapsed, tokens));
-        } catch (Exception e) {
+        } catch (AiProviderException e) {
             meterRegistry.counter("radar.generation", "status", "failure").increment();
             LOG.error("radar generation failed radar={}: {}", radarId, e.toString(), e);
-            radarService.markFailed(radarId, "GENERATION_FAILED", e.getMessage());
-            events.publishFailed(new RadarFailedEvent(radarId, "GENERATION_FAILED", e.getMessage()));
+            radarService.markFailed(radarId, "AI_PROVIDER_ERROR", e.getMessage());
+            events.publishFailed(new RadarFailedEvent(radarId, "AI_PROVIDER_ERROR", e.getMessage()));
+        } catch (Exception e) {
+            meterRegistry.counter("radar.generation", "status", "failure").increment();
+            String errorCode = (e instanceof IllegalStateException && e.getMessage() != null && e.getMessage().contains("No source items"))
+                    ? "NO_SOURCE_ITEMS" : "GENERATION_FAILED";
+            LOG.error("radar generation failed radar={}: {}", radarId, e.toString(), e);
+            radarService.markFailed(radarId, errorCode, e.getMessage());
+            events.publishFailed(new RadarFailedEvent(radarId, errorCode, e.getMessage()));
         }
     }
 

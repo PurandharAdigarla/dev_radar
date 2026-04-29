@@ -4,4 +4,4 @@ import com.devradar.domain.RadarStatus;
 import java.time.Instant;
 import java.util.List;
 
-public record RadarDetailDTO(Long id, RadarStatus status, Instant periodStart, Instant periodEnd, Instant generatedAt, Long generationMs, Integer tokenCount, List<RadarThemeDTO> themes) {}
+public record RadarDetailDTO(Long id, RadarStatus status, Instant periodStart, Instant periodEnd, Instant generatedAt, Long generationMs, Integer tokenCount, String errorCode, String errorMessage, List<RadarThemeDTO> themes) {}

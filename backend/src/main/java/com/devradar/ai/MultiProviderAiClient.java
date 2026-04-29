@@ -8,7 +8,6 @@ import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -24,7 +23,6 @@ import java.util.concurrent.TimeUnit;
  * with exponential backoff, and falls back to the next available provider on failure.
  */
 @Component
-@Profile("!demo")
 public class MultiProviderAiClient implements AiClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiProviderAiClient.class);

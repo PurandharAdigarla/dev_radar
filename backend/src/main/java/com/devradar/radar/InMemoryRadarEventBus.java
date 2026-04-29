@@ -1,6 +1,9 @@
 package com.devradar.radar;
 
+import com.devradar.domain.Radar;
+import com.devradar.domain.RadarStatus;
 import com.devradar.radar.event.*;
+import com.devradar.repository.RadarRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -10,6 +13,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -20,6 +24,11 @@ public class InMemoryRadarEventBus implements RadarEventBus {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final ConcurrentHashMap<Long, List<SseEmitter>> subscribers = new ConcurrentHashMap<>();
+    private final RadarRepository radarRepository;
+
+    public InMemoryRadarEventBus(RadarRepository radarRepository) {
+        this.radarRepository = radarRepository;
+    }
 
     @Override
     public SseEmitter subscribe(Long radarId) {
@@ -28,6 +37,36 @@ public class InMemoryRadarEventBus implements RadarEventBus {
         emitter.onCompletion(() -> removeEmitter(radarId, emitter));
         emitter.onTimeout(() -> removeEmitter(radarId, emitter));
         emitter.onError(e -> removeEmitter(radarId, emitter));
+
+        // If radar already completed or failed, immediately send terminal event
+        Optional<Radar> radarOpt = radarRepository.findById(radarId);
+        if (radarOpt.isPresent()) {
+            Radar radar = radarOpt.get();
+            if (radar.getStatus() == RadarStatus.READY) {
+                try {
+                    var event = new RadarCompleteEvent(radarId,
+                            radar.getGenerationMs() != null ? radar.getGenerationMs() : 0L,
+                            radar.getTokenCount() != null ? radar.getTokenCount() : 0);
+                    emitter.send(SseEmitter.event().name("radar.complete")
+                            .data(JSON.writeValueAsString(event)));
+                    emitter.complete();
+                } catch (IOException e) {
+                    LOG.debug("Failed to send terminal complete for radar={}: {}", radarId, e.toString());
+                }
+            } else if (radar.getStatus() == RadarStatus.FAILED) {
+                try {
+                    var event = new RadarFailedEvent(radarId,
+                            radar.getErrorCode() != null ? radar.getErrorCode() : "UNKNOWN",
+                            radar.getErrorMessage() != null ? radar.getErrorMessage() : "Radar generation failed");
+                    emitter.send(SseEmitter.event().name("radar.failed")
+                            .data(JSON.writeValueAsString(event)));
+                    emitter.complete();
+                } catch (IOException e) {
+                    LOG.debug("Failed to send terminal failed for radar={}: {}", radarId, e.toString());
+                }
+            }
+        }
+
         return emitter;
     }
 

@@ -5,8 +5,10 @@ import com.devradar.domain.UserApiKey;
 import com.devradar.repository.UserApiKeyRepository;
 import com.devradar.security.ApiKeyGenerator;
 import com.devradar.security.ApiKeyHasher;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
@@ -49,8 +51,8 @@ public class ApiKeyService {
 
     @Transactional
     public void revoke(Long userId, Long keyId) {
-        UserApiKey k = repo.findById(keyId).orElseThrow(() -> new RuntimeException("not found"));
-        if (!k.getUserId().equals(userId)) throw new RuntimeException("forbidden");
+        UserApiKey k = repo.findById(keyId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "API key not found"));
+        if (!k.getUserId().equals(userId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         k.setRevokedAt(Instant.now());
         repo.save(k);
     }

@@ -6,8 +6,11 @@ import com.devradar.notification.DigestService;
 import com.devradar.repository.NotificationPreferenceRepository;
 import com.devradar.security.SecurityUtils;
 import com.devradar.web.rest.dto.NotificationPreferenceDTO;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/users/me/notifications")
@@ -29,7 +32,7 @@ public class NotificationResource {
     }
 
     @PutMapping
-    public NotificationPreferenceDTO update(@RequestBody NotificationPreferenceDTO dto) {
+    public NotificationPreferenceDTO update(@Valid @RequestBody NotificationPreferenceDTO dto) {
         Long userId = requireUserId();
         NotificationPreference pref = prefRepo.findByUserId(userId).orElseGet(() -> createDefault(userId));
         pref.setEmailEnabled(dto.emailEnabled());
@@ -43,7 +46,12 @@ public class NotificationResource {
     @PostMapping("/test-email")
     public ResponseEntity<Void> testEmail() {
         Long userId = requireUserId();
-        digestService.sendTestEmail(userId);
+        try {
+            digestService.sendTestEmail(userId);
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                "Email delivery is not configured on this instance.");
+        }
         return ResponseEntity.ok().build();
     }
 

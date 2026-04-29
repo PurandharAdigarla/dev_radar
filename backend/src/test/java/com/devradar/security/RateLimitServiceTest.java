@@ -64,12 +64,22 @@ class RateLimitServiceTest {
     }
 
     @Test
-    void fallbackToAllowWhenRedisNull() {
+    void inMemoryFallbackAllowsRequestsUnderLimit() {
         RateLimitService noRedis = new RateLimitService(null);
 
-        boolean allowed = noRedis.tryConsume("radar:user1", 10, Duration.ofHours(1));
+        for (int i = 0; i < 10; i++) {
+            assertThat(noRedis.tryConsume("radar:user1", 10, Duration.ofHours(1))).isTrue();
+        }
+    }
 
-        assertThat(allowed).isTrue();
+    @Test
+    void inMemoryFallbackBlocksRequestsOverLimit() {
+        RateLimitService noRedis = new RateLimitService(null);
+
+        for (int i = 0; i < 10; i++) {
+            noRedis.tryConsume("radar:user1", 10, Duration.ofHours(1));
+        }
+        assertThat(noRedis.tryConsume("radar:user1", 10, Duration.ofHours(1))).isFalse();
     }
 
     @Test

@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.web.server.ResponseStatusException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -96,8 +98,8 @@ class ApiKeyServiceTest {
         when(repo.findById(1L)).thenReturn(Optional.of(k));
 
         assertThatThrownBy(() -> service.revoke(99L, 1L))
-            .isInstanceOf(RuntimeException.class)
-            .hasMessageContaining("forbidden");
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("Access denied");
     }
 
     @Test
@@ -105,6 +107,7 @@ class ApiKeyServiceTest {
         when(repo.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.revoke(7L, 1L))
-            .isInstanceOf(RuntimeException.class);
+            .isInstanceOf(ResponseStatusException.class)
+            .hasMessageContaining("API key not found");
     }
 }
