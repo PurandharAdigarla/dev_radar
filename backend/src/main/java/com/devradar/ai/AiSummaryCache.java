@@ -3,6 +3,7 @@ package com.devradar.ai;
 import com.devradar.observability.DailyMetricsCounter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -18,17 +19,22 @@ public class AiSummaryCache {
     private static final Duration TTL = Duration.ofDays(30);
     private static final String PREFIX = "ai:summary:";
 
+    @Nullable
     private final StringRedisTemplate redis;
     private final MeterRegistry meterRegistry;
     private final DailyMetricsCounter dailyMetrics;
 
-    public AiSummaryCache(StringRedisTemplate redis, MeterRegistry meterRegistry, DailyMetricsCounter dailyMetrics) {
+    public AiSummaryCache(@Nullable StringRedisTemplate redis, MeterRegistry meterRegistry, DailyMetricsCounter dailyMetrics) {
         this.redis = redis;
         this.meterRegistry = meterRegistry;
         this.dailyMetrics = dailyMetrics;
     }
 
     public Optional<String> get(List<Long> sourceItemIds) {
+        if (redis == null) {
+            meterRegistry.counter("ai.summary.cache", "result", "miss").increment();
+            return Optional.empty();
+        }
         String key = buildKey(sourceItemIds);
         String v = redis.opsForValue().get(key);
         var result = Optional.ofNullable(v);
@@ -46,6 +52,7 @@ public class AiSummaryCache {
     }
 
     public void put(List<Long> sourceItemIds, String summary) {
+        if (redis == null) return;
         String key = buildKey(sourceItemIds);
         redis.opsForValue().set(key, summary, TTL);
     }
