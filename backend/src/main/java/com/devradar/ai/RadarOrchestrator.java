@@ -124,18 +124,32 @@ public class RadarOrchestrator {
             if (resp.text() != null && !resp.text().isBlank()) lastText = resp.text();
             LOG.info("orchestrator iter={} stopReason={} toolCalls={} textLen={}", iter, resp.stopReason(), resp.toolCalls().size(), lastText.length());
 
-            if (resp.toolCalls().isEmpty() || "end_turn".equals(resp.stopReason())) break;
+            if (resp.toolCalls().isEmpty() && "end_turn".equals(resp.stopReason())) break;
 
-            messages.add(new AiMessage("assistant", resp.text(), resp.toolCalls(), List.of()));
+            if (!resp.toolCalls().isEmpty()) {
+                messages.add(new AiMessage("assistant", resp.text(), resp.toolCalls(), List.of()));
 
-            List<AiToolResult> results = new ArrayList<>();
-            for (AiToolCall call : resp.toolCalls()) {
-                String out = tools.dispatch(call.name(), call.inputJson(), ctx);
-                boolean isError = out != null && out.contains("\"error\"");
-                results.add(new AiToolResult(call.id(), out, isError));
-                LOG.debug("tool dispatched name={} resultLen={}", call.name(), out == null ? 0 : out.length());
+                List<AiToolResult> results = new ArrayList<>();
+                for (AiToolCall call : resp.toolCalls()) {
+                    String out = tools.dispatch(call.name(), call.inputJson(), ctx);
+                    boolean isError = out != null && out.contains("\"error\"");
+                    results.add(new AiToolResult(call.id(), out, isError));
+                    LOG.debug("tool dispatched name={} resultLen={}", call.name(), out == null ? 0 : out.length());
+                }
+                messages.add(AiMessage.userToolResults(results));
             }
-            messages.add(AiMessage.userToolResults(results));
+        }
+
+        // If the model never produced text output, nudge it for the JSON
+        if (lastText.isBlank() && Duration.between(start, Instant.now()).toSeconds() < maxDurationSeconds) {
+            LOG.info("orchestrator: model produced no text, sending nudge for final JSON");
+            messages.add(AiMessage.userText(
+                "Now produce the final JSON output with your themes. Output ONLY the JSON object, no prose: {\"themes\": [...]}"));
+            AiResponse nudge = ai.generate(model, systemPrompt, messages, List.of(), maxTokens);
+            totalIn += nudge.inputTokens();
+            totalOut += nudge.outputTokens();
+            if (nudge.text() != null && !nudge.text().isBlank()) lastText = nudge.text();
+            LOG.info("orchestrator nudge: textLen={}", lastText.length());
         }
 
         List<RadarOrchestrationTheme> themes = new ArrayList<>();
@@ -153,7 +167,7 @@ public class RadarOrchestrator {
                 }
             }
         } catch (Exception e) {
-            LOG.warn("failed to parse final radar JSON; returning empty themes. err={}", e.toString());
+            LOG.warn("failed to parse final radar JSON; returning empty themes. lastText='{}' err={}", lastText.length() > 200 ? lastText.substring(0, 200) : lastText, e.toString());
         }
 
         return new RadarOrchestrationResult(themes, totalIn, totalOut);
