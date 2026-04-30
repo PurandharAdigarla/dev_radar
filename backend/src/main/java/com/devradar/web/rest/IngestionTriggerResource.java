@@ -33,6 +33,7 @@ public class IngestionTriggerResource {
     private final DigestService digestService;
     private final CveAlertService cveAlertService;
     private final NotificationPreferenceRepository prefRepo;
+    private final DemoSeedJob demoSeed;
 
     public IngestionTriggerResource(
         RssFeedIngestor rss, HackerNewsIngestor hn, GHSAIngestor ghsa,
@@ -40,7 +41,8 @@ public class IngestionTriggerResource {
         DependencyReleaseIngestor depReleases, DependencyScanJob depScan,
         MetricsAggregationJob metrics, DigestService digestService,
         CveAlertService cveAlertService,
-        NotificationPreferenceRepository prefRepo
+        NotificationPreferenceRepository prefRepo,
+        DemoSeedJob demoSeed
     ) {
         this.rss = rss;
         this.hn = hn;
@@ -53,6 +55,7 @@ public class IngestionTriggerResource {
         this.digestService = digestService;
         this.cveAlertService = cveAlertService;
         this.prefRepo = prefRepo;
+        this.demoSeed = demoSeed;
     }
 
     @PostMapping("/rss")
@@ -102,6 +105,13 @@ public class IngestionTriggerResource {
         LOG.info("trigger: dep-scan");
         depScan.run();
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/seed-demo")
+    public ResponseEntity<String> triggerDemoSeed() {
+        LOG.info("trigger: seed-demo");
+        int count = demoSeed.run();
+        return ResponseEntity.ok(count + " demo items seeded");
     }
 
     @PostMapping("/metrics-aggregate")
