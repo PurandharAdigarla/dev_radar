@@ -19,9 +19,11 @@ public class ObservabilityApplicationService {
     }
 
     public ObservabilitySummaryDTO getSummary() {
-        var yesterday = LocalDate.now().minusDays(1);
-        var rollup = observabilityService.getForDate(yesterday).orElse(emptyRollup(yesterday));
-        return toSummary(rollup);
+        var today = LocalDate.now();
+        var todayRollup = observabilityService.getForDate(today).orElse(emptyRollup(today));
+        var yesterday = today.minusDays(1);
+        var yesterdayRollup = observabilityService.getForDate(yesterday).orElse(emptyRollup(yesterday));
+        return toSummary(merge(todayRollup, yesterdayRollup));
     }
 
     public List<MetricsDayDTO> getTimeseries(int days) {
@@ -71,6 +73,29 @@ public class ObservabilityApplicationService {
                 r.getEvalScoreCitations(),
                 r.getEvalScoreDistinctness()
         );
+    }
+
+    private MetricsDailyRollup merge(MetricsDailyRollup a, MetricsDailyRollup b) {
+        var r = new MetricsDailyRollup();
+        r.setDate(a.getDate());
+        r.setTotalRadars(a.getTotalRadars() + b.getTotalRadars());
+        r.setTotalTokensInput(a.getTotalTokensInput() + b.getTotalTokensInput());
+        r.setTotalTokensOutput(a.getTotalTokensOutput() + b.getTotalTokensOutput());
+        r.setSonnetCalls(a.getSonnetCalls() + b.getSonnetCalls());
+        r.setHaikuCalls(a.getHaikuCalls() + b.getHaikuCalls());
+        r.setCacheHits(a.getCacheHits() + b.getCacheHits());
+        r.setCacheMisses(a.getCacheMisses() + b.getCacheMisses());
+        r.setP50Ms(Math.max(a.getP50Ms(), b.getP50Ms()));
+        r.setP95Ms(Math.max(a.getP95Ms(), b.getP95Ms()));
+        long totalMs = (long) a.getAvgGenerationMs() * a.getTotalRadars() + (long) b.getAvgGenerationMs() * b.getTotalRadars();
+        int totalRadars = a.getTotalRadars() + b.getTotalRadars();
+        r.setAvgGenerationMs(totalRadars > 0 ? (int) (totalMs / totalRadars) : 0);
+        r.setItemsIngested(a.getItemsIngested() + b.getItemsIngested());
+        r.setItemsDeduped(a.getItemsDeduped() + b.getItemsDeduped());
+        r.setEvalScoreRelevance(a.getEvalScoreRelevance() != null ? a.getEvalScoreRelevance() : b.getEvalScoreRelevance());
+        r.setEvalScoreCitations(a.getEvalScoreCitations() != null ? a.getEvalScoreCitations() : b.getEvalScoreCitations());
+        r.setEvalScoreDistinctness(a.getEvalScoreDistinctness() != null ? a.getEvalScoreDistinctness() : b.getEvalScoreDistinctness());
+        return r;
     }
 
     private MetricsDailyRollup emptyRollup(LocalDate date) {

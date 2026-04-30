@@ -121,6 +121,13 @@ public class IngestionTriggerResource {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/metrics-aggregate-today")
+    public ResponseEntity<Void> triggerMetricsToday() {
+        LOG.info("trigger: metrics-aggregate-today");
+        metrics.aggregateForDate(java.time.LocalDate.now());
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/all")
     public ResponseEntity<Void> triggerAll() {
         LOG.info("trigger: all data ingestors");
