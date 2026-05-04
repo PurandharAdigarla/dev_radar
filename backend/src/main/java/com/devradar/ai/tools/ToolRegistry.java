@@ -9,21 +9,19 @@ public class ToolRegistry {
 
     private final SearchItemsTool search;
     private final GetItemDetailTool detail;
-    private final CheckRepoForVulnerabilityTool repoCheck;
 
-    public ToolRegistry(SearchItemsTool search, GetItemDetailTool detail, CheckRepoForVulnerabilityTool repoCheck) {
-        this.search = search; this.detail = detail; this.repoCheck = repoCheck;
+    public ToolRegistry(SearchItemsTool search, GetItemDetailTool detail) {
+        this.search = search; this.detail = detail;
     }
 
     public List<ToolDefinition> definitions() {
-        return List.of(search.definition(), detail.definition(), repoCheck.definition());
+        return List.of(search.definition(), detail.definition());
     }
 
     public String dispatch(String name, String inputJson, ToolContext ctx) {
         return switch (name) {
             case SearchItemsTool.NAME -> search.execute(inputJson);
             case GetItemDetailTool.NAME -> detail.execute(inputJson);
-            case CheckRepoForVulnerabilityTool.NAME -> repoCheck.execute(inputJson, ctx);
             default -> "{\"error\":\"unknown tool: " + name + "\"}";
         };
     }

@@ -30,4 +30,8 @@
     <include file="db/changelog/025-engagement-theme-id.xml"/>
     <include file="db/changelog/026-user-plan-columns.xml"/>
     <include file="db/changelog/027-seed-authoritative-blog-feeds.xml"/>
+    <include file="db/changelog/028-radar-web-sources.xml"/>
+    <include file="db/changelog/029-user-topics.xml"/>
+    <include file="db/changelog/030-radar-theme-sources.xml"/>
+    <include file="db/changelog/031-radar-repo-recommendations.xml"/>
 </databaseChangeLog>

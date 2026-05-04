@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class RadarOrchestrator {
@@ -23,49 +24,78 @@ public class RadarOrchestrator {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private static final String SYSTEM_PROMPT = """
-        You are a tech radar analyst. Given a user's interest tags and a pool of recently ingested items,
-        identify 3-5 themes that matter to this user THIS WEEK.
+        You are a senior tech journalist writing for a developer community (like dev.to or InfoQ).
+        Given a user's interest tags and a pool of recently ingested items, identify 5-7 themes
+        that matter to this user THIS WEEK and write each as a detailed, well-structured article.
 
         QUALITY RULES:
         - Every theme title must reference a SPECIFIC technology, event, release, or vulnerability.
           BAD: "Java Ecosystem & Frameworks"
           GOOD: "Spring Boot 3.5 drops native GraalVM support for WebFlux"
           GOOD: "CVE-2026-12345: RCE in Spring Framework < 6.1.5"
-        - Every summary must explain WHY this matters to the user specifically and WHAT they should do.
         - Do not create themes that could apply to any random week. Each theme must be tied to
           something that happened in the last 7 days.
-        - If an item is a GitHub trending repo, explain what it does and why it's trending,
-          not just that it exists.
-        - If an item is a security advisory, include the severity, affected package, and fix version.
+
+        ARTICLE WRITING RULES — THIS IS CRITICAL:
+        Each theme summary must be a DETAILED ARTICLE of 300-500 words, structured like a
+        professional dev community post. Use this structure:
+
+        1. OPENING PARAGRAPH: Start with the news hook — what happened, who announced it, when.
+           Give the reader immediate context.
+
+        2. TECHNICAL DETAILS: Go deep. Explain the technical specifics — what changed in the API,
+           what the new architecture looks like, how the vulnerability works, what the benchmark
+           numbers show. Include version numbers, package names, configuration changes. Developers
+           read this to LEARN, not just to be aware.
+
+        3. WHY IT MATTERS: Explain the broader significance. How does this fit into the ecosystem?
+           What problem does it solve? What was the community's reaction? Reference discussions,
+           blog posts, or expert opinions you found via web search.
+
+        4. WHAT TO DO: End with concrete, actionable guidance for the reader. Should they upgrade?
+           Migrate? Watch and wait? Include specific steps when possible (e.g. "bump the version
+           in your pom.xml" or "check your CSP headers").
+
+        Use paragraph breaks (newlines) between sections for readability. Write in a direct,
+        technically precise style — no marketing fluff. Use concrete numbers, version strings,
+        and technical terms. The reader is an experienced developer.
+
+        - If an item is a GitHub trending repo, explain its architecture, key features, how it
+          compares to alternatives, and why it gained traction this week.
+        - If an item is a security advisory, include severity score, attack vector, affected
+          versions, fix version, and whether exploits exist in the wild.
 
         CITATION PRIORITY:
-        - When items from GH_RELEASES or GH_STARS exist for a technology, ALWAYS prefer them over
-          GH_TRENDING items for the same project. Release items link to specific changelogs;
-          trending items only link to repo homepages with no context about what changed.
-        - ARTICLE items are blog posts and official documentation from authoritative sources.
-          They provide valuable context for WHY a change matters. When building a theme about a
-          release or trending project, prefer to include an ARTICLE citation alongside the release
-          item to give the user both the changelog and expert analysis.
-        - DEP_RELEASE items are new versions of packages the user actually depends on in their
-          GitHub repos. These are the HIGHEST priority citations — they represent direct, actionable
-          updates. Always build a theme around DEP_RELEASE items when available, explaining what
-          changed and whether the user should upgrade.
-        - Build themes around releases and version updates when available. Trending repos should
-          only be cited when no release item exists for that project.
+        - DEP_RELEASE items (new versions of packages the user depends on) are HIGHEST priority.
+        - GH_RELEASES items preferred over GH_TRENDING for the same project.
+        - ARTICLE items provide expert analysis — include alongside release items.
+        - GH_TRENDING only when no release item exists for that project.
 
-        Use the provided tools to search items by tag, fetch item details, and investigate.
-        When you encounter a CVE-related item, call checkRepoForVulnerability to see if
-        the user's repos are affected.
+        RESEARCH DEPTH:
+        Use the provided tools to search items by tag and fetch item details.
+        You also have access to Google Search — use it extensively to research each theme deeply.
+        For EVERY theme, search for:
+        - Official announcements and changelogs
+        - Community reactions and discussions (HN, Reddit, Twitter)
+        - Expert blog posts and analysis
+        - Benchmark comparisons or migration guides if relevant
+        Weave this research into your article to give the reader a complete, authoritative picture.
+        When you encounter a CVE-related item, call checkRepoForVulnerability.
 
         Output a single JSON object with NO PROSE around it:
         {"themes": [
-          {"title": "...", "summary": "...", "item_ids": [<source_item ids cited>]},
-          ...
+          {"title": "headline under 120 chars", "summary": "Full article text 300-500 words with paragraph breaks...", "item_ids": [142, 155]}
         ]}
+
+        CROSS-WEEK CONTINUITY:
+        - If previous radar summaries are provided, track evolving stories and reference progression.
+        - Do NOT repeat themes verbatim. If a topic evolved, reference what changed since last week.
+        - Surface trends across multiple weeks when patterns emerge.
+        - Highlight resolutions to previously flagged issues.
 
         Each theme should:
         - Have a specific, concrete title under 120 chars.
-        - Have a summary of 2-4 sentences citing why it matters to THIS user and what action to take.
+        - Have a detailed article summary of 300-500 words as described above.
         - Reference 1-5 source_item ids from your search results.
         - Do not invent ids — only cite ids you've seen in tool results.
         """;
@@ -77,32 +107,49 @@ public class RadarOrchestrator {
     private final int maxIterations;
     private final int maxTokens;
     private final int maxDurationSeconds;
+    private final int maxTokensPerRadar;
 
     public RadarOrchestrator(AiClient ai, ToolRegistry tools,
                              EngagementProfileService engagementProfileService,
                              @Value("${devradar.ai.orchestrator-model}") String model,
                              @Value("${devradar.ai.max-tool-iterations}") int maxIterations,
                              @Value("${devradar.ai.max-tokens-per-call}") int maxTokens,
-                             @Value("${devradar.ai.max-duration-seconds:120}") int maxDurationSeconds) {
+                             @Value("${devradar.ai.max-duration-seconds:120}") int maxDurationSeconds,
+                             @Value("${devradar.ai.max-tokens-per-radar:50000}") int maxTokensPerRadar) {
         this.ai = ai; this.tools = tools;
         this.engagementProfileService = engagementProfileService;
         this.model = model;
         this.maxIterations = maxIterations; this.maxTokens = maxTokens;
         this.maxDurationSeconds = maxDurationSeconds;
+        this.maxTokensPerRadar = maxTokensPerRadar;
     }
 
     public RadarOrchestrationResult generate(List<String> userInterests, List<Long> candidateItemIds, ToolContext ctx) {
-        return generate(userInterests, candidateItemIds, ctx, null);
+        return generate(userInterests, candidateItemIds, ctx, null, List.of());
     }
 
     public RadarOrchestrationResult generate(List<String> userInterests, List<Long> candidateItemIds, ToolContext ctx, Long userId) {
-        String userMsg = """
-            User interests: %s
-            Candidate item ids (from last 7 days, pre-filtered to user's tags): %s
+        return generate(userInterests, candidateItemIds, ctx, userId, List.of());
+    }
 
-            Use the tools to look up titles, fetch full details, check the user's repos for vulnerabilities, and produce the final themes JSON.
-            """.formatted(userInterests, candidateItemIds);
+    public RadarOrchestrationResult generate(List<String> userInterests, List<Long> candidateItemIds,
+                                             ToolContext ctx, Long userId, List<PreviousRadarSummary> previousRadars) {
+        StringBuilder userMsgBuilder = new StringBuilder();
+        userMsgBuilder.append("User interests: ").append(userInterests).append("\n");
+        userMsgBuilder.append("Candidate item ids (from last 7 days, pre-filtered to user's tags): ").append(candidateItemIds).append("\n\n");
+        userMsgBuilder.append("Use the tools to look up titles, fetch full details, check the user's repos for vulnerabilities, and produce the final themes JSON.\n");
 
+        if (!previousRadars.isEmpty()) {
+            userMsgBuilder.append("\n## Previous Radars (most recent first)\n");
+            for (var prev : previousRadars) {
+                userMsgBuilder.append("\n### Week of ").append(prev.periodLabel()).append("\n");
+                for (var theme : prev.themes()) {
+                    userMsgBuilder.append("- **").append(theme.title()).append("**: ").append(theme.summary()).append("\n");
+                }
+            }
+        }
+
+        String userMsg = userMsgBuilder.toString();
         String systemPrompt = buildSystemPrompt(userId);
 
         List<AiMessage> messages = new ArrayList<>();
@@ -110,6 +157,7 @@ public class RadarOrchestrator {
 
         int totalIn = 0, totalOut = 0;
         String lastText = "";
+        List<AiResponse.GroundingSource> allGroundingSources = new ArrayList<>();
         Instant start = Instant.now();
 
         for (int iter = 0; iter < maxIterations; iter++) {
@@ -118,7 +166,13 @@ public class RadarOrchestrator {
                         maxDurationSeconds, iter);
                 break;
             }
-            AiResponse resp = ai.generate(model, systemPrompt, messages, tools.definitions(), maxTokens);
+            if (totalIn + totalOut > maxTokensPerRadar) {
+                LOG.warn("orchestrator per-radar token budget exceeded: {} tokens (limit {}), stopping at iter={}",
+                        totalIn + totalOut, maxTokensPerRadar, iter);
+                break;
+            }
+            AiResponse resp = ai.generate(model, systemPrompt, messages, tools.definitions(), maxTokens, true);
+            allGroundingSources.addAll(resp.groundingSources());
             totalIn += resp.inputTokens();
             totalOut += resp.outputTokens();
             if (resp.text() != null && !resp.text().isBlank()) lastText = resp.text();
@@ -129,12 +183,20 @@ public class RadarOrchestrator {
             if (!resp.toolCalls().isEmpty()) {
                 messages.add(new AiMessage("assistant", resp.text(), resp.toolCalls(), List.of()));
 
-                List<AiToolResult> results = new ArrayList<>();
-                for (AiToolCall call : resp.toolCalls()) {
+                List<AiToolResult> results;
+                if (resp.toolCalls().size() == 1) {
+                    AiToolCall call = resp.toolCalls().get(0);
                     String out = tools.dispatch(call.name(), call.inputJson(), ctx);
-                    boolean isError = out != null && out.contains("\"error\"");
-                    results.add(new AiToolResult(call.id(), out, isError));
+                    results = List.of(new AiToolResult(call.id(), out, isToolError(out)));
                     LOG.debug("tool dispatched name={} resultLen={}", call.name(), out == null ? 0 : out.length());
+                } else {
+                    results = resp.toolCalls().parallelStream()
+                        .map(call -> {
+                            String out = tools.dispatch(call.name(), call.inputJson(), ctx);
+                            LOG.debug("tool dispatched name={} resultLen={}", call.name(), out == null ? 0 : out.length());
+                            return new AiToolResult(call.id(), out, isToolError(out));
+                        })
+                        .toList();
                 }
                 messages.add(AiMessage.userToolResults(results));
             }
@@ -170,7 +232,7 @@ public class RadarOrchestrator {
             LOG.warn("failed to parse final radar JSON; returning empty themes. lastText='{}' err={}", lastText.length() > 200 ? lastText.substring(0, 200) : lastText, e.toString());
         }
 
-        return new RadarOrchestrationResult(themes, totalIn, totalOut);
+        return new RadarOrchestrationResult(themes, totalIn, totalOut, allGroundingSources);
     }
 
     private String buildSystemPrompt(Long userId) {
@@ -194,18 +256,38 @@ public class RadarOrchestrator {
         }
     }
 
+    private static boolean isToolError(String output) {
+        if (output == null || output.isBlank()) return false;
+        try {
+            JsonNode node = JSON.readTree(output);
+            return node.isObject() && node.has("error") && node.size() == 1;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private static String extractJsonObject(String text) {
         int start = text.indexOf('{');
         if (start < 0) return "{}";
         int depth = 0;
+        boolean inString = false;
         for (int i = start; i < text.length(); i++) {
             char c = text.charAt(i);
+            if (inString) {
+                if (c == '\\') { i++; continue; }
+                if (c == '"') inString = false;
+                continue;
+            }
+            if (c == '"') { inString = true; continue; }
             if (c == '{') depth++;
             else if (c == '}') { depth--; if (depth == 0) return text.substring(start, i + 1); }
         }
         return "{}";
     }
 
-    public record RadarOrchestrationResult(List<RadarOrchestrationTheme> themes, int totalInputTokens, int totalOutputTokens) {}
+    public record RadarOrchestrationResult(List<RadarOrchestrationTheme> themes, int totalInputTokens,
+                                             int totalOutputTokens, List<AiResponse.GroundingSource> webSources) {}
     public record RadarOrchestrationTheme(String title, String summary, List<Long> itemIds, int displayOrder) {}
+    public record PreviousRadarSummary(String periodLabel, List<PreviousTheme> themes) {}
+    public record PreviousTheme(String title, String summary) {}
 }

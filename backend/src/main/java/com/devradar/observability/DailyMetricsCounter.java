@@ -1,5 +1,6 @@
 package com.devradar.observability;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
@@ -13,9 +14,16 @@ public class DailyMetricsCounter {
     private static final Duration TTL = Duration.ofDays(7);
     @Nullable
     private final StringRedisTemplate redis;
+    private final double geminiInputPerMillion;
+    private final double geminiOutputPerMillion;
 
-    public DailyMetricsCounter(@Nullable StringRedisTemplate redis) {
+    public DailyMetricsCounter(
+            @Nullable StringRedisTemplate redis,
+            @Value("${devradar.ai.pricing.gemini-input-per-million:0.15}") double geminiInputPerMillion,
+            @Value("${devradar.ai.pricing.gemini-output-per-million:0.60}") double geminiOutputPerMillion) {
         this.redis = redis;
+        this.geminiInputPerMillion = geminiInputPerMillion;
+        this.geminiOutputPerMillion = geminiOutputPerMillion;
     }
 
     /** @deprecated Kept for backwards compatibility with Redis keys; no longer incremented. */
@@ -42,8 +50,8 @@ public class DailyMetricsCounter {
 
         int geminiIn = getTokens(date, "gemini", "input");
         int geminiOut = getTokens(date, "gemini", "output");
-        cost += geminiIn * (0.15 / 1_000_000.0);
-        cost += geminiOut * (0.60 / 1_000_000.0);
+        cost += geminiIn * (geminiInputPerMillion / 1_000_000.0);
+        cost += geminiOut * (geminiOutputPerMillion / 1_000_000.0);
 
         return cost;
     }

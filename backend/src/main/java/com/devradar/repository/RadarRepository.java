@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -34,4 +35,17 @@ public interface RadarRepository extends JpaRepository<Radar, Long> {
     Optional<Radar> findFirstByIsPublicTrueAndStatusOrderByGeneratedAtDesc(RadarStatus status);
 
     long countByUserIdAndStatus(Long userId, RadarStatus status);
+
+    List<Radar> findByStatusAndPeriodEndBefore(RadarStatus status, Instant cutoff);
+
+    @Query("""
+        SELECT r FROM Radar r
+         WHERE r.status = :status AND r.isPublic = true
+           AND r.periodStart IS NOT NULL AND r.periodEnd IS NOT NULL
+           AND r.periodEnd >= :periodStart AND r.periodStart <= :periodEnd
+         ORDER BY r.generatedAt DESC
+        """)
+    List<Radar> findPublicReadyOverlapping(@Param("status") RadarStatus status,
+                                           @Param("periodStart") Instant periodStart,
+                                           @Param("periodEnd") Instant periodEnd);
 }

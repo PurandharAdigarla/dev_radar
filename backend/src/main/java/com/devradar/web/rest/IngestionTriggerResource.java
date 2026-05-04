@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.DayOfWeek;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -24,11 +23,7 @@ public class IngestionTriggerResource {
 
     private final RssFeedIngestor rss;
     private final HackerNewsIngestor hn;
-    private final GHSAIngestor ghsa;
-    private final GitHubTrendingIngestor ghTrending;
-    private final GitHubReleasesIngestor ghReleases;
     private final DependencyReleaseIngestor depReleases;
-    private final DependencyScanJob depScan;
     private final MetricsAggregationJob metrics;
     private final DigestService digestService;
     private final CveAlertService cveAlertService;
@@ -36,9 +31,8 @@ public class IngestionTriggerResource {
     private final DemoSeedJob demoSeed;
 
     public IngestionTriggerResource(
-        RssFeedIngestor rss, HackerNewsIngestor hn, GHSAIngestor ghsa,
-        GitHubTrendingIngestor ghTrending, GitHubReleasesIngestor ghReleases,
-        DependencyReleaseIngestor depReleases, DependencyScanJob depScan,
+        RssFeedIngestor rss, HackerNewsIngestor hn,
+        DependencyReleaseIngestor depReleases,
         MetricsAggregationJob metrics, DigestService digestService,
         CveAlertService cveAlertService,
         NotificationPreferenceRepository prefRepo,
@@ -46,11 +40,7 @@ public class IngestionTriggerResource {
     ) {
         this.rss = rss;
         this.hn = hn;
-        this.ghsa = ghsa;
-        this.ghTrending = ghTrending;
-        this.ghReleases = ghReleases;
         this.depReleases = depReleases;
-        this.depScan = depScan;
         this.metrics = metrics;
         this.digestService = digestService;
         this.cveAlertService = cveAlertService;
@@ -72,38 +62,10 @@ public class IngestionTriggerResource {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/ghsa")
-    public ResponseEntity<Void> triggerGhsa() {
-        LOG.info("trigger: ghsa");
-        ghsa.run();
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/gh-trending")
-    public ResponseEntity<Void> triggerGhTrending() {
-        LOG.info("trigger: gh-trending");
-        ghTrending.run();
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/gh-releases")
-    public ResponseEntity<Void> triggerGhReleases() {
-        LOG.info("trigger: gh-releases");
-        ghReleases.run();
-        return ResponseEntity.ok().build();
-    }
-
     @PostMapping("/dep-releases")
     public ResponseEntity<Void> triggerDepReleases() {
         LOG.info("trigger: dep-releases");
         depReleases.run();
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/dep-scan")
-    public ResponseEntity<Void> triggerDepScan() {
-        LOG.info("trigger: dep-scan");
-        depScan.run();
         return ResponseEntity.ok().build();
     }
 
@@ -133,15 +95,10 @@ public class IngestionTriggerResource {
         LOG.info("trigger: all data ingestors");
         rss.run();
         hn.run();
-        ghsa.run();
-        ghTrending.run();
-        ghReleases.run();
         depReleases.run();
-        depScan.run();
         return ResponseEntity.ok().build();
     }
 
-    /** HTTP trigger for weekly CVE alert — sends lightweight CVE count emails to all users. */
     @PostMapping("/cve-alerts")
     public ResponseEntity<Void> triggerCveAlerts() {
         LOG.info("trigger: cve-alerts");
@@ -149,7 +106,6 @@ public class IngestionTriggerResource {
         return ResponseEntity.ok().build();
     }
 
-    /** HTTP trigger for weekly digest — use Cloud Scheduler to call this hourly on Cloud Run. */
     @PostMapping("/weekly-digest")
     public ResponseEntity<Void> triggerWeeklyDigest() {
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);

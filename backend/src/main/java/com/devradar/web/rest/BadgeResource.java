@@ -7,6 +7,7 @@ import com.devradar.domain.Source;
 import com.devradar.domain.UserInterest;
 import com.devradar.domain.InterestTag;
 import com.devradar.repository.InterestTagRepository;
+import com.devradar.security.SecurityUtils;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -55,8 +56,10 @@ public class BadgeResource {
         this.sourceRepo = sourceRepo;
     }
 
-    @GetMapping(value = "/{userId}/security.svg", produces = "image/svg+xml")
-    public ResponseEntity<String> securityBadge(@PathVariable Long userId) {
+    @GetMapping(value = "/me/security.svg", produces = "image/svg+xml")
+    public ResponseEntity<String> securityBadge() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) return ResponseEntity.status(401).build();
         int criticalCount = countCriticalCves(userId);
         String color = criticalCount > 0 ? COLOR_RED : COLOR_GREEN;
         String label = criticalCount + " critical CVE" + (criticalCount != 1 ? "s" : "");

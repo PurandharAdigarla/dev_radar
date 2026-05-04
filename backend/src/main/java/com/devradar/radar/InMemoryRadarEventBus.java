@@ -74,6 +74,9 @@ public class InMemoryRadarEventBus implements RadarEventBus {
     public void publishStarted(RadarStartedEvent event) { send(event.radarId(), "radar.started", event, false); }
 
     @Override
+    public void publishProgress(AgentProgressEvent event) { send(event.radarId(), "agent.progress", event, false); }
+
+    @Override
     public void publishThemeComplete(ThemeCompleteEvent event) { send(event.radarId(), "theme.complete", event, false); }
 
     @Override
@@ -81,9 +84,6 @@ public class InMemoryRadarEventBus implements RadarEventBus {
 
     @Override
     public void publishFailed(RadarFailedEvent event) { send(event.radarId(), "radar.failed", event, true); }
-
-    @Override
-    public void publishActionProposed(ActionProposedEvent event) { send(event.radarId(), "action.proposed", event, false); }
 
     private void send(Long radarId, String eventName, Object data, boolean terminal) {
         List<SseEmitter> list = subscribers.get(radarId);

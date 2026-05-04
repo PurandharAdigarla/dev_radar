@@ -35,7 +35,7 @@ steps:
       - --set-secrets
       - >-
         JWT_SECRET=jwt-secret:latest,
-        GOOGLE_AI_API_KEY=google-ai-api-key:latest,
+        GEMINI_API_KEY=google-ai-api-key:latest,
         GITHUB_OAUTH_CLIENT_ID=github-oauth-client-id:latest,
         GITHUB_OAUTH_CLIENT_SECRET=github-oauth-client-secret:latest,
         GITHUB_TOKEN_ENCRYPTION_KEY=github-token-encryption-key:latest,

@@ -4,12 +4,9 @@ import Typography from "@mui/material/Typography";
 import { StatusTag } from "./StatusTag";
 import type { RadarSummary } from "../api/types";
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function formatPeriod(startIso: string, endIso: string): string {
-  return `Week of ${formatDate(startIso)} – ${formatDate(endIso)}`;
+function formatDate(iso: string | null): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export interface RadarRowProps {
@@ -50,7 +47,7 @@ export function RadarRow({ radar }: RadarRowProps) {
             mb: "4px",
           }}
         >
-          {formatPeriod(radar.periodStart, radar.periodEnd)}
+          {formatDate(radar.generatedAt) || "Generating..."}
         </Typography>
         <Box
           sx={{

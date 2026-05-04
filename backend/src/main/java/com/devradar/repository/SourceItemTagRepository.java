@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface SourceItemTagRepository extends JpaRepository<SourceItemTag, SourceItemTagId> {
     List<SourceItemTag> findBySourceItemId(Long sourceItemId);
+    List<SourceItemTag> findBySourceItemIdIn(List<Long> sourceItemIds);
 }

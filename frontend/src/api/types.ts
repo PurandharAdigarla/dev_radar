@@ -42,12 +42,12 @@ export interface RadarSummary {
 }
 
 export interface RadarItem {
-  id: number;
+  id: number | null;
   title: string;
   description: string | null;
   url: string;
   author: string | null;
-  sourceName: string;
+  sourceName: string | null;
 }
 
 export interface RadarTheme {
@@ -58,8 +58,20 @@ export interface RadarTheme {
   items: RadarItem[];
 }
 
+export interface RepoRecommendation {
+  repoUrl: string;
+  repoName: string;
+  description: string;
+  whyNotable: string;
+  category: string;
+  topic: string;
+}
+
 export interface RadarDetail extends RadarSummary {
+  errorCode: string | null;
+  errorMessage: string | null;
   themes: RadarTheme[];
+  repos: RepoRecommendation[];
 }
 
 export interface PageResponse<T> {
@@ -138,8 +150,15 @@ export interface ThemeCompleteEvent {
   itemIds: number[];
   displayOrder: number;
 }
-export interface RadarCompleteEvent { radarId: number; elapsedMs: number; totalTokens: number }
-export interface RadarFailedEvent { radarId: number; errorCode: string; errorMessage: string }
+export interface AgentProgressEvent {
+  radarId: number;
+  agent: string;
+  phase: "research" | "repo_discovery";
+  searchQueries: string[];
+  searchResults: Array<{ title: string; domain: string; url: string }>;
+}
+export interface RadarCompleteEvent { radarId: number; generationMs: number; tokenCount: number }
+export interface RadarFailedEvent { radarId: number; errorCode: string; message: string }
 export interface ActionProposedEvent {
   radarId: number;
   proposalId: number;

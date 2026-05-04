@@ -1,0 +1,160 @@
+{
+  "project": {
+    "tagline": "AI-powered developer intelligence platform — personalized tech radars from HackerNews, GitHub, and security advisories",
+    "metrics": [
+      "3 Content Sources (HN, GitHub Trending, GHSA)",
+      "Gemini 2.5 Flash AI with Agentic Tool-Calling",
+      "Real-time SSE Streaming",
+      "GitHub OAuth + Repo Scanning",
+      "Automated CVE Fix PRs",
+      "Team Collaboration & RBAC",
+      "Weekly Email Digests"
+    ],
+    "techStack": {
+      "backend": "Java 21, Spring Boot 3.5, MySQL 8, Liquibase, Redis Pub/Sub",
+      "frontend": "React 18, Redux Toolkit (RTK Query), Material UI 5",
+      "ai": "Google Gemini 2.5 Flash — agentic orchestration with multi-turn tool-calling",
+      "auth": "JWT (HS512) + GitHub OAuth 2.0 + encrypted token storage (AES-256)",
+      "streaming": "Server-Sent Events (SSE) via Redis Pub/Sub (Cloud Run multi-instance safe)",
+      "deployment": "Google Cloud Run (serverless), Cloud SQL, Secret Manager, Artifact Registry",
+      "testing": "JUnit 5, Testcontainers, Mockito, Vitest, React Testing Library, MSW"
+    }
+  },
+  "screenshots": [
+    {
+      "step": 1,
+      "filename": "01-landing.png",
+      "title": "Landing Page",
+      "hotspot": "Hero headline: 'Know what changed in your stack before it breaks your build'",
+      "hotspotCoords": { "x": 15, "y": 13, "w": 50, "h": 30 },
+      "tooltip": "Dev Radar scans your repos, matches CVEs against your dependency tree, and opens fix PRs — all in one weekly radar",
+      "tooltipPos": "right"
+    },
+    {
+      "step": 2,
+      "filename": "02-landing-features.png",
+      "title": "Features Overview",
+      "hotspot": "Connect GitHub and View Sample Radar CTA buttons",
+      "hotspotCoords": { "x": 15, "y": 5, "w": 40, "h": 12 },
+      "tooltip": "One-click GitHub OAuth connects your account and scans repos to auto-detect your tech stack",
+      "tooltipPos": "bottom"
+    },
+    {
+      "step": 3,
+      "filename": "03-login.png",
+      "title": "Authentication",
+      "hotspot": "Continue with GitHub OAuth button",
+      "hotspotCoords": { "x": 30, "y": 60, "w": 30, "h": 8 },
+      "tooltip": "GitHub OAuth login — connects your account to enable repo scanning, dependency monitoring, and automated PR proposals",
+      "tooltipPos": "top"
+    },
+    {
+      "step": 4,
+      "filename": "05-onboarding.png",
+      "title": "Smart Onboarding",
+      "hotspot": "3-step stepper: Scan Repos → Choose Interests → Generate Radar",
+      "hotspotCoords": { "x": 28, "y": 22, "w": 50, "h": 6 },
+      "tooltip": "Guided onboarding scans your GitHub repos to auto-detect languages, frameworks, and topics — no manual setup needed",
+      "tooltipPos": "bottom"
+    },
+    {
+      "step": 5,
+      "filename": "07-interests.png",
+      "title": "Interest Picker",
+      "hotspot": "Category-organized tag grid with selected chips (Java, Python, TypeScript, Spring Boot, React)",
+      "hotspotCoords": { "x": 12, "y": 22, "w": 78, "h": 45 },
+      "tooltip": "Curate your radar from 50+ technology tags across Languages, Frameworks, Databases, DevOps, and Security categories",
+      "tooltipPos": "top"
+    },
+    {
+      "step": 6,
+      "filename": "06-dashboard.png",
+      "title": "Dashboard",
+      "hotspot": "Radar Status card showing 'Your latest radar is ready' with View radars button",
+      "hotspotCoords": { "x": 58, "y": 22, "w": 40, "h": 28 },
+      "tooltip": "Personalized dashboard with dependency health, radar status, usage stats, and quick action buttons",
+      "tooltipPos": "left"
+    },
+    {
+      "step": 7,
+      "filename": "13-radar-list.png",
+      "title": "Radar History",
+      "hotspot": "'Generate new radar' button and radar rows showing themes/tokens/time metadata",
+      "hotspotCoords": { "x": 80, "y": 15, "w": 18, "h": 8 },
+      "tooltip": "One-click radar generation triggers an agentic AI pipeline — track token usage, generation time, and theme counts per radar",
+      "tooltipPos": "left"
+    },
+    {
+      "step": 8,
+      "filename": "09-radar-streaming.png",
+      "title": "Live SSE Streaming",
+      "hotspot": "Pulsing dot indicator with 'Generating themes... 0 of 4' and skeleton placeholder cards",
+      "hotspotCoords": { "x": 22, "y": 22, "w": 55, "h": 8 },
+      "tooltip": "Real-time Server-Sent Events streaming — watch the Gemini AI agent search, score, and curate themes live with skeleton loading",
+      "tooltipPos": "bottom"
+    },
+    {
+      "step": 9,
+      "filename": "11-radar-complete.png",
+      "title": "Completed Radar",
+      "hotspot": "First theme card 'docker-java 3.5.1 Released' with source badge, engagement buttons, and share action",
+      "hotspotCoords": { "x": 22, "y": 30, "w": 55, "h": 50 },
+      "tooltip": "Themed radar sections with AI-curated summaries, source attribution badges, thumbs up/down engagement tracking, and one-click sharing",
+      "tooltipPos": "right"
+    },
+    {
+      "step": 10,
+      "filename": "12-radar-complete-full.png",
+      "title": "Full Radar with CVE Alerts",
+      "hotspot": "CRITICAL CVE theme cards at bottom with red security warning icons (SQL Injection, Auth Bypass)",
+      "hotspotCoords": { "x": 8, "y": 70, "w": 55, "h": 25 },
+      "tooltip": "Security advisories get red CRITICAL CVE highlights — GHSA-sourced vulnerabilities with severity indicators and actionable remediation guidance",
+      "tooltipPos": "top"
+    },
+    {
+      "step": 11,
+      "filename": "04-observability.png",
+      "title": "Observability Dashboard",
+      "hotspot": "Metrics grid: Radars Generated, Tokens Used, Avg Latency, Cache Hit Rate, Eval scores, and Token Usage trend chart",
+      "hotspotCoords": { "x": 8, "y": 18, "w": 85, "h": 55 },
+      "tooltip": "Public observability dashboard — real-time Micrometer metrics with request counts, latency percentiles, token tracking, and trend charts",
+      "tooltipPos": "bottom"
+    },
+    {
+      "step": 12,
+      "filename": "14-settings.png",
+      "title": "GitHub Integration",
+      "hotspot": "GitHub connection status section with Connect button",
+      "hotspotCoords": { "x": 22, "y": 25, "w": 55, "h": 25 },
+      "tooltip": "GitHub integration settings — connect your account to enable repo scanning, CVE monitoring, and automated fix PR proposals",
+      "tooltipPos": "bottom"
+    },
+    {
+      "step": 13,
+      "filename": "15-notifications.png",
+      "title": "Email Digests",
+      "hotspot": "Email toggle and day/time scheduling selectors for weekly digest delivery",
+      "hotspotCoords": { "x": 22, "y": 25, "w": 55, "h": 35 },
+      "tooltip": "Schedule weekly email digests — choose delivery day and time for personalized radar summaries in your inbox",
+      "tooltipPos": "bottom"
+    },
+    {
+      "step": 14,
+      "filename": "16-teams.png",
+      "title": "Team Collaboration",
+      "hotspot": "Team dashboard with create team form and member management",
+      "hotspotCoords": { "x": 22, "y": 25, "w": 55, "h": 35 },
+      "tooltip": "Team collaboration — create teams, invite members by email, assign roles (Owner/Admin/Member), and generate shared radars",
+      "tooltipPos": "bottom"
+    },
+    {
+      "step": 15,
+      "filename": "17-api-keys.png",
+      "title": "API Key Management",
+      "hotspot": "API keys section with Create Key button for MCP/IDE integrations",
+      "hotspotCoords": { "x": 22, "y": 20, "w": 55, "h": 35 },
+      "tooltip": "MCP & IDE integration — generate API keys for Cursor, VS Code, or custom tool integrations via the Spring AI MCP server",
+      "tooltipPos": "bottom"
+    }
+  ]
+}

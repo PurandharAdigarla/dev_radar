@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="030-1" author="devradar">
+        <comment>Add topic column to radar_themes</comment>
+        <addColumn tableName="radar_themes">
+            <column name="topic" type="VARCHAR(80)" afterColumn="radar_id"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="030-2" author="devradar">
+        <comment>Create radar_theme_sources table (per-theme web sources)</comment>
+        <createTable tableName="radar_theme_sources">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="theme_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="url" type="VARCHAR(2000)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(500)"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint
+            baseTableName="radar_theme_sources" baseColumnNames="theme_id"
+            referencedTableName="radar_themes" referencedColumnNames="id"
+            constraintName="fk_rts_theme_id"
+            onDelete="CASCADE"/>
+        <createIndex tableName="radar_theme_sources" indexName="idx_rts_theme_id">
+            <column name="theme_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

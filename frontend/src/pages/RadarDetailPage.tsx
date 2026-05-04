@@ -1,39 +1,46 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate, useParams, Link as RouterLink } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Snackbar from "@mui/material/Snackbar";
-import MuiAlert from "@mui/material/Alert";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ShareOutlined from "@mui/icons-material/ShareOutlined";
+import { motion } from "framer-motion";
+import { ActivityFeed } from "../components/ActivityFeed";
 import { Button } from "../components/Button";
 import { PulseDot } from "../components/PulseDot";
+import { RepoSection } from "../components/RepoSection";
+import { StatusTag } from "../components/StatusTag";
 import { ThemeCard } from "../components/ThemeCard";
 import { ThemeSkeleton } from "../components/ThemeSkeleton";
-import { ProposalCard } from "../components/ProposalCard";
 import { Alert } from "../components/Alert";
+import { colors, fonts } from "../theme";
 import { useGetRadarQuery, useShareRadarMutation, radarApi } from "../api/radarApi";
-import { useListProposalsByRadarQuery } from "../api/actionApi";
-import { useGetEngagementSummaryQuery } from "../api/engagementApi";
-import { useGetMyInterestsQuery } from "../api/interestApi";
+import { useGetTopicsQuery } from "../api/topicApi";
 import { useRadarStream } from "../radar/useRadarStream";
 import { generationFinished, generationStarted } from "../radar/radarGenerationSlice";
 import type { AppDispatch } from "../store";
 import type { RadarTheme } from "../api/types";
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function formatDate(iso: string | null): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-function formatPeriod(startIso: string, endIso: string): string {
-  return `Week of ${formatDate(startIso)} – ${formatDate(endIso)}`;
-}
+/* ── animation variants ───────────────────────────────────────── */
 
-/** Best-effort expected theme count for the progress counter while streaming.
- *  Backend doesn't tell us the target, so estimate from interest count
- *  (min 2, max 5). Only controls how many skeleton placeholders render. */
-function estimateExpectedThemes(interestCount: number): number {
-  return Math.max(2, Math.min(5, Math.ceil(interestCount / 2)));
-}
+const themeContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.12, delayChildren: 0.2 },
+  },
+};
 
 export function RadarDetailPage() {
   const params = useParams<{ id: string }>();
@@ -42,13 +49,9 @@ export function RadarDetailPage() {
   const radarId = Number(params.id);
 
   const { data: radar, error } = useGetRadarQuery(radarId, { skip: !radarId });
-  const { data: proposals = [] } = useListProposalsByRadarQuery(radarId, { skip: !radarId });
-  const { data: myInterests } = useGetMyInterestsQuery();
-  const { data: engagementSummary } = useGetEngagementSummaryQuery();
+  const { data: topics } = useGetTopicsQuery();
   const [shareRadar] = useShareRadarMutation();
   const [shareSnackbar, setShareSnackbar] = useState<string | null>(null);
-  const [feedbackAck, setFeedbackAck] = useState(false);
-  const initialEngagementCount = useRef<number | null>(null);
 
   const handleShare = useCallback(async () => {
     try {
@@ -64,7 +67,6 @@ export function RadarDetailPage() {
   const stream = useRadarStream(radarId, isGenerating);
   const streaming = isGenerating && stream.status !== "complete" && stream.status !== "failed";
 
-  // Track generating radar in the sidebar indicator.
   useEffect(() => {
     if (isGenerating) {
       dispatch(generationStarted({ radarId, startedAt: new Date().toISOString() }));
@@ -73,42 +75,24 @@ export function RadarDetailPage() {
     }
   }, [dispatch, radarId, isGenerating]);
 
-  // Clear sidebar indicator on unmount.
   useEffect(() => {
-    return () => { dispatch(generationFinished()); };
+    return () => {
+      dispatch(generationFinished());
+    };
   }, [dispatch]);
 
-  // When the stream finishes, refetch the radar for full item metadata.
   useEffect(() => {
     if (stream.status === "complete" || stream.status === "failed") {
       dispatch(radarApi.util.invalidateTags([{ type: "Radar", id: radarId }]));
     }
   }, [stream.status, dispatch, radarId]);
 
-  // Track session engagement count for feedback acknowledgment banner
-  useEffect(() => {
-    if (engagementSummary == null) return;
-    if (initialEngagementCount.current === null) {
-      initialEngagementCount.current = engagementSummary.totalInteractions;
-      return;
-    }
-    const sessionDelta = engagementSummary.totalInteractions - initialEngagementCount.current;
-    const alreadyAcked = localStorage.getItem("devradar.feedbackAcked") === "true";
-    if (sessionDelta >= 3 && !alreadyAcked && !feedbackAck) {
-      setFeedbackAck(true);
-      localStorage.setItem("devradar.feedbackAcked", "true");
-    }
-  }, [engagementSummary, feedbackAck]);
-
-  // Redirect on 404 / 403.
   useEffect(() => {
     if (error && "status" in error && (error.status === 404 || error.status === 403)) {
       navigate("/app/radars", { replace: true });
     }
   }, [error, navigate]);
 
-  // Merge persisted themes + streamed themes (streamed lack full items until
-  // the final refetch fills in metadata).
   const themes: RadarTheme[] = useMemo(() => {
     const persisted = radar?.themes ?? [];
     if (!isGenerating) return persisted;
@@ -127,81 +111,136 @@ export function RadarDetailPage() {
 
   if (!radar) {
     return (
-      <Box sx={{ maxWidth: 720 }}>
-        <Typography variant="body2" color="text.secondary">Loading radar…</Typography>
+      <Box sx={{ py: 8 }}>
+        <Typography variant="body2" color="text.secondary">
+          Loading radar...
+        </Typography>
       </Box>
     );
   }
 
-  const expectedThemes = estimateExpectedThemes(myInterests?.length ?? 3);
+  const expectedThemes = topics?.length ?? 5;
   const pendingCount = streaming ? Math.max(0, expectedThemes - themes.length) : 0;
 
   return (
-    <Box
-      sx={{
-        display: "grid",
-        gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 720px) 300px" },
-        gap: { xs: 5, lg: 6 },
-        alignItems: "flex-start",
-      }}
-    >
-      {/* Read column */}
-      <Box sx={{ minWidth: 0 }}>
+    <Box sx={{ width: "100%" }}>
+      {/* Back link */}
+      <motion.div
+        initial={{ opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Box
+          component={RouterLink}
+          to="/app/radars"
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.75,
+            mb: 3,
+            fontSize: "0.875rem",
+            fontWeight: 500,
+            color: colors.textSecondary,
+            textDecoration: "none",
+            transition: "all 0.15s ease",
+            "&:hover": {
+              color: colors.primary,
+              transform: "translateX(-2px)",
+            },
+          }}
+        >
+          <ArrowBackIcon sx={{ fontSize: 18 }} />
+          Back to Radars
+        </Box>
+      </motion.div>
+
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         <Box sx={{ mb: 5 }}>
-          <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-            {formatPeriod(radar.periodStart, radar.periodEnd)}
-          </Typography>
-          <Typography
-            component="h1"
-            sx={{
-              m: 0,
-              fontSize: "2rem",
-              lineHeight: "40px",
-              fontWeight: 500,
-              letterSpacing: "-0.01em",
-              color: "text.primary",
-            }}
-          >
-            This week in your stack
-          </Typography>
           <Box
             sx={{
-              mt: 1.5,
-              fontSize: 13,
-              lineHeight: "20px",
-              color: "text.secondary",
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 2,
+              flexWrap: "wrap",
+              mb: 2,
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                component="h1"
+                sx={{
+                  m: 0,
+                  fontFamily: fonts.headline,
+                  fontSize: "2rem",
+                  fontWeight: 700,
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1.2,
+                  color: colors.text,
+                  mb: 1,
+                }}
+              >
+                Your Dev AI Radar
+              </Typography>
+
+              <Typography
+                sx={{
+                  fontSize: "0.9375rem",
+                  color: colors.textSecondary,
+                  mb: 1.5,
+                }}
+              >
+                {formatDate(radar.generatedAt) || "Generating..."}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexShrink: 0 }}>
+              <StatusTag status={radar.status} />
+              {!streaming && radar.status === "READY" && (
+                <Button variant="outlined" size="small" onClick={handleShare}>
+                  <ShareOutlined sx={{ fontSize: 16, mr: 0.75 }} />
+                  Share
+                </Button>
+              )}
+            </Box>
+          </Box>
+
+          {/* Generation stats bar */}
+          <Box
+            sx={{
               display: "flex",
               alignItems: "center",
-              gap: 1.25,
+              gap: 1.5,
               flexWrap: "wrap",
+              fontSize: "0.8125rem",
+              color: colors.textMuted,
               fontVariantNumeric: "tabular-nums",
             }}
           >
             {streaming ? (
               <>
-                <PulseDot />
-                <span>Generating themes…</span>
-                <span>·</span>
-                <span>{themes.length} of {expectedThemes}</span>
+                <PulseDot color={colors.warning} />
+                <span>Generating themes...</span>
+                <span>&middot;</span>
+                <span>
+                  {themes.length} of ~{expectedThemes}
+                </span>
               </>
             ) : (
               <>
                 <span>{themes.length} themes</span>
-                <span>·</span>
+                <span>&middot;</span>
                 <span>{((radar.generationMs ?? 0) / 1000).toFixed(1)}s</span>
-                <span>·</span>
+                <span>&middot;</span>
                 <span>{((radar.tokenCount ?? 0) / 1000).toFixed(1)}k tokens</span>
               </>
             )}
           </Box>
-
-          {!streaming && radar.status === "READY" && (
-            <Box sx={{ mt: 2 }}>
-              <Button variant="outlined" size="small" onClick={handleShare}>
-                Share this radar
-              </Button>
-            </Box>
-          )}
 
           {stream.status === "failed" && (
             <Typography variant="body2" color="error" sx={{ mt: 2 }}>
@@ -212,47 +251,51 @@ export function RadarDetailPage() {
           {!streaming && radar.status === "FAILED" && (
             <Box sx={{ mt: 3 }}>
               <Alert severity="error">
-                This radar failed to generate. Start a fresh one from the Radars list.
+                {radar.errorMessage ??
+                  "This radar failed to generate. Start a fresh one from the Radars list."}
               </Alert>
             </Box>
           )}
         </Box>
+      </motion.div>
 
+      {/* Activity feed during streaming */}
+      {streaming && <ActivityFeed activities={stream.activities} streaming={streaming} />}
+
+      {/* Themes */}
+      <motion.div
+        variants={themeContainer}
+        initial="hidden"
+        animate="show"
+      >
         {themes.map((t) => (
           <ThemeCard key={t.id} theme={t} radarId={radarId} />
         ))}
-        {streaming &&
-          Array.from({ length: pendingCount }).map((_, i) => (
-            <ThemeSkeleton key={`sk-${i}`} />
-          ))}
+      </motion.div>
 
-        {!streaming && themes.length === 0 && radar.status !== "FAILED" && (
-          <Box
-            sx={{
-              padding: "80px 24px",
-              textAlign: "center",
-              border: "1px dashed",
-              borderColor: "divider",
-              borderRadius: 3,
-              color: "text.secondary",
-              fontSize: 14,
-            }}
-          >
+      {streaming &&
+        Array.from({ length: pendingCount }).map((_, i) => <ThemeSkeleton key={`sk-${i}`} />)}
+
+      {!streaming && themes.length === 0 && radar.status !== "FAILED" && (
+        <Box
+          sx={{
+            p: "80px 24px",
+            textAlign: "center",
+            border: "2px dashed",
+            borderColor: "rgba(87,83,78,0.2)",
+            borderRadius: "16px",
+            background: colors.gradientCard,
+          }}
+        >
+          <Typography sx={{ fontSize: "0.9375rem", color: colors.textSecondary }}>
             No themes generated.
-          </Box>
-        )}
-      </Box>
-
-      {/* Proposals column */}
-      {proposals.length > 0 && (
-        <Box component="aside">
-          <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 2 }}>
-            Action proposals
           </Typography>
-          {proposals.map((p) => (
-            <ProposalCard key={p.id} proposal={p} />
-          ))}
         </Box>
+      )}
+
+      {/* Repos */}
+      {!streaming && radar.repos && radar.repos.length > 0 && (
+        <RepoSection repos={radar.repos} />
       )}
 
       <Snackbar
@@ -261,21 +304,6 @@ export function RadarDetailPage() {
         onClose={() => setShareSnackbar(null)}
         message={shareSnackbar}
       />
-      <Snackbar
-        open={feedbackAck}
-        autoHideDuration={6000}
-        onClose={() => setFeedbackAck(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <MuiAlert
-          onClose={() => setFeedbackAck(false)}
-          severity="success"
-          variant="filled"
-          sx={{ width: "100%" }}
-        >
-          Your radar is learning your preferences — future radars will be more relevant.
-        </MuiAlert>
-      </Snackbar>
     </Box>
   );
 }

@@ -55,6 +55,9 @@ public class RedisRadarEventBus implements RadarEventBus {
     public void publishStarted(RadarStartedEvent event) { publish(event.radarId(), "radar.started", event); }
 
     @Override
+    public void publishProgress(AgentProgressEvent event) { publish(event.radarId(), "agent.progress", event); }
+
+    @Override
     public void publishThemeComplete(ThemeCompleteEvent event) { publish(event.radarId(), "theme.complete", event); }
 
     @Override
@@ -62,9 +65,6 @@ public class RedisRadarEventBus implements RadarEventBus {
 
     @Override
     public void publishFailed(RadarFailedEvent event) { publish(event.radarId(), "radar.failed", event); }
-
-    @Override
-    public void publishActionProposed(ActionProposedEvent event) { publish(event.radarId(), "action.proposed", event); }
 
     private void publish(Long radarId, String eventName, Object data) {
         try {

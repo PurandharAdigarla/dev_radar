@@ -3,18 +3,30 @@ package com.devradar.radar;
 import com.devradar.ai.AiProviderException;
 import com.devradar.ai.AiSummaryCache;
 import com.devradar.ai.RadarOrchestrator;
+import com.devradar.ai.AiResponse;
+import com.devradar.ai.RadarOrchestrator.PreviousRadarSummary;
+import com.devradar.ai.RadarOrchestrator.PreviousTheme;
+import com.devradar.domain.Radar;
+import com.devradar.domain.RadarStatus;
 import com.devradar.domain.RadarTheme;
 import com.devradar.domain.RadarThemeItem;
+import com.devradar.domain.RadarWebSource;
+import com.devradar.repository.RadarRepository;
 import com.devradar.repository.RadarThemeItemRepository;
 import com.devradar.repository.RadarThemeRepository;
+import com.devradar.repository.RadarWebSourceRepository;
 import com.devradar.radar.event.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,32 +34,38 @@ public class RadarGenerationService {
 
     private static final Logger LOG = LoggerFactory.getLogger(RadarGenerationService.class);
 
+    private static final int PREVIOUS_RADAR_COUNT = 3;
+    private static final DateTimeFormatter WEEK_LABEL = DateTimeFormatter.ofPattern("MMM d");
+
     private final RadarOrchestrator orchestrator;
     private final RadarService radarService;
+    private final RadarRepository radarRepo;
     private final RadarThemeRepository themeRepo;
     private final RadarThemeItemRepository themeItemRepo;
+    private final RadarWebSourceRepository webSourceRepo;
     private final AiSummaryCache cache;
     private final RadarEventBus events;
-    private final com.devradar.repository.ActionProposalRepository actionProposalRepo;
     private final MeterRegistry meterRegistry;
 
     public RadarGenerationService(
         RadarOrchestrator orchestrator,
         RadarService radarService,
+        RadarRepository radarRepo,
         RadarThemeRepository themeRepo,
         RadarThemeItemRepository themeItemRepo,
+        RadarWebSourceRepository webSourceRepo,
         AiSummaryCache cache,
         RadarEventBus events,
-        com.devradar.repository.ActionProposalRepository actionProposalRepo,
         MeterRegistry meterRegistry
     ) {
         this.orchestrator = orchestrator;
         this.radarService = radarService;
+        this.radarRepo = radarRepo;
         this.themeRepo = themeRepo;
         this.themeItemRepo = themeItemRepo;
+        this.webSourceRepo = webSourceRepo;
         this.cache = cache;
         this.events = events;
-        this.actionProposalRepo = actionProposalRepo;
         this.meterRegistry = meterRegistry;
     }
 
@@ -63,14 +81,13 @@ public class RadarGenerationService {
                     "No source items found matching your interests in the last 7 days. "
                     + "Try adding more interest tags or check back after ingestion runs.");
             }
-            var result = orchestrator.generate(userInterests, candidateIds, new com.devradar.ai.tools.ToolContext(userId, radarId), userId);
+            List<PreviousRadarSummary> previousRadars = loadPreviousRadars(userId);
+            var result = orchestrator.generate(userInterests, candidateIds,
+                    new com.devradar.ai.tools.ToolContext(userId, radarId), userId, previousRadars);
             sample.stop(Timer.builder("radar.generation.duration").register(meterRegistry));
             meterRegistry.counter("radar.generation", "status", "success").increment();
             persistAndStream(radarId, result.themes());
-            for (var prop : actionProposalRepo.findByRadarIdOrderByCreatedAtAsc(radarId)) {
-                events.publishActionProposed(new com.devradar.radar.event.ActionProposedEvent(
-                    radarId, prop.getId(), prop.getKind().name(), prop.getPayload()));
-            }
+            persistWebSources(radarId, result.webSources());
             long elapsed = System.currentTimeMillis() - t0;
             int tokens = result.totalInputTokens() + result.totalOutputTokens();
             radarService.markReady(radarId, elapsed, tokens, result.totalInputTokens(), result.totalOutputTokens());
@@ -87,6 +104,45 @@ public class RadarGenerationService {
             LOG.error("radar generation failed radar={}: {}", radarId, e.toString(), e);
             radarService.markFailed(radarId, errorCode, e.getMessage());
             events.publishFailed(new RadarFailedEvent(radarId, errorCode, e.getMessage()));
+        }
+    }
+
+    private void persistWebSources(Long radarId, List<AiResponse.GroundingSource> sources) {
+        if (sources == null || sources.isEmpty()) return;
+        sources.stream().distinct().forEach(src -> {
+            RadarWebSource ws = new RadarWebSource();
+            ws.setRadarId(radarId);
+            ws.setUrl(src.uri());
+            ws.setTitle(src.title());
+            webSourceRepo.save(ws);
+        });
+        LOG.info("persisted {} web sources for radar={}", sources.size(), radarId);
+    }
+
+    private List<PreviousRadarSummary> loadPreviousRadars(Long userId) {
+        try {
+            var page = radarRepo.findByUserIdOrderByGeneratedAtDesc(userId, PageRequest.of(0, PREVIOUS_RADAR_COUNT + 1));
+            List<Radar> readyRadars = page.getContent().stream()
+                    .filter(r -> r.getStatus() == RadarStatus.READY)
+                    .limit(PREVIOUS_RADAR_COUNT)
+                    .toList();
+
+            List<PreviousRadarSummary> summaries = new ArrayList<>();
+            for (Radar radar : readyRadars) {
+                String label = radar.getPeriodStart().atZone(ZoneOffset.UTC).format(WEEK_LABEL)
+                        + " – " + radar.getPeriodEnd().atZone(ZoneOffset.UTC).format(WEEK_LABEL);
+
+                List<RadarTheme> themes = themeRepo.findByRadarIdOrderByDisplayOrderAsc(radar.getId());
+                List<PreviousTheme> prevThemes = themes.stream()
+                        .map(t -> new PreviousTheme(t.getTitle(), t.getSummary()))
+                        .toList();
+                summaries.add(new PreviousRadarSummary(label, prevThemes));
+            }
+            LOG.info("loaded {} previous radars for cross-week context (userId={})", summaries.size(), userId);
+            return summaries;
+        } catch (Exception e) {
+            LOG.warn("failed to load previous radars for userId={}: {}", userId, e.getMessage());
+            return List.of();
         }
     }
 

@@ -1,8 +1,10 @@
 package com.devradar.notification;
 
 import com.devradar.domain.InterestTag;
+import com.devradar.domain.NotificationPreference;
 import com.devradar.domain.Source;
 import com.devradar.domain.User;
+import com.devradar.repository.NotificationPreferenceRepository;
 import com.devradar.repository.SourceItemRepository;
 import com.devradar.repository.SourceRepository;
 import com.devradar.repository.UserRepository;
@@ -26,6 +28,7 @@ public class CveAlertService {
     private final UserInterestService interestService;
     private final SourceItemRepository sourceItemRepo;
     private final SourceRepository sourceRepo;
+    private final NotificationPreferenceRepository prefRepo;
     private final EmailRenderer renderer;
     private final Optional<EmailSender> emailSender;
 
@@ -33,12 +36,14 @@ public class CveAlertService {
                            UserInterestService interestService,
                            SourceItemRepository sourceItemRepo,
                            SourceRepository sourceRepo,
+                           NotificationPreferenceRepository prefRepo,
                            EmailRenderer renderer,
                            Optional<EmailSender> emailSender) {
         this.userRepo = userRepo;
         this.interestService = interestService;
         this.sourceItemRepo = sourceItemRepo;
         this.sourceRepo = sourceRepo;
+        this.prefRepo = prefRepo;
         this.renderer = renderer;
         this.emailSender = emailSender;
     }
@@ -65,6 +70,9 @@ public class CveAlertService {
     }
 
     private boolean sendCveAlertForUser(User user, Long ghsaSourceId) {
+        Optional<NotificationPreference> pref = prefRepo.findByUserId(user.getId());
+        if (pref.isPresent() && !pref.get().isEmailEnabled()) return false;
+
         List<InterestTag> tags = interestService.findInterestsForUser(user.getId());
         if (tags.isEmpty()) return false;
 
@@ -72,9 +80,13 @@ public class CveAlertService {
         long count = sourceItemRepo.countNewItemsBySourceForUserSince(user.getId(), ghsaSourceId, since);
         if (count == 0) return false;
 
+        String emailAddr = pref.map(NotificationPreference::getEmailAddress)
+                .filter(a -> a != null && !a.isBlank())
+                .orElse(user.getEmail());
+
         String html = renderer.renderCveAlert(user.getDisplayName(), (int) count);
-        requireSender().send(user.getEmail(), "⚠️ " + count + " new CVEs affect your stack", html);
-        LOG.info("CVE alert sent to user={} email={} count={}", user.getId(), user.getEmail(), count);
+        requireSender().send(emailAddr, "⚠️ " + count + " new CVEs affect your stack", html);
+        LOG.info("CVE alert sent to user={} count={}", user.getId(), count);
         return true;
     }
 

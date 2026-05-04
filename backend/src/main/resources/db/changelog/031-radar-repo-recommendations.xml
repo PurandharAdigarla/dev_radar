@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="031-1" author="devradar">
+        <comment>Create radar_repo_recommendations table for repo discovery per topic</comment>
+        <createTable tableName="radar_repo_recommendations">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="radar_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="topic" type="VARCHAR(80)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repo_url" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="repo_name" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="why_notable" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category" type="VARCHAR(50)"/>
+            <column name="display_order" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint
+            baseTableName="radar_repo_recommendations" baseColumnNames="radar_id"
+            referencedTableName="radars" referencedColumnNames="id"
+            constraintName="fk_rrr_radar_id"
+            onDelete="CASCADE"/>
+        <createIndex tableName="radar_repo_recommendations" indexName="idx_rrr_radar_id">
+            <column name="radar_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

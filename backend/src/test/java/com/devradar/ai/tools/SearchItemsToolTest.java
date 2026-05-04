@@ -46,7 +46,12 @@ class SearchItemsToolTest extends AbstractIntegrationTest {
         assertThat(arr.isArray()).isTrue();
         assertThat(arr.size()).isGreaterThanOrEqualTo(1);
         boolean foundSpring = false;
-        for (JsonNode n : arr) if ("search-1".equals(n.get("external_id").asText())) foundSpring = true;
+        for (JsonNode n : arr) {
+            assertThat(n.has("title")).isTrue();
+            assertThat(n.has("source_type")).isTrue();
+            assertThat(n.has("description")).as("search results should not include description").isFalse();
+            if ("Spring Boot 3.5".equals(n.get("title").asText())) foundSpring = true;
+        }
         assertThat(foundSpring).isTrue();
     }
 

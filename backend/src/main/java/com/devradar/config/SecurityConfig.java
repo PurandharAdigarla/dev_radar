@@ -50,13 +50,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/observability/**").permitAll()
                 .requestMatchers("/api/sample-radar").permitAll()
                 .requestMatchers("/api/radars/shared/**").permitAll()
-                .requestMatchers("/api/badges/**").permitAll()
+                .requestMatchers("/api/badges/**").authenticated()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/internal/**").authenticated()
-                .requestMatchers("/mcp/**").authenticated()
                 .requestMatchers(request -> {
                     String path = request.getRequestURI();
-                    return !path.startsWith("/api/") && !path.startsWith("/mcp/") && !path.startsWith("/actuator/");
+                    return !path.startsWith("/api/") && !path.startsWith("/actuator/");
                 }).permitAll()
                 .anyRequest().authenticated()
             )

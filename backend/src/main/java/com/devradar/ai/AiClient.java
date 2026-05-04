@@ -9,4 +9,9 @@ import java.util.List;
  */
 public interface AiClient {
     AiResponse generate(String model, String systemPrompt, List<AiMessage> messages, List<ToolDefinition> tools, int maxTokens);
+
+    default AiResponse generate(String model, String systemPrompt, List<AiMessage> messages,
+                                List<ToolDefinition> tools, int maxTokens, boolean enableWebSearch) {
+        return generate(model, systemPrompt, messages, tools, maxTokens);
+    }
 }

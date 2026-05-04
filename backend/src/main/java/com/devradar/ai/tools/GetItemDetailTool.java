@@ -26,6 +26,7 @@ public class GetItemDetailTool {
     private final SourceItemRepository repo;
     private final SourceRepository sourceRepo;
     private final ObjectMapper json = new ObjectMapper();
+    private static final int MAX_CACHE_SIZE = 100;
     private final ConcurrentHashMap<Long, String> sourceNameCache = new ConcurrentHashMap<>();
 
     public GetItemDetailTool(SourceItemRepository repo, SourceRepository sourceRepo) {
@@ -46,7 +47,7 @@ public class GetItemDetailTool {
             ObjectNode n = json.createObjectNode();
             n.put("id", si.getId());
             n.put("title", si.getTitle());
-            n.put("description", si.getDescription());
+            n.put("description", truncate(si.getDescription(), 500));
             n.put("url", si.getUrl());
             n.put("author", si.getAuthor());
             n.put("source_name", resolveSourceName(si.getSourceId()));
@@ -58,8 +59,14 @@ public class GetItemDetailTool {
     }
 
     private String resolveSourceName(Long sourceId) {
+        if (sourceNameCache.size() >= MAX_CACHE_SIZE) sourceNameCache.clear();
         return sourceNameCache.computeIfAbsent(sourceId, sid ->
             sourceRepo.findById(sid).map(s -> s.getCode()).orElse("UNKNOWN")
         );
+    }
+
+    private static String truncate(String text, int maxLen) {
+        if (text == null || text.length() <= maxLen) return text;
+        return text.substring(0, maxLen) + "...";
     }
 }

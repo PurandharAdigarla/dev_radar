@@ -176,8 +176,8 @@ The `AiClient` interface lets you swap LLM providers without touching the agent 
 # Demo mode — no API key required
 mvn spring-boot:run -Dspring-boot.run.profiles=demo
 
-# Gemini (free tier, set GOOGLE_AI_API_KEY in env first)
-export GOOGLE_AI_API_KEY=...   # from aistudio.google.com/apikey
+# Gemini (free tier, set GEMINI_API_KEY in env first)
+export GEMINI_API_KEY=...   # from aistudio.google.com/apikey
 mvn spring-boot:run -Dspring-boot.run.profiles=gemini
 
 # Anthropic (paid)

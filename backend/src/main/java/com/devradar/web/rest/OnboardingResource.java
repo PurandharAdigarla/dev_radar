@@ -1,7 +1,6 @@
 package com.devradar.web.rest;
 
 import com.devradar.domain.exception.UserNotAuthenticatedException;
-import com.devradar.onboarding.GitHubRepoScanService;
 import com.devradar.security.SecurityUtils;
 import com.devradar.service.UserInterestService;
 import org.springframework.http.ResponseEntity;
@@ -14,18 +13,10 @@ import java.util.Map;
 @RequestMapping("/api/onboarding")
 public class OnboardingResource {
 
-    private final GitHubRepoScanService scanService;
     private final UserInterestService interestService;
 
-    public OnboardingResource(GitHubRepoScanService scanService, UserInterestService interestService) {
-        this.scanService = scanService;
+    public OnboardingResource(UserInterestService interestService) {
         this.interestService = interestService;
-    }
-
-    @PostMapping("/scan")
-    public GitHubRepoScanService.ScanResult scan() {
-        Long userId = currentUserId();
-        return scanService.scanUserRepos(userId);
     }
 
     @PostMapping("/apply")

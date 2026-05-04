@@ -30,7 +30,7 @@ class RadarOrchestratorTest {
         when(tools.definitions()).thenReturn(List.of());
         when(tools.dispatch(eq("searchItems"), eq("{\"tag_slugs\":[\"spring_boot\"]}"), any())).thenReturn("[{\"id\":1,\"title\":\"sb 3.5\"},{\"id\":2,\"title\":\"sb perf\"}]");
 
-        RadarOrchestrator orch = new RadarOrchestrator(ai, tools, mock(EngagementProfileService.class), "gemini-2.5-flash", 8, 4096, 120);
+        RadarOrchestrator orch = new RadarOrchestrator(ai, tools, mock(EngagementProfileService.class), "gemini-2.5-flash", 8, 4096, 120, 50000);
 
         var result = orch.generate(List.of("spring_boot"), List.of(1L, 2L, 3L), new com.devradar.ai.tools.ToolContext(null, null));
 
@@ -52,7 +52,7 @@ class RadarOrchestratorTest {
         when(tools.definitions()).thenReturn(List.of());
         when(tools.dispatch(eq("searchItems"), anyString(), any())).thenReturn("[]");
 
-        RadarOrchestrator orch = new RadarOrchestrator(ai, tools, mock(EngagementProfileService.class), "gemini-2.5-flash", 3, 4096, 120);
+        RadarOrchestrator orch = new RadarOrchestrator(ai, tools, mock(EngagementProfileService.class), "gemini-2.5-flash", 3, 4096, 120, 50000);
 
         var result = orch.generate(List.of(), List.of(), new com.devradar.ai.tools.ToolContext(null, null));
         // 3 iterations, then we stop with whatever themes (none in this case)

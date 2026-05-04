@@ -26,7 +26,19 @@ public class GeminiAiClient implements AiClient {
     }
 
     @Override
+    public AiResponse generate(String model, String systemPrompt, List<AiMessage> messages,
+                               List<ToolDefinition> tools, int maxTokens, boolean enableWebSearch) {
+        AiResponse resp = doGenerate(model, systemPrompt, messages, tools, maxTokens, enableWebSearch);
+        return resp;
+    }
+
+    @Override
     public AiResponse generate(String model, String systemPrompt, List<AiMessage> messages, List<ToolDefinition> tools, int maxTokens) {
+        return doGenerate(model, systemPrompt, messages, tools, maxTokens, false);
+    }
+
+    private AiResponse doGenerate(String model, String systemPrompt, List<AiMessage> messages,
+                                  List<ToolDefinition> tools, int maxTokens, boolean enableWebSearch) {
         // Gemini uses model name like "gemini-2.0-flash" not "claude-sonnet-4-6".
         // If the caller passes a Claude model name, ignore it and use the configured Gemini default.
         String geminiModel = model.startsWith("gemini") ? model : "gemini-2.5-flash";
@@ -80,8 +92,8 @@ public class GeminiAiClient implements AiClient {
         }
 
         // Tools
+        ArrayNode toolsArr = body.putArray("tools");
         if (tools != null && !tools.isEmpty()) {
-            ArrayNode toolsArr = body.putArray("tools");
             ObjectNode toolEntry = toolsArr.addObject();
             ArrayNode declarations = toolEntry.putArray("functionDeclarations");
             for (ToolDefinition t : tools) {
@@ -94,6 +106,12 @@ public class GeminiAiClient implements AiClient {
                     // skip malformed schema
                 }
             }
+        }
+        if (enableWebSearch) {
+            toolsArr.addObject().putObject("google_search");
+        }
+        if (toolsArr.isEmpty()) {
+            body.remove("tools");
         }
 
         // Generation config
@@ -129,13 +147,14 @@ public class GeminiAiClient implements AiClient {
         // Parse response
         StringBuilder textOut = new StringBuilder();
         List<AiToolCall> toolCalls = new ArrayList<>();
+        List<AiResponse.GroundingSource> groundingSources = new ArrayList<>();
         String stopReason = "end_turn";
         int inputTokens = 0;
         int outputTokens = 0;
 
         if (resp != null) {
             JsonNode candidates = resp.path("candidates");
-            if (candidates.isArray() && candidates.size() > 0) {
+            if (candidates.isArray() && !candidates.isEmpty()) {
                 JsonNode candidate = candidates.get(0);
                 JsonNode finishReason = candidate.path("finishReason");
                 if ("STOP".equals(finishReason.asText("STOP"))) stopReason = "end_turn";
@@ -149,10 +168,20 @@ public class GeminiAiClient implements AiClient {
                         JsonNode fc = part.get("functionCall");
                         String name = fc.path("name").asText();
                         String argsJson = fc.path("args").toString();
-                        // Gemini doesn't return opaque tool_use ids. Fabricate one that round-trips the function name.
                         String fakeId = "gemini_" + callIdx++ + "_" + name;
                         toolCalls.add(new AiToolCall(fakeId, name, argsJson));
                         stopReason = "tool_use";
+                    }
+                }
+
+                JsonNode grounding = candidate.path("groundingMetadata");
+                if (grounding.has("groundingChunks")) {
+                    for (JsonNode chunk : grounding.path("groundingChunks")) {
+                        JsonNode web = chunk.path("web");
+                        if (!web.isMissingNode()) {
+                            groundingSources.add(new AiResponse.GroundingSource(
+                                    web.path("uri").asText(), web.path("title").asText("")));
+                        }
                     }
                 }
             }
@@ -161,7 +190,7 @@ public class GeminiAiClient implements AiClient {
             outputTokens = usage.path("candidatesTokenCount").asInt(0);
         }
 
-        return new AiResponse(textOut.toString(), toolCalls, stopReason, inputTokens, outputTokens);
+        return new AiResponse(textOut.toString(), toolCalls, stopReason, inputTokens, outputTokens, groundingSources);
     }
 
     private String extractGeminiError(String responseBody) {

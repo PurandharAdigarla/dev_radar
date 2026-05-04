@@ -12,10 +12,11 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoField;
 import java.time.temporal.WeekFields;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/public/radar")
@@ -69,50 +70,54 @@ public class PublicRadarResource {
         Instant periodStart = weekStart.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant periodEnd = weekEnd.atStartOfDay(ZoneOffset.UTC).toInstant();
 
-        // Find all public/ready radars that overlap this week
-        List<Radar> radars = radarRepo.findByStatusOrderByGeneratedAtDesc(RadarStatus.READY,
-                org.springframework.data.domain.PageRequest.of(0, 500)).getContent();
+        List<Radar> weekRadars = radarRepo.findPublicReadyOverlapping(RadarStatus.READY, periodStart, periodEnd);
 
-        // Filter to radars whose period overlaps this week
-        List<Radar> weekRadars = radars.stream()
-                .filter(Radar::isPublic)
-                .filter(r -> r.getPeriodStart() != null && r.getPeriodEnd() != null)
-                .filter(r -> !r.getPeriodEnd().isBefore(periodStart) && !r.getPeriodStart().isAfter(periodEnd))
-                .toList();
+        List<Long> radarIds = weekRadars.stream().map(Radar::getId).toList();
+        List<RadarTheme> allThemes = radarIds.isEmpty() ? List.of()
+                : themeRepo.findByRadarIdInOrderByDisplayOrderAsc(radarIds);
 
-        // Collect themes from these radars that contain items tagged with our slug
+        List<Long> themeIds = allThemes.stream().map(RadarTheme::getId).toList();
+        List<RadarThemeItem> allThemeItems = themeIds.isEmpty() ? List.of()
+                : themeItemRepo.findByThemeIdInOrderByDisplayOrderAsc(themeIds);
+
+        List<Long> sourceItemIds = allThemeItems.stream().map(RadarThemeItem::getSourceItemId).distinct().toList();
+        Map<Long, SourceItem> sourceItemMap = sourceItemIds.isEmpty() ? Map.of()
+                : sourceItemRepo.findAllById(sourceItemIds).stream()
+                    .collect(Collectors.toMap(SourceItem::getId, Function.identity()));
+
+        Map<Long, List<SourceItemTag>> tagsByItemId = sourceItemIds.isEmpty() ? Map.of()
+                : sourceItemTagRepo.findBySourceItemIdIn(sourceItemIds).stream()
+                    .collect(Collectors.groupingBy(SourceItemTag::getSourceItemId));
+
+        Map<Long, List<RadarThemeItem>> themeItemsByThemeId = allThemeItems.stream()
+                .collect(Collectors.groupingBy(RadarThemeItem::getThemeId));
+
         List<RadarThemeDTO> matchingThemes = new ArrayList<>();
         Set<Long> seenThemeTitles = new HashSet<>();
 
-        for (Radar radar : weekRadars) {
-            List<RadarTheme> themes = themeRepo.findByRadarIdOrderByDisplayOrderAsc(radar.getId());
-            for (RadarTheme theme : themes) {
-                var rtis = themeItemRepo.findByThemeIdOrderByDisplayOrderAsc(theme.getId());
-                boolean hasMatchingTag = false;
-                List<RadarItemDTO> itemDtos = new ArrayList<>();
+        for (RadarTheme theme : allThemes) {
+            List<RadarThemeItem> rtis = themeItemsByThemeId.getOrDefault(theme.getId(), List.of());
+            boolean hasMatchingTag = false;
+            List<RadarItemDTO> itemDtos = new ArrayList<>();
 
-                for (var rti : rtis) {
-                    SourceItem si = sourceItemRepo.findById(rti.getSourceItemId()).orElse(null);
-                    if (si == null) continue;
+            for (var rti : rtis) {
+                SourceItem si = sourceItemMap.get(rti.getSourceItemId());
+                if (si == null) continue;
 
-                    // Check if this source item is tagged with our interest tag
-                    List<SourceItemTag> tags = sourceItemTagRepo.findBySourceItemId(si.getId());
-                    boolean tagged = tags.stream().anyMatch(t -> t.getInterestTagId().equals(tag.getId()));
-                    if (tagged) {
-                        hasMatchingTag = true;
-                    }
-
-                    itemDtos.add(new RadarItemDTO(si.getId(), si.getTitle(), si.getDescription(),
-                            si.getUrl(), si.getAuthor(), resolveSourceName(si.getSourceId())));
+                List<SourceItemTag> tags = tagsByItemId.getOrDefault(si.getId(), List.of());
+                if (tags.stream().anyMatch(t -> t.getInterestTagId().equals(tag.getId()))) {
+                    hasMatchingTag = true;
                 }
 
-                if (hasMatchingTag) {
-                    // Deduplicate by title hash
-                    long titleHash = theme.getTitle().hashCode();
-                    if (seenThemeTitles.add(titleHash)) {
-                        matchingThemes.add(new RadarThemeDTO(theme.getId(), theme.getTitle(),
-                                theme.getSummary(), theme.getDisplayOrder(), itemDtos));
-                    }
+                itemDtos.add(new RadarItemDTO(si.getId(), si.getTitle(), si.getDescription(),
+                        si.getUrl(), si.getAuthor(), resolveSourceName(si.getSourceId())));
+            }
+
+            if (hasMatchingTag) {
+                long titleHash = theme.getTitle().hashCode();
+                if (seenThemeTitles.add(titleHash)) {
+                    matchingThemes.add(new RadarThemeDTO(theme.getId(), theme.getTitle(),
+                            theme.getSummary(), theme.getDisplayOrder(), itemDtos));
                 }
             }
         }

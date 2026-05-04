@@ -31,14 +31,6 @@ spring:
       pageable:
         max-page-size: 200
         default-page-size: 20
-  ai:
-    mcp:
-      server:
-        name: devradar
-        version: 1.0.0
-        type: SYNC
-        sse-message-endpoint: /mcp/message
-        sse-endpoint: /mcp/sse
 
 jwt:
   secret: ${JWT_SECRET:dev-only-secret-please-override-in-prod-must-be-at-least-256-bits-long-ok}
@@ -52,69 +44,25 @@ server:
     include-stacktrace: never
 
 google-ai:
-  api-key: ${GOOGLE_AI_API_KEY:}
+  api-key: ${GEMINI_API_KEY:}
   base-url: https://generativelanguage.googleapis.com
-
-encryption:
-  github-token-key-base64: ${GITHUB_TOKEN_ENCRYPTION_KEY:}
 
 frontend:
   base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
-
-github:
-  oauth:
-    client-id: ${GITHUB_OAUTH_CLIENT_ID:}
-    client-secret: ${GITHUB_OAUTH_CLIENT_SECRET:}
-    redirect-uri: ${GITHUB_OAUTH_REDIRECT_URI:http://localhost:8080/api/auth/github/callback}
-    authorize-url: https://github.com/login/oauth/authorize
-    token-url: https://github.com/login/oauth/access_token
-  api:
-    base-url: https://api.github.com
 
 devradar:
   rate-limit:
     radar-per-hour: 10
   ai:
+    model: ${AI_MODEL:gemini-2.5-flash}
     orchestrator-model: ${AI_ORCHESTRATOR_MODEL:gemini-2.5-flash}
     scoring-model: ${AI_SCORING_MODEL:gemini-2.5-flash}
-    max-tool-iterations: 8
-    max-tokens-per-call: 4096
-    max-duration-seconds: ${AI_MAX_DURATION_SECONDS:300}
-    daily-budget-usd: ${AI_DAILY_BUDGET_USD:5.0}
-    retry:
-      max-attempts: 3
-      initial-delay-ms: 1000
+    max-tool-iterations: ${AI_MAX_TOOL_ITERATIONS:10}
+    max-tokens-per-call: ${AI_MAX_TOKENS_PER_CALL:16384}
   scheduling:
     enabled: ${SCHEDULING_ENABLED:false}
   internal:
     trigger-secret: ${TRIGGER_SECRET:}
-  ingest:
-    gh-releases:
-      repos: >-
-        facebook/react:react,frontend,javascript;
-        vercel/next.js:next_js,react,frontend;
-        sveltejs/svelte:svelte,frontend;
-        vuejs/core:vue,frontend,javascript;
-        angular/angular:angular,frontend,typescript;
-        spring-projects/spring-boot:spring_boot,java,backend;
-        spring-projects/spring-framework:spring_boot,java,backend;
-        django/django:django,python,backend;
-        tiangolo/fastapi:fastapi,python,backend;
-        rails/rails:rails,backend;
-        golang/go:go;
-        rust-lang/rust:rust;
-        JetBrains/kotlin:kotlin;
-        apple/swift:swift;
-        microsoft/TypeScript:typescript;
-        moby/moby:docker,devops;
-        kubernetes/kubernetes:kubernetes,devops;
-        hashicorp/terraform:terraform,devops;
-        redis/redis:redis,database;
-        tailwindlabs/tailwindcss:frontend;
-        vitejs/vite:frontend,javascript;
-        modelcontextprotocol/specification:mcp,ai_tooling;
-        langchain-ai/langchain:ai_tooling,llm,python;
-        ollama/ollama:ai_tooling,llm
 
 management:
   endpoints:

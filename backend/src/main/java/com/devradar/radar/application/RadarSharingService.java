@@ -3,8 +3,7 @@ package com.devradar.radar.application;
 import com.devradar.domain.Radar;
 import com.devradar.domain.RadarStatus;
 import com.devradar.domain.RadarTheme;
-import com.devradar.domain.Source;
-import com.devradar.domain.SourceItem;
+import com.devradar.domain.RadarThemeSource;
 import com.devradar.domain.exception.UserNotAuthenticatedException;
 import com.devradar.repository.*;
 import com.devradar.security.SecurityUtils;
@@ -15,32 +14,22 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class RadarSharingService {
 
     private final RadarRepository radarRepo;
     private final RadarThemeRepository themeRepo;
-    private final RadarThemeItemRepository themeItemRepo;
-    private final SourceItemRepository sourceItemRepo;
-    private final SourceRepository sourceRepo;
-
-    private final Map<Long, String> sourceNameCache = new ConcurrentHashMap<>();
+    private final RadarThemeSourceRepository themeSourceRepo;
 
     public RadarSharingService(RadarRepository radarRepo,
                                RadarThemeRepository themeRepo,
-                               RadarThemeItemRepository themeItemRepo,
-                               SourceItemRepository sourceItemRepo,
-                               SourceRepository sourceRepo) {
+                               RadarThemeSourceRepository themeSourceRepo) {
         this.radarRepo = radarRepo;
         this.themeRepo = themeRepo;
-        this.themeItemRepo = themeItemRepo;
-        this.sourceItemRepo = sourceItemRepo;
-        this.sourceRepo = sourceRepo;
+        this.themeSourceRepo = themeSourceRepo;
     }
 
     public ShareRadarResponseDTO shareRadar(Long radarId, String baseUrl) {
@@ -72,22 +61,27 @@ public class RadarSharingService {
 
     private RadarDetailDTO toDetail(Radar r) {
         var themes = themeRepo.findByRadarIdOrderByDisplayOrderAsc(r.getId());
+        List<Long> themeIds = themes.stream().map(RadarTheme::getId).toList();
+        List<RadarThemeSource> allSources = themeIds.isEmpty()
+                ? List.of()
+                : themeSourceRepo.findByThemeIdIn(themeIds);
+
         List<RadarThemeDTO> themeDtos = new ArrayList<>();
         for (var t : themes) {
-            var rtis = themeItemRepo.findByThemeIdOrderByDisplayOrderAsc(t.getId());
-            List<RadarItemDTO> itemDtos = new ArrayList<>();
-            for (var rti : rtis) {
-                SourceItem si = sourceItemRepo.findById(rti.getSourceItemId()).orElse(null);
-                if (si == null) continue;
-                itemDtos.add(new RadarItemDTO(si.getId(), si.getTitle(), si.getDescription(), si.getUrl(), si.getAuthor(), resolveSourceName(si.getSourceId())));
-            }
+            List<RadarItemDTO> itemDtos = allSources.stream()
+                    .filter(s -> s.getThemeId().equals(t.getId()))
+                    .map(s -> new RadarItemDTO(null, s.getTitle(), null, s.getUrl(), null, null))
+                    .toList();
             themeDtos.add(new RadarThemeDTO(t.getId(), t.getTitle(), t.getSummary(), t.getDisplayOrder(), itemDtos));
         }
-        return new RadarDetailDTO(r.getId(), r.getStatus(), r.getPeriodStart(), r.getPeriodEnd(), r.getGeneratedAt(), r.getGenerationMs(), r.getTokenCount(), r.getErrorCode(), r.getErrorMessage(), themeDtos);
-    }
 
-    private String resolveSourceName(Long sourceId) {
-        return sourceNameCache.computeIfAbsent(sourceId, id ->
-            sourceRepo.findById(id).map(Source::getCode).orElse("unknown"));
+        List<WebSourceDTO> webSources = allSources.stream()
+                .filter(s -> s.getUrl() != null && !s.getUrl().isBlank())
+                .map(s -> new WebSourceDTO(s.getUrl(), s.getTitle()))
+                .toList();
+
+        return new RadarDetailDTO(r.getId(), r.getStatus(), r.getPeriodStart(), r.getPeriodEnd(),
+                r.getGeneratedAt(), r.getGenerationMs(), r.getTokenCount(),
+                r.getErrorCode(), r.getErrorMessage(), themeDtos, webSources);
     }
 }

@@ -3,6 +3,7 @@ package com.devradar.ai.tools;
 import com.devradar.domain.InterestTag;
 import com.devradar.domain.SourceItem;
 import com.devradar.repository.InterestTagRepository;
+import com.devradar.repository.SourceRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -11,12 +12,13 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class SearchItemsTool {
 
     public static final String NAME = "searchItems";
-    public static final String DESCRIPTION = "Find recent ingested items matching the given interest tag slugs (case-sensitive). Returns the most recent N items.";
+    public static final String DESCRIPTION = "Find recent ingested items matching the given interest tag slugs (case-sensitive). Returns id, title, and source_type for the most recent N items. Use getItemDetail for full info.";
     public static final String INPUT_SCHEMA = """
         {
           "type": "object",
@@ -29,12 +31,17 @@ public class SearchItemsTool {
         """;
 
     private final InterestTagRepository tagRepo;
+    private final SourceRepository sourceRepo;
     private final ObjectMapper json = new ObjectMapper();
+    private final ConcurrentHashMap<Long, String> sourceCodeCache = new ConcurrentHashMap<>();
 
     @PersistenceContext
     private EntityManager em;
 
-    public SearchItemsTool(InterestTagRepository tagRepo) { this.tagRepo = tagRepo; }
+    public SearchItemsTool(InterestTagRepository tagRepo, SourceRepository sourceRepo) {
+        this.tagRepo = tagRepo;
+        this.sourceRepo = sourceRepo;
+    }
 
     public ToolDefinition definition() {
         return new ToolDefinition(NAME, DESCRIPTION, INPUT_SCHEMA);
@@ -66,10 +73,8 @@ public class SearchItemsTool {
             for (SourceItem si : items) {
                 ObjectNode n = json.createObjectNode();
                 n.put("id", si.getId());
-                n.put("external_id", si.getExternalId());
                 n.put("title", si.getTitle());
-                n.put("description", si.getDescription());
-                n.put("url", si.getUrl());
+                n.put("source_type", resolveSourceCode(si.getSourceId()));
                 n.put("posted_at", si.getPostedAt().toString());
                 arr.add(n);
             }
@@ -77,5 +82,12 @@ public class SearchItemsTool {
         } catch (Exception e) {
             return "{\"error\":\"" + e.getMessage().replace("\"", "'") + "\"}";
         }
+    }
+
+    private String resolveSourceCode(Long sourceId) {
+        if (sourceId == null) return "UNKNOWN";
+        return sourceCodeCache.computeIfAbsent(sourceId, sid ->
+            sourceRepo.findById(sid).map(s -> s.getCode()).orElse("UNKNOWN")
+        );
     }
 }

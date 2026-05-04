@@ -1,106 +1,121 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { PageHeader } from "../components/PageHeader";
-import { Button } from "../components/Button";
-import { useGitHubStatusQuery } from "../api/githubApi";
+import PersonOutlined from "@mui/icons-material/PersonOutlined";
+import { motion } from "framer-motion";
+import { colors, fonts } from "../theme";
 import { useAuth } from "../auth/useAuth";
-import { serifStack } from "../theme";
 
-function CheckIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] as const } },
+};
+
+const cardSx = {
+  bgcolor: colors.bgPaper,
+  border: `1px solid ${colors.divider}`,
+  borderRadius: "12px",
+  p: 3,
+  transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+} as const;
 
 export function SettingsPage() {
-  const { data: ghStatus, isLoading } = useGitHubStatusQuery();
-  const { accessToken } = useAuth();
-
-  function handleLink() {
-    if (accessToken) {
-      window.location.href = `/api/auth/github/link?token=${encodeURIComponent(accessToken)}`;
-    }
-  }
+  const { user } = useAuth();
 
   return (
-    <Box sx={{ maxWidth: 960, width: "100%" }}>
-      <PageHeader title="Settings" sub="Manage your account and integrations." />
-
-      <Box sx={{ mb: 5 }}>
+    <Box sx={{ maxWidth: 640, width: "100%" }}>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <Typography
-          component="h2"
-          sx={{ fontSize: "1.125rem", fontWeight: 500, color: "text.primary", mb: 2 }}
+          component="h1"
+          sx={{
+            m: 0,
+            mb: 4,
+            fontFamily: fonts.headline,
+            fontSize: "2rem",
+            fontWeight: 700,
+            letterSpacing: "-0.03em",
+            color: colors.text,
+          }}
         >
-          GitHub
+          Settings
         </Typography>
-        <Typography sx={{ fontSize: "0.9375rem", color: "text.secondary", mb: 3, lineHeight: "24px" }}>
-          Connect your GitHub account to personalize your radar with releases from repos you've starred.
-        </Typography>
+      </motion.div>
 
-        {isLoading && (
-          <Typography variant="body2" color="text.secondary">Checking connection…</Typography>
-        )}
+      <motion.div variants={container} initial="hidden" animate="show">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          {/* Account card */}
+          <motion.div variants={item}>
+            <Box sx={cardSx}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "10px",
+                    background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                  }}
+                >
+                  <PersonOutlined sx={{ fontSize: 20 }} />
+                </Box>
+                <Typography
+                  sx={{
+                    fontFamily: fonts.headline,
+                    fontSize: "1.125rem",
+                    fontWeight: 600,
+                    color: colors.text,
+                  }}
+                >
+                  Account
+                </Typography>
+              </Box>
 
-        {!isLoading && ghStatus?.linked && (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              py: "14px",
-              px: 2,
-              border: 1,
-              borderColor: "divider",
-              borderRadius: 2,
-              bgcolor: "background.paper",
-            }}
-          >
-            <Box sx={{ color: "success.main", display: "flex", alignItems: "center" }}>
-              <CheckIcon />
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: colors.bgSubtle,
+                  borderRadius: "10px",
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: "0.9375rem",
+                    fontWeight: 500,
+                    color: colors.text,
+                  }}
+                >
+                  {user?.displayName}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "0.8125rem",
+                    color: colors.textSecondary,
+                    mt: 0.25,
+                  }}
+                >
+                  {user?.email}
+                </Typography>
+              </Box>
             </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontSize: "0.9375rem", fontWeight: 500, color: "text.primary" }}>
-                Connected as @{ghStatus.login}
-              </Typography>
-              <Typography sx={{ fontSize: "0.8125rem", color: "text.secondary", mt: 0.25 }}>
-                Starred repo releases will appear in your next radar.
-              </Typography>
-            </Box>
-          </Box>
-        )}
+          </motion.div>
 
-        {!isLoading && !ghStatus?.linked && (
-          <Box
-            sx={{
-              padding: "48px 24px",
-              textAlign: "center",
-              border: "1px dashed",
-              borderColor: "divider",
-              borderRadius: 3,
-              bgcolor: "background.paper",
-            }}
-          >
-            <Box
-              sx={{
-                fontFamily: serifStack,
-                fontSize: 18,
-                lineHeight: "26px",
-                fontStyle: "italic",
-                color: "text.primary",
-                mb: 1,
-              }}
-            >
-              GitHub not connected
-            </Box>
-            <Typography sx={{ fontSize: 14, color: "text.secondary", mb: 3, lineHeight: "22px" }}>
-              Link your account to get personalized release updates from your starred repos.
-            </Typography>
-            <Button onClick={handleLink}>Connect to GitHub</Button>
-          </Box>
-        )}
-      </Box>
+        </Box>
+      </motion.div>
     </Box>
   );
 }

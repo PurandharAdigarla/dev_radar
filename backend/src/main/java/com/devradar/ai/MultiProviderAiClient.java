@@ -66,15 +66,26 @@ public class MultiProviderAiClient implements AiClient {
         }
 
         if (providers.isEmpty()) {
-            LOG.warn("No AI provider configured. Set GOOGLE_AI_API_KEY to enable AI features.");
+            LOG.warn("No AI provider configured. Set GEMINI_API_KEY to enable AI features.");
         }
     }
 
     @Override
     public AiResponse generate(String model, String systemPrompt, List<AiMessage> messages,
+                               List<ToolDefinition> tools, int maxTokens, boolean enableWebSearch) {
+        return doGenerate(model, systemPrompt, messages, tools, maxTokens, enableWebSearch);
+    }
+
+    @Override
+    public AiResponse generate(String model, String systemPrompt, List<AiMessage> messages,
                                List<ToolDefinition> tools, int maxTokens) {
+        return doGenerate(model, systemPrompt, messages, tools, maxTokens, false);
+    }
+
+    private AiResponse doGenerate(String model, String systemPrompt, List<AiMessage> messages,
+                                  List<ToolDefinition> tools, int maxTokens, boolean enableWebSearch) {
         if (providers.isEmpty()) {
-            throw new AiProviderException("No AI provider configured. Set GOOGLE_AI_API_KEY to enable AI features.");
+            throw new AiProviderException("No AI provider configured. Set GEMINI_API_KEY to enable AI features.");
         }
         if (dailyMetrics.estimatedCostUsd(LocalDate.now()) >= dailyBudgetUsd) {
             throw new AiProviderException("Daily AI budget of $" + dailyBudgetUsd + " exhausted. Resets at midnight UTC.");
@@ -83,7 +94,7 @@ public class MultiProviderAiClient implements AiClient {
 
         // Try primary with retry
         try {
-            AiResponse resp = executeWithRetry(primary, model, systemPrompt, messages, tools, maxTokens);
+            AiResponse resp = executeWithRetry(primary, model, systemPrompt, messages, tools, maxTokens, enableWebSearch);
             trackMetrics(primary.name(), model, resp);
             return resp;
         } catch (Exception e) {
@@ -95,7 +106,7 @@ public class MultiProviderAiClient implements AiClient {
             if (fallback == primary) continue;
             try {
                 LOG.info("Falling back to {} with model={}", fallback.name(), fallback.defaultModel());
-                AiResponse resp = executeWithRetry(fallback, fallback.defaultModel(), systemPrompt, messages, tools, maxTokens);
+                AiResponse resp = executeWithRetry(fallback, fallback.defaultModel(), systemPrompt, messages, tools, maxTokens, enableWebSearch);
                 trackMetrics(fallback.name(), fallback.defaultModel(), resp);
                 Counter.builder("ai.client.fallback")
                         .tag("from", primary.name())
@@ -112,14 +123,15 @@ public class MultiProviderAiClient implements AiClient {
     }
 
     private AiResponse executeWithRetry(Provider provider, String model, String systemPrompt,
-                                        List<AiMessage> messages, List<ToolDefinition> tools, int maxTokens) {
+                                        List<AiMessage> messages, List<ToolDefinition> tools,
+                                        int maxTokens, boolean enableWebSearch) {
         long delay = initialDelayMs;
         Exception lastException = null;
 
         for (int attempt = 0; attempt <= maxRetries; attempt++) {
             try {
                 var sample = Timer.start(meterRegistry);
-                AiResponse resp = provider.client().generate(model, systemPrompt, messages, tools, maxTokens);
+                AiResponse resp = provider.client().generate(model, systemPrompt, messages, tools, maxTokens, enableWebSearch);
                 sample.stop(Timer.builder("ai.client.duration")
                         .tag("provider", provider.name())
                         .tag("model", model)

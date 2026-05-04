@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { tokenStorage } from "../auth/tokenStorage";
-import type { ThemeCompleteEvent, RadarCompleteEvent, RadarFailedEvent, ActionProposedEvent } from "../api/types";
+import type {
+  ThemeCompleteEvent,
+  RadarCompleteEvent,
+  RadarFailedEvent,
+  ActionProposedEvent,
+  AgentProgressEvent,
+} from "../api/types";
 
 export type StreamStatus = "idle" | "open" | "complete" | "failed";
 
@@ -12,17 +18,30 @@ export interface StreamedTheme {
   displayOrder: number;
 }
 
+export interface ActivityEntry {
+  id: number;
+  agent: string;
+  phase: "research" | "repo_discovery";
+  queries: string[];
+  results: Array<{ title: string; domain: string; url: string }>;
+  timestamp: number;
+}
+
 export interface UseRadarStreamResult {
   status: StreamStatus;
   themes: StreamedTheme[];
+  activities: ActivityEntry[];
   proposalIds: number[];
   completionMs: number | null;
   error: string | null;
 }
 
+let activityId = 0;
+
 export function useRadarStream(radarId: number, enabled: boolean): UseRadarStreamResult {
   const [status, setStatus] = useState<StreamStatus>("idle");
   const [themes, setThemes] = useState<StreamedTheme[]>([]);
+  const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [proposalIds, setProposalIds] = useState<number[]>([]);
   const [completionMs, setCompletionMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +57,20 @@ export function useRadarStream(radarId: number, enabled: boolean): UseRadarStrea
     esRef.current = es;
 
     const handleOpen = () => setStatus("open");
+    const handleProgress = (ev: MessageEvent<string>) => {
+      const payload = JSON.parse(ev.data) as AgentProgressEvent;
+      setActivities((prev) => [
+        ...prev,
+        {
+          id: ++activityId,
+          agent: payload.agent,
+          phase: payload.phase,
+          queries: payload.searchQueries,
+          results: payload.searchResults,
+          timestamp: Date.now(),
+        },
+      ]);
+    };
     const handleTheme = (ev: MessageEvent<string>) => {
       const payload = JSON.parse(ev.data) as ThemeCompleteEvent;
       setThemes((prev) => [
@@ -57,13 +90,13 @@ export function useRadarStream(radarId: number, enabled: boolean): UseRadarStrea
     };
     const handleComplete = (ev: MessageEvent<string>) => {
       const payload = JSON.parse(ev.data) as RadarCompleteEvent;
-      setCompletionMs(payload.elapsedMs);
+      setCompletionMs(payload.generationMs);
       setStatus("complete");
       es.close();
     };
     const handleFailed = (ev: MessageEvent<string>) => {
       const payload = JSON.parse(ev.data) as RadarFailedEvent;
-      setError(payload.errorMessage);
+      setError(payload.message);
       setStatus("failed");
       es.close();
     };
@@ -75,6 +108,7 @@ export function useRadarStream(radarId: number, enabled: boolean): UseRadarStrea
     };
 
     es.onopen = handleOpen;
+    es.addEventListener("agent.progress", handleProgress as EventListener);
     es.addEventListener("theme.complete", handleTheme as EventListener);
     es.addEventListener("action.proposed", handleProposal as EventListener);
     es.addEventListener("radar.complete", handleComplete as EventListener);
@@ -87,5 +121,5 @@ export function useRadarStream(radarId: number, enabled: boolean): UseRadarStrea
     };
   }, [radarId, enabled]);
 
-  return { status, themes, proposalIds, completionMs, error };
+  return { status, themes, activities, proposalIds, completionMs, error };
 }

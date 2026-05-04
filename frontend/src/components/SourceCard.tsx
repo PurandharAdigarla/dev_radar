@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
-import { monoStack } from "../theme";
+import { fonts } from "../theme";
 import type { RadarItem } from "../api/types";
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -15,7 +15,7 @@ const SOURCE_LABELS: Record<string, string> = {
   DEP_RELEASE: "Dependency",
 };
 
-function sourceBadgeColor(sourceName: string): string {
+function sourceBadgeColor(sourceName: string | null): string {
   switch (sourceName) {
     case "GHSA": return "rgba(179,38,30,0.08)";
     default: return "rgba(45,42,38,0.05)";
@@ -50,7 +50,7 @@ interface SourceCardProps {
 }
 
 export function SourceCard({ item }: SourceCardProps) {
-  const label = SOURCE_LABELS[item.sourceName] ?? item.sourceName;
+  const label = (item.sourceName && SOURCE_LABELS[item.sourceName]) ?? item.sourceName ?? "Source";
   const epss = useMemo(() => parseEpss(item.description), [item.description]);
   const cleanDescription = useMemo(
     () => (item.description ? stripEpssTag(item.description) : null),
@@ -84,7 +84,7 @@ export function SourceCard({ item }: SourceCardProps) {
           py: "2px",
           borderRadius: "4px",
           bgcolor: sourceBadgeColor(item.sourceName),
-          fontFamily: monoStack,
+          fontFamily: fonts.mono,
           fontSize: "0.6875rem",
           fontWeight: 500,
           lineHeight: "16px",
@@ -133,7 +133,7 @@ export function SourceCard({ item }: SourceCardProps) {
               mt: "4px",
               height: 20,
               fontSize: "0.6875rem",
-              fontFamily: monoStack,
+              fontFamily: fonts.mono,
               fontWeight: 600,
               ...(epss.numericPercent >= 10
                 ? { bgcolor: "rgba(211,47,47,0.12)", color: "#b71c1c" }

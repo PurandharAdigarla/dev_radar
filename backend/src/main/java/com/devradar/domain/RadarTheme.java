@@ -12,6 +12,9 @@ public class RadarTheme {
     @Column(name = "radar_id", nullable = false)
     private Long radarId;
 
+    @Column(length = 80)
+    private String topic;
+
     @Column(nullable = false, length = 500)
     private String title;
 
@@ -31,6 +34,8 @@ public class RadarTheme {
     public void setId(Long id) { this.id = id; }
     public Long getRadarId() { return radarId; }
     public void setRadarId(Long v) { this.radarId = v; }
+    public String getTopic() { return topic; }
+    public void setTopic(String v) { this.topic = v; }
     public String getTitle() { return title; }
     public void setTitle(String v) { this.title = v; }
     public String getSummary() { return summary; }

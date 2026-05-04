@@ -59,12 +59,12 @@ class MultiProviderAiClientBudgetTest {
     void generatesNormallyWhenUnderBudget() {
         when(dailyMetrics.estimatedCostUsd(any(LocalDate.class))).thenReturn(1.0);
         AiResponse expected = new AiResponse("test", List.of(), "end_turn", 100, 50);
-        when(mockProvider.generate(anyString(), anyString(), anyList(), anyList(), anyInt())).thenReturn(expected);
+        when(mockProvider.generate(anyString(), anyString(), anyList(), anyList(), anyInt(), anyBoolean())).thenReturn(expected);
 
         AiResponse result = client.generate("gemini-2.5-flash", "sys", List.of(AiMessage.userText("hi")), List.of(), 100);
 
         assertThat(result.text()).isEqualTo("test");
-        verify(mockProvider).generate(anyString(), anyString(), anyList(), anyList(), anyInt());
+        verify(mockProvider).generate(anyString(), anyString(), anyList(), anyList(), anyInt(), anyBoolean());
     }
 
     @Test
